@@ -461,3 +461,99 @@ def test_dash_before_heading_typo_reads_whole_heading(units):
     u = units(body, contents=contents, act="BNS")
     assert u["BNS-S255"]["heading"] == ("Public servant disobeying direction of law with intent to save person "
                                         "from punishment or property from forfeiture")
+
+
+# ---------------------------------------------------------------- Order numbers, BSA schedule (session 5)
+
+def test_order_xl_is_not_read_as_order_x_suffix_l():
+    # v1 turned "XL" into "X-L", so Order XL's rules got IDs "CPC-OX-L-R1".
+    assert sg.norm_order("XL") == "XL"
+    assert [sg.norm_order(o) for o in ("XV A", "XV-A", "XXXIIA", "XLI", "L", "LI")] == \
+        ["XV-A", "XV-A", "XXXII-A", "XLI", "L", "LI"]
+
+
+def test_bsa_schedule_is_not_part_of_section_170():
+    contents = ["ARRANGEMENT OF SECTIONS", "169. Hostile witness.", "170. Repeal and savings.", "THE SCHEDULE"]
+    body = [
+        "BE it enacted by Parliament in the Seventy-fourth Year of the Republic of India as follows:—",
+        "170. Repeal and savings.—(1) The Indian Evidence Act, 1872 is hereby repealed.",
+        "THE SCHEDULE",
+        "[See section 63(4)(c)]",
+        "CERTIFICATE",
+    ]
+    lab = labels(body, contents=contents, act="BSA")
+    assert lab["THE SCHEDULE"] == "schedule" and lab["CERTIFICATE"] == "schedule"
+
+
+# ---------------------------------------------------------------- chapters (session 5)
+
+def chapters_of(contents, act):
+    rows = rows_of(contents, [])
+    return sg.chapters(act, rows, ["contents"] * len(contents))
+
+
+def test_chapter_title_wraps_over_long_lines_only():
+    # BNSS Chapter IV's title wraps; BNS Chapter IV's short title is followed by a lower-case cross-heading.
+    contents = ["ARRANGEMENT OF SECTIONS", "CHAPTER IV",
+                "POWERS OF SUPERIOR OFFICERS OF POLICE AND AID TO THE MAGISTRATES AND",
+                "THE POLICE", "30. Powers of superior officers of police."]
+    assert chapters_of(contents, "BNSS")[(None, "30")] == \
+        "Chapter IV: Powers of Superior Officers of Police and Aid to the Magistrates and the Police"
+
+
+def test_short_part_title_does_not_swallow_cross_heading():
+    contents = ["ARRANGEMENT OF SECTIONS", "PART II", "EXECUTION", "GENERAL", "36. Application to orders."]
+    assert chapters_of(contents, "CPC")[(None, "36")] == "Part II: Execution"
+
+
+def test_column_header_and_cpc_preliminary():
+    contents = ["ARRANGEMENT OF SECTIONS", "______", "PRELIMINARY", "SECTIONS", "1. Short title, commencement and extent.",
+                "PART I", "SUITS IN GENERAL", "9. Courts to try all civil suits unless barred."]
+    ch = chapters_of(contents, "CPC")
+    assert ch[(None, "1")] == "Preliminary" and ch[(None, "9")] == "Part I: Suits in General"
+    bns = ["ARRANGEMENT OF SECTIONS", "CHAPTER I", "PRELIMINARY SECTIONS", "1. Short title, commencement and application."]
+    assert chapters_of(bns, "BNS")[(None, "1")] == "Chapter I: Preliminary"
+
+
+def test_order_title_in_ordinary_case_and_bsa_parts_skipped():
+    cpc = ["ARRANGEMENT OF SECTIONS", "ORDER XII", "Admissions", "1. Notice of admission of case.",
+           "ORDER XXV", "Security for Costs", "RULES", "1. When security for costs may be required from plaintiff."]
+    ch = chapters_of(cpc, "CPC")
+    assert ch[("XII", "1")] == "Order XII: Admissions" and ch[("XXV", "1")] == "Order XXV: Security for Costs"
+    bsa = ["ARRANGEMENT OF SECTIONS", "PART I", "CHAPTER I", "PRELIMINARY", "1. Short title, application and commencement."]
+    assert chapters_of(bsa, "BSA")[(None, "1")] == "Chapter I: Preliminary"
+
+
+def test_unit_gets_chapter_and_commercial_order_falls_back_to_body_title(units):
+    contents = ["ARRANGEMENT OF SECTIONS", "ORDER XIII", "PRODUCTION, IMPOUNDING AND RETURN OF DOCUMENTS",
+                "1. Original documents to be produced at or before the settlement of issues."]
+    body = [
+        PREAMBLE,
+        "ORDER XIII",
+        "1. Original documents to be produced at or before the settlement of issues.—(1) The parties",
+        "*[ORDER XIII-A",
+        "Summary Judgment",
+        "1. Scope of and classes of suits to which this Order applies.—(1) This Order sets out the procedure",
+    ]
+    u = units(body, contents=contents)
+    assert u["CPC-OXIII-R1"]["chapter"] == "Order XIII: Production, Impounding and Return of Documents"
+    assert u["CPC-OXIII-A-R1"]["chapter"] == "Order XIII-A: Summary Judgment"
+
+
+# ---------------------------------------------------------------- footnotes (session 5)
+
+def test_footnotes_link_by_same_page_and_number_only(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "txt").mkdir()
+    notes = [{"page": 93, "text": "4. Subs. by Act 22 of 2002, s. 6, for rule 9 (w.e.f. 1-7-2002)."},
+             {"page": 95, "text": "1. Subs. by Act 104 of 1976, s. 55, for rule 15 (w.e.f. 1-2-1977)."}]
+    (tmp_path / "txt" / "CPC.notes.jsonl").write_text(
+        "\n".join(__import__("json").dumps(n) for n in notes) + "\n", encoding="utf-8")
+    contents = ["ARRANGEMENT OF SECTIONS", "ORDER V", "9. Delivery of summons by Court."]
+    rows = [(t, 1) for t in contents] + [(PREAMBLE, 92), ("ORDER V", 92),
+            ("⟨4⟩[9. Delivery of summons by Court.—(1) Where the defendant resides within the jurisdiction", 93),
+            ("may be made by such mode of service of summons as is referred to in ⟨1⟩[sub-rule (3)]", 94)]
+    u = {x["id"]: x for x in sg.units("CPC", rows, sg.segment("CPC", rows))}
+    fn = u["CPC-OV-R9"]["footnotes"]
+    assert [(f["marker"], f["page"]) for f in fn] == [("4", 93)]   # ⟨1⟩ on p.94 isn't linked to p.95's note
+    assert u["CPC-OV-R9"]["line_pages"] == [93, 94]
