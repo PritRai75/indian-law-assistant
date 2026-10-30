@@ -81,7 +81,7 @@ for r in rows:
         d[k] = re.sub(r"(?<=\w) (?=\w)", "", d[k]) if len(d[k]) < 40 else d[k]  # "C o g nizable" -> "Cognizable"
     d["page"] = r["page"]
     clean.append(d)
-json.dump(clean, open("txt/BNSS.schedule1.json", "w"), indent=1, ensure_ascii=False)
+json.dump(clean, open("txt/BNSS.schedule1.json", "w", encoding="utf-8"), indent=1, ensure_ascii=False)
 vals = lambda k: collections.Counter(x[k] for x in clean).most_common(8)
 print("rows", len(clean))
 print("cognizable", vals("cognizable"))

@@ -1,5 +1,6 @@
 # Corpus pipeline (Project 1). v0 from session 3; v1 (session 4, 30 Oct 2026) fixes state-amendment
-# leaks and 8 missed CPC units. Tests: tests/test_segment.py. Run from a folder containing raw/BNS.pdf,
+# leaks and 8 missed CPC units; v2 (session 5) fixes heading metadata (hyphens, 80-char cap, wrapped
+# compounds, BNS s.255), marks CPC O.V r.20A repealed, and opens every file as UTF-8. Tests: tests/test_segment.py. Run from a folder containing raw/BNS.pdf,
 # raw/BNSS.pdf, raw/BSA.pdf, raw/CPC.pdf (the India Code PDFs) and an empty txt/ folder.
 # Order: python extract.py BNS BNSS BSA CPC  ->  python segment.py BNS BNSS BSA CPC  ->  python schedule.py
 # Needs: pip install pdfplumber. See corpus-audit.md for what each rule fixes.
@@ -18,13 +19,17 @@ MARK = r"(?:⟨[^⟩]*⟩\s*|\*|\[\s*)*"
 # num() drops the hyphen so the number matches the contents list.
 NUM = r"(\d+(?:-?[A-Z]{1,3})?)"
 num = lambda s: s.replace("-", "")
-SEC = re.compile(rf"^{MARK}{NUM}\.\s*(?:\[)?([A-Z“\"‘'(][^—–]*?)\s*\.?\s*[—–-]{{1,2}}")
+# A heading closes on an em or en dash only ("174. Information as to non-cognizable cases ….—(1)").
+# A hyphen never closes it: v1 accepted "-" and cut 114 headings at a compound word ("non", "House",
+# "Cross"), and repealed stubs at the hyphen in a date ("w.e.f. 1-7-2002"). No heading in the four
+# Acts closes with a hyphen (session 5 survey: 1,814 em dash, 4 en dash, 134 hyphens all mid-word).
+SEC = re.compile(rf"^{MARK}{NUM}\.\s*(?:\[)?([A-Z“\"‘'(][^—–]*?)\s*\.?\s*[—–]{{1,2}}")
 ORDER = re.compile(rf"^{MARK}\s*[“\"]?ORDER\s+([IVXL]+(?:\s*-?\s*[A-Z])?)\b")
 norm_order = lambda o: re.sub(r"\s*-?\s*([A-Z])$", r"-\1", o) if re.search(r"[IVXL]\s*-?\s*[A-HJ-UWYZ]$", o) else o
 
 
 def load(act):
-    rows = [l.split("\t") for l in open(f"txt/{act}.body.tsv").read().split("\n")]
+    rows = [l.split("\t") for l in open(f"txt/{act}.body.tsv", encoding="utf-8").read().split("\n")]
     return [(r[0], int(r[1])) for r in rows]
 
 
@@ -117,7 +122,16 @@ def toc_of(act, rows, seg):
 # "17A. [Production of evidence …] omitted by …" (the last after joining its wrapped second line).
 # Only the keyword is case-insensitive; the section letters stay upper-case.
 REPEALED = re.compile(rf"^{MARK}{NUM}\.\s*(?:⟨[^⟩]*⟩\s*)*\[?\s*(?:⟨[^⟩]*⟩\s*)*\[([^\]]+)\]\.?\]?\s*\.?\s*(?:(?i:rep\.|omitted|repealed)|\*)")
-SEC_DASH_FIRST = re.compile(rf"^{MARK}{NUM}\.\s*[—–]+\s*([A-Z].{{0,80}})")  # e.g. BNS "255.—Public servant..."
+# The same stub with its opening bracket before the number: "⟨1⟩[20A. Service of summons by post.] Rep. by …"
+# (CPC O.V r.20A). MARK eats the "[", so the heading runs from the number to the closing bracket.
+# No dash or bracket may sit inside it, so an in-force heading ("…post.—") can never match.
+REPEALED_OUTER = re.compile(rf"^{MARK}{NUM}\.\s*([^\[\]—–]+?)\]\s*\.?\s*(?i:rep\.|omitted|repealed)")
+is_repealed = lambda s: bool(REPEALED.match(s) or REPEALED_OUTER.match(s))
+# The source typo BNS "255.—Public servant … forfeiture.—": a dash before the heading as well as after.
+# SEC_DASH_FIRST reads the heading up to its closing dash, joining a wrapped second line like SEC.
+# The loose form (first 80 characters of the line) is a last resort so the unit is never lost.
+SEC_DASH_FIRST = re.compile(rf"^{MARK}{NUM}\.\s*[—–]+\s*([A-Z][^—–]*?)\s*\.?\s*[—–]")
+SEC_DASH_FIRST_LOOSE = re.compile(rf"^{MARK}{NUM}\.\s*[—–]+\s*([A-Z].{{0,80}})")
 
 
 def units(act, rows, seg):
@@ -126,7 +140,7 @@ def units(act, rows, seg):
     has not been seen yet -- this rejects line-initial years ("2023. A may be...") and list items."""
     toc = toc_of(act, rows, seg)
     star_notes = collections.defaultdict(list)
-    for l in open(f"txt/{act}.notes.jsonl"):
+    for l in open(f"txt/{act}.notes.jsonl", encoding="utf-8"):
         n = json.loads(l)
         if n["text"].startswith("*"):
             star_notes[n["page"]].append(n["text"])
@@ -155,17 +169,21 @@ def units(act, rows, seg):
             cur = None
             continue
         head = t   # the heading text, joined with its continuation lines when it wraps
-        m = SEC.match(t) or REPEALED.match(t) or SEC_DASH_FIRST.match(t)
-        if not m and re.match(rf"^{MARK}{NUM}\.\s", t):
+        m = SEC.match(t) or REPEALED.match(t) or REPEALED_OUTER.match(t) or SEC_DASH_FIRST.match(t)
+        if not m and re.match(rf"^{MARK}{NUM}\.(?:\s|[—–])", t):
             # heading (or repealed stub) wrapped onto the next line(s) before its dash or "Rep."
             joined = t
             for j in (1, 2):
                 if i + j < len(rows):
-                    joined += " " + rows[i + j][0]
-                    m = SEC.match(joined) or REPEALED.match(joined)
+                    # A line that ends in a hyphen broke a compound word ("bank-" / "notes"): no space.
+                    joined += ("" if joined.endswith("-") else " ") + rows[i + j][0]
+                    m = (SEC.match(joined) or SEC_DASH_FIRST.match(joined) or REPEALED.match(joined)
+                         or REPEALED_OUTER.match(joined))
                     if m:
                         head = joined
                         break
+            if not m:
+                m = SEC_DASH_FIRST_LOOSE.match(t)
         regime = "general"
         if m:
             n = num(m.group(1))
@@ -182,9 +200,11 @@ def units(act, rows, seg):
             seen.add((okey, n))
             suffix = "@commercial" if okey != order else ""
             uid = (f"{act}-O{order}-R{n}" if order else f"{act}-S{n}") + suffix
-            cur = {"id": uid, "page": pg, "heading": m.group(2)[:80], "regime": regime,
+            # The whole heading, without the full stop that closes it. No length cap: real headings
+            # run to 167 characters (BNS s.196), and the old 80-character cut truncated 215 of them.
+            cur = {"id": uid, "page": pg, "heading": m.group(2).strip().rstrip(".").rstrip(), "regime": regime,
                    "applies_to_commercial": kind != "omitted_for_commercial",
-                   "status": "repealed" if REPEALED.match(head) else "in_force", "text": t}
+                   "status": "repealed" if is_repealed(head) else "in_force", "text": t}
             out.append(cur)
         elif cur:
             cur["text"] += "\n" + t
@@ -196,15 +216,15 @@ if __name__ == "__main__":
     for act in sys.argv[1:]:
         rows = load(act)
         seg = segment(act, rows)
-        notes = [json.loads(l)["text"] for l in open(f"txt/{act}.notes.jsonl")]
+        notes = [json.loads(l)["text"] for l in open(f"txt/{act}.notes.jsonl", encoding="utf-8")]
         by = collections.defaultdict(list)
         for (t, _), s in zip(rows, seg):
             by[s].append(t)
         stats = {k: tok("\n".join(v)) for k, v in by.items()}
         stats["footnotes"] = tok("\n".join(notes))
         u = units(act, rows, seg)
-        json.dump(u, open(f"txt/{act}.units.json", "w"), ensure_ascii=False, indent=0)
-        json.dump(seg, open(f"txt/{act}.seg.json", "w"))
+        json.dump(u, open(f"txt/{act}.units.json", "w", encoding="utf-8"), ensure_ascii=False, indent=0)
+        json.dump(seg, open(f"txt/{act}.seg.json", "w", encoding="utf-8"))
         sizes = sorted(tok(x["text"]) for x in u)
         q = lambda p: sizes[min(len(sizes) - 1, int(p * len(sizes)))]
         report[act] = dict(tokens=stats, units=len(u), unit_tokens=dict(

@@ -43,14 +43,16 @@ def labels(body, contents=CONTENTS, act="CPC"):
 
 @pytest.fixture
 def units(tmp_path, monkeypatch):
-    """Run units() on a fake CPC. units() reads txt/CPC.notes.jsonl, so give it an empty one."""
+    """Run units() on a fake Act (CPC by default). units() reads txt/<ACT>.notes.jsonl, so give
+    each Act an empty one."""
     monkeypatch.chdir(tmp_path)
     (tmp_path / "txt").mkdir()
-    (tmp_path / "txt" / "CPC.notes.jsonl").write_text("", encoding="utf-8")
+    for act in ("BNS", "BNSS", "BSA", "CPC"):
+        (tmp_path / "txt" / f"{act}.notes.jsonl").write_text("", encoding="utf-8")
 
-    def run(body, contents=CONTENTS):
+    def run(body, contents=CONTENTS, act="CPC"):
         rows = rows_of(contents, body)
-        return {x["id"]: x for x in sg.units("CPC", rows, sg.segment("CPC", rows))}
+        return {x["id"]: x for x in sg.units(act, rows, sg.segment(act, rows))}
     return run
 
 
@@ -329,3 +331,133 @@ def test_repealed_keyword_case_does_not_loosen_section_letters():
     # Only "Rep./Omitted/Repealed" is case-insensitive; a lower-case letter suffix is not a section.
     assert sg.REPEALED.match("17A. [Production of evidence.] omitted by Act 46 of 1999.")
     assert not sg.REPEALED.match("17a. [Production of evidence.] omitted by Act 46 of 1999.")
+
+
+# ---------------------------------------------------------------- heading metadata (session 5)
+
+BNS_PREAMBLE = "BE it enacted by Parliament in the Seventy-fourth Year of the Republic of India as follows:—"
+
+
+def test_hyphen_inside_heading_does_not_close_it(units):
+    # v1 closed a heading on any hyphen, so BNSS s.174 was stored as "Information as to non".
+    contents = ["ARRANGEMENT OF SECTIONS", "173. Information in cognizable cases.",
+                "174. Information as to non-cognizable cases and investigation of such cases.",
+                "175. Police officer’s power to investigate cognizable case."]
+    body = [
+        BNS_PREAMBLE,
+        "174. Information as to non-cognizable cases and investigation of such cases.—(1) When",
+        "175. Police officer’s power to investigate cognizable case.—(1) Any officer in charge of a police",
+    ]
+    u = units(body, contents=contents, act="BNSS")
+    assert u["BNSS-S174"]["heading"] == "Information as to non-cognizable cases and investigation of such cases"
+
+
+def test_heading_that_starts_with_a_hyphenated_word(units):
+    contents = ["ARRANGEMENT OF SECTIONS", "ORDER VIII", "6. Particulars of set-off to be given in written statement.",
+                "6A. Counter-claim by defendant."]
+    body = [
+        PREAMBLE,
+        "ORDER VIII",
+        "6A. Counter-claim by defendant.—(1) A defendant in a suit may, in addition to his right of pleading",
+    ]
+    assert units(body, contents=contents)["CPC-OVIII-R6A"]["heading"] == "Counter-claim by defendant"
+
+
+def test_wrapped_heading_joins_hyphenated_word_without_space(units):
+    # BNS s.179's heading breaks the line inside "bank-notes".
+    contents = ["ARRANGEMENT OF SECTIONS",
+                "179. Using as genuine, forged or counterfeit coin, Government stamp, currency-notes or bank-notes.",
+                "180. Possession of forged or counterfeit coin, Government stamp, currency-notes or bank-notes."]
+    body = [
+        BNS_PREAMBLE,
+        "179. Using as genuine, forged or counterfeit coin, Government stamp, currency-notes or bank-",
+        "notes.—Whoever imports or exports, or sells or delivers to, or buys or receives from, any other person, or",
+    ]
+    u = units(body, contents=contents, act="BNS")
+    assert u["BNS-S179"]["heading"] == ("Using as genuine, forged or counterfeit coin, Government stamp, "
+                                        "currency-notes or bank-notes")
+    assert u["BNS-S179"]["text"].endswith("any other person, or")   # the unit text itself is untouched
+
+
+def test_long_heading_is_not_cut(units):
+    # BNS s.196 has the longest heading in the four Acts (167 characters). v1 cut every heading at 80.
+    contents = ["ARRANGEMENT OF SECTIONS", "195. Assaulting or obstructing public servant when suppressing riot, etc.",
+                "196. Promoting enmity between different groups on grounds of religion, race, place of birth,",
+                "197. Imputations, assertions prejudicial to national integration."]
+    body = [
+        BNS_PREAMBLE,
+        "196. Promoting enmity between different groups on grounds of religion, race, place of birth,",
+        "residence, language, etc., and doing acts prejudicial to maintenance of harmony.—(1) Whoever—",
+    ]
+    h = units(body, contents=contents, act="BNS")["BNS-S196"]["heading"]
+    assert h.endswith("doing acts prejudicial to maintenance of harmony")
+    assert len(h) == 167
+
+
+def test_date_hyphen_in_repealed_stub_is_not_a_heading_end(units):
+    # v1 took "… (w.e.f. 1" as the end of the heading, at the hyphen in the date.
+    contents = ["ARRANGEMENT OF SECTIONS", "47. Questions to be determined by the Court executing decree.",
+                "48. [Repealed.]", "49. Transferee."]
+    body = [
+        PREAMBLE,
+        "48. [Execution barred in certain cases.] Rep. by the Limitation Act, 1963 (36 of 1963), s. 28 (w.e.f. 1-1-1964).",
+        "49. Transferee.—Every transferee of a decree shall hold the same subject to the equities",
+    ]
+    u = units(body, contents=contents)
+    assert u["CPC-S48"]["heading"] == "Execution barred in certain cases"
+    assert u["CPC-S48"]["status"] == "repealed"
+
+
+def test_repealed_stub_with_bracket_before_number(units):
+    # CPC O.V r.20A: the bracket opens before the number, so v1 marked it in force and its heading ran
+    # into rule 21.
+    contents = ["ARRANGEMENT OF SECTIONS", "ORDER V", "20. Substituted service.", "20A. [Repealed.]",
+                "21. Service of summons where defendant resides within jurisdiction of another Court."]
+    body = [
+        PREAMBLE,
+        "ORDER V",
+        "⟨1⟩[20A. Service of summons by post.] Rep. by the Code of Civil Procedure (Amendment) Act, 1976",
+        "(104 of 1976), s. 55 (w.e.f. 1-2-1977)].",
+        "21. Service of summons where defendant resides within jurisdiction of another Court.—A",
+    ]
+    u = units(body, contents=contents)
+    assert u["CPC-OV-R20A"]["status"] == "repealed"
+    assert u["CPC-OV-R20A"]["heading"] == "Service of summons by post"
+    assert u["CPC-OV-R21"]["status"] == "in_force"
+
+
+def test_in_force_heading_never_matches_outer_stub_pattern():
+    assert not sg.is_repealed("174. Information as to non-cognizable cases and investigation of such cases.—(1) When")
+    assert not sg.is_repealed("⟨1⟩[35A. Compensatory costs in respect of false or vexatious claims or defences.—(1) If")
+
+
+# ---------------------------------------------------------------- file encoding (session 5)
+
+def test_every_text_open_names_utf8():
+    # Windows opens files as cp1252 unless told otherwise, which crashes on the ⟨ ⟩ markers.
+    # Every built-in open() in ingest/ must say encoding="utf-8" (binary modes excepted).
+    import ast
+    missing = []
+    for path in sorted((Path(__file__).resolve().parents[1] / "ingest").glob("*.py")):
+        for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
+            if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id == "open":
+                mode = node.args[1].value if len(node.args) > 1 and isinstance(node.args[1], ast.Constant) else "r"
+                if "b" not in mode and not any(k.arg == "encoding" for k in node.keywords):
+                    missing.append(f"{path.name}:{node.lineno}")
+    assert missing == []
+
+
+def test_dash_before_heading_typo_reads_whole_heading(units):
+    # BNS s.255 is printed "255.—Public servant …" with a dash before the heading too. v1 kept the first
+    # 80 characters of the line as the heading.
+    contents = ["ARRANGEMENT OF SECTIONS", "254. Harbouring offender who has escaped from custody.",
+                "255. Public servant disobeying direction of law with intent to save person from punishment or",
+                "256. Public servant framing incorrect record or writing with intent to save person."]
+    body = [
+        BNS_PREAMBLE,
+        "255.—Public servant disobeying direction of law with intent to save person from punishment or",
+        "property from forfeiture.—Whoever, being a public servant, knowingly disobeys any direction of the law",
+    ]
+    u = units(body, contents=contents, act="BNS")
+    assert u["BNS-S255"]["heading"] == ("Public servant disobeying direction of law with intent to save person "
+                                        "from punishment or property from forfeiture")

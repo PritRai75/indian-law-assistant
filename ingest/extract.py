@@ -9,7 +9,7 @@ Per page:
   - mark raised small chars (superscripts) as ⟨n⟩ so footnote refs never fuse
     with section numbers ("date1" -> "date⟨1⟩")
   - split body lines from the footnote block at the bottom of the page
-Writes <ACT>.body.txt and <ACT>.notes.jsonl (page, text) plus a page map.
+Writes txt/<ACT>.body.tsv (text, page, font size) and txt/<ACT>.notes.jsonl (page, text), as UTF-8.
 """
 import json, re, sys, statistics
 import pdfplumber
@@ -95,9 +95,9 @@ def run(act):
                     continue
                 in_foot = False
                 body.append(f"{txt}\t{pno}\t{med:.0f}")
-    with open(f"txt/{act}.body.tsv", "w") as f:
+    with open(f"txt/{act}.body.tsv", "w", encoding="utf-8") as f:
         f.write("\n".join(body))
-    with open(f"txt/{act}.notes.jsonl", "w") as f:
+    with open(f"txt/{act}.notes.jsonl", "w", encoding="utf-8") as f:
         for n in notes:
             f.write(json.dumps(n, ensure_ascii=False) + "\n")
     print(act, "body lines", len(body), "footnotes", len(notes))
