@@ -1,4 +1,5 @@
-# Corpus pipeline v0 (Project 1, session 3, 30 Oct 2026). Run from a folder containing raw/BNS.pdf,
+# Corpus pipeline (Project 1). v0 from session 3; v1 (session 4, 30 Oct 2026) fixes state-amendment
+# leaks and 8 missed CPC units. Tests: tests/test_segment.py. Run from a folder containing raw/BNS.pdf,
 # raw/BNSS.pdf, raw/BSA.pdf, raw/CPC.pdf (the India Code PDFs) and an empty txt/ folder.
 # Order: python extract.py BNS BNSS BSA CPC  ->  python segment.py BNS BNSS BSA CPC  ->  python schedule.py
 # Needs: pip install pdfplumber. See corpus-audit.md for what each rule fixes.
@@ -10,16 +11,14 @@ import json, re, sys, collections
 
 tok = lambda s: round(len(s) / 4)
 
-STATES = {"Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat",
-          "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh",
-          "Maharashtra", "Manipur", "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Orissa", "Punjab",
-          "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand",
-          "West Bengal", "Delhi", "Chandigarh", "Pondicherry", "Puducherry", "Jammu and Kashmir",
-          "Union territory of Jammu and Kashmir and Union territory of Ladakh", "Ladakh",
-          "Lakshadweep", "Dadra and Nagar Haveli", "Andaman and Nicobar Islands", "Madras", "Bombay",
-          "Mysore", "Uttaranchal"}
-MARK = r"(?:⟨[^⟩]*⟩|\*)?\[?"
-SEC = re.compile(rf"^{MARK}(\d+[A-Z]{{0,3}})\.\s*(?:\[)?([A-Z“\"‘'(][^—–]*?)\s*\.?\s*[—–-]{{1,2}}")
+# Any run of footnote markers, stars and opening brackets before a number: "⟨8⟩60.", "*[4.",
+# "⟨1⟩[ ⟨2⟩5." (two nested amendments, CPC O.XVIII r.5).
+MARK = r"(?:⟨[^⟩]*⟩\s*|\*|\[\s*)*"
+# A provision number: "35", "35A", and "46-I" (the CPC body prints O.XXI r.46I with a hyphen).
+# num() drops the hyphen so the number matches the contents list.
+NUM = r"(\d+(?:-?[A-Z]{1,3})?)"
+num = lambda s: s.replace("-", "")
+SEC = re.compile(rf"^{MARK}{NUM}\.\s*(?:\[)?([A-Z“\"‘'(][^—–]*?)\s*\.?\s*[—–-]{{1,2}}")
 ORDER = re.compile(rf"^{MARK}\s*[“\"]?ORDER\s+([IVXL]+(?:\s*-?\s*[A-Z])?)\b")
 norm_order = lambda o: re.sub(r"\s*-?\s*([A-Z])$", r"-\1", o) if re.search(r"[IVXL]\s*-?\s*[A-HJ-UWYZ]$", o) else o
 
@@ -29,14 +28,42 @@ def load(act):
     return [(r[0], int(r[1])) for r in rows]
 
 
+# A line that starts a numbered provision: "116. Part to…", "⟨8⟩60. Property…", "110. [Value…] Rep.",
+# "255.—Public servant…". Looser than SEC on purpose: it only needs the start of the line, so a
+# heading that wraps before its dash still counts.
+HEAD_NUM = re.compile(rf"^{MARK}{NUM}\.\s*(?:\[|[—–]|[A-Z“\"‘'(])")
+# An ORDER heading with no opening quote mark. A quoted “ORDER … inside a state block is state text.
+ORDER_HEAD = re.compile(r"^(?:⟨[^⟩]*⟩|\*)?\[?\s*ORDER\s+([IVXL]+(?:\s*-?\s*[A-Z])?)\b")
+# How far ahead in the Act's own contents list a heading may be and still count as the next one.
+# Central text: up to 10 ahead, so a missed heading (e.g. an unparsed repealed stub) can't stall
+# the tracker. Inside a state block: up to 3 ahead, so quoted text rarely ends a block by accident.
+BODY_WINDOW, STATE_WINDOW = 10, 3
+# The opening words of an amending Act's own section ("Amendment of section 115 of Act V of 1908.—",
+# "Substitution of section 115.—"). In the CPC body these lines are always state text, including a
+# state block that resumes after central text without repeating its STATE AMENDMENT heading.
+AMENDING_FORMULA = re.compile(r"^(?:Amendment|Insertion|Substitution|Omission)s? (?:of|in|to)\b")
+
+
 def segment(act, rows):
+    """Label each line: contents, body, schedule, appendix, objects_and_reasons or state_amendment.
+
+    A state-amendment block starts at a "STATE AMENDMENT(S)" heading, or (CPC) at an amending Act's
+    formula line ("Amendment of section 115.—"). It ends only when central text resumes: the next
+    central heading in the Act's own contents order, a new ORDER, a starred Commercial Courts Act
+    heading ("*[4." or "*[ORDER XV-A"), or a change of part (appendix, schedule, objects and reasons). v0 ended a block at the first line
+    after a "[Vide …]" line that wasn't a state name, which leaked consecutive amendments by the
+    same state into central units (CPC ss.9, 35A, 60, 115, O.IV r.2, O.XIX r.4).
+    """
     text = [r[0] for r in rows]
     # body starts at the enacting formula (after the arrangement of sections)
     start = next(i for i, t in enumerate(text) if t.startswith("BE it enacted") or t.startswith("WHEREAS"))
     seg = ["contents"] * start
-    mode, in_state, after_vide = "body", False, False
+    toc = toc_of(act, rows, seg)          # zip() stops at len(seg), so this reads the contents only
+    order, ptr = None, -1                 # current Order (None = sections) and last central heading's toc index
+    mode, in_state = "body", False
     for i in range(start, len(text)):
         t = text[i]
+        prev_mode = mode
         if re.match(r"^(⟨[^⟩]*⟩)?\[?THE (FIRST|SECOND) SCHEDULE", t) and act in ("BNSS", "BSA"):
             mode = "schedule"
         if act == "CPC" and re.match(r"^(⟨[^⟩]*⟩|\*)?\[?\s*APPENDIX", t) and i > start:
@@ -45,15 +72,24 @@ def segment(act, rows):
             mode = "schedule"
         if t.startswith("STATEMENT OF OBJECTS AND REASONS"):
             mode = "objects_and_reasons"
-        if re.match(r"^STATE AMENDMENTS?\b", t):
-            in_state, after_vide = True, False
-        elif in_state and after_vide:
-            if t.strip(" :.") in STATES or t.startswith("[Vide") or t.startswith("Vide"):
-                pass
+        if mode != prev_mode:
+            in_state = False
+        starred = t.startswith("*[")   # Commercial Courts Act text: always central
+        if re.match(r"^STATE AMENDMENTS?\b", t) or (act == "CPC" and AMENDING_FORMULA.match(t)):
+            in_state = True
+        elif mode == "body":
+            om = ORDER_HEAD.match(t) if act == "CPC" else None
+            if om and (norm_order(om.group(1)) in toc or starred):
+                order, ptr, in_state = norm_order(om.group(1)), -1, False
             else:
-                in_state = False
-        if in_state:
-            after_vide = t.startswith("[Vide") or t.rstrip().endswith("]") and "Vide" in t
+                hm = HEAD_NUM.match(t)
+                if hm:
+                    ahead = toc.get(order, [])[ptr + 1: ptr + 1 + (STATE_WINDOW if in_state else BODY_WINDOW)]
+                    if num(hm.group(1)) in ahead:
+                        ptr += 1 + ahead.index(num(hm.group(1)))
+                        in_state = False
+                    elif starred:
+                        in_state = False
         seg.append("state_amendment" if in_state else mode)
     return seg
 
@@ -61,7 +97,11 @@ def segment(act, rows):
 def toc_of(act, rows, seg):
     """Section/rule numbers listed in the Act's own arrangement, keyed by Order (None = sections)."""
     toc, order = collections.defaultdict(list), None
-    for (t, _), s in zip(rows, seg):
+    # Start at the arrangement heading: the CPC prints a numbered "LIST OF AMENDING ACTS" before it,
+    # and those numbers ("35. The Code of Civil Procedure (Amendment) Act, 1949") are not sections.
+    first = next((i for i, ((t, _), s) in enumerate(zip(rows, seg))
+                  if s == "contents" and t.startswith("ARRANGEMENT OF")), 0)
+    for (t, _), s in list(zip(rows, seg))[first:]:
         if s != "contents":
             continue
         m = ORDER.match(t)
@@ -73,8 +113,11 @@ def toc_of(act, rows, seg):
     return toc
 
 
-REPEALED = re.compile(r"(?i)" + rf"^{MARK}(\d+[A-Z]{{0,3}})\.\s*\[?\s*\[([^\]]+)\]\.?\]?\s*\.?\s*(?:Rep\.|Omitted|Repealed|\*)")
-SEC_DASH_FIRST = re.compile(rf"^{MARK}(\d+[A-Z]{{0,3}})\.\s*[—–]+\s*([A-Z].{{0,80}})")  # e.g. BNS "255.—Public servant..."
+# A repealed or omitted stub: "110. [Value of subject matters.] Rep. by …", "7. ⟨1⟩[No security …] Rep.",
+# "17A. [Production of evidence …] omitted by …" (the last after joining its wrapped second line).
+# Only the keyword is case-insensitive; the section letters stay upper-case.
+REPEALED = re.compile(rf"^{MARK}{NUM}\.\s*(?:⟨[^⟩]*⟩\s*)*\[?\s*(?:⟨[^⟩]*⟩\s*)*\[([^\]]+)\]\.?\]?\s*\.?\s*(?:(?i:rep\.|omitted|repealed)|\*)")
+SEC_DASH_FIRST = re.compile(rf"^{MARK}{NUM}\.\s*[—–]+\s*([A-Z].{{0,80}})")  # e.g. BNS "255.—Public servant..."
 
 
 def units(act, rows, seg):
@@ -111,35 +154,37 @@ def units(act, rows, seg):
             seen_orders.add(order)
             cur = None
             continue
+        head = t   # the heading text, joined with its continuation lines when it wraps
         m = SEC.match(t) or REPEALED.match(t) or SEC_DASH_FIRST.match(t)
-        if not m and re.match(rf"^{MARK}\d+[A-Z]{{0,3}}\.\s+[A-Z“\"‘'(]", t):
-            # heading wrapped onto the next line(s) before its dash
+        if not m and re.match(rf"^{MARK}{NUM}\.\s", t):
+            # heading (or repealed stub) wrapped onto the next line(s) before its dash or "Rep."
             joined = t
             for j in (1, 2):
                 if i + j < len(rows):
                     joined += " " + rows[i + j][0]
-                    m = SEC.match(joined)
+                    m = SEC.match(joined) or REPEALED.match(joined)
                     if m:
+                        head = joined
                         break
         regime = "general"
         if m:
-            num = m.group(1)
+            n = num(m.group(1))
             starred = t.startswith("*[")
             kind = star_kind(pg) if starred else order_regime
             regime = "commercial" if kind == "commercial" else "general"
             okey = order
-            if regime == "commercial" and (order, num) in seen:
+            if regime == "commercial" and (order, n) in seen:
                 okey = (order or "") + "@commercial"   # a second, commercial-dispute version
             allowed = toc.get(order)
-            if (okey, num) in seen or (allowed and num not in allowed and regime == "general"):
+            if (okey, n) in seen or (allowed and n not in allowed and regime == "general"):
                 m = None
         if m:
-            seen.add((okey, num))
+            seen.add((okey, n))
             suffix = "@commercial" if okey != order else ""
-            uid = (f"{act}-O{order}-R{num}" if order else f"{act}-S{num}") + suffix
+            uid = (f"{act}-O{order}-R{n}" if order else f"{act}-S{n}") + suffix
             cur = {"id": uid, "page": pg, "heading": m.group(2)[:80], "regime": regime,
                    "applies_to_commercial": kind != "omitted_for_commercial",
-                   "status": "repealed" if REPEALED.match(t) else "in_force", "text": t}
+                   "status": "repealed" if REPEALED.match(head) else "in_force", "text": t}
             out.append(cur)
         elif cur:
             cur["text"] += "\n" + t
