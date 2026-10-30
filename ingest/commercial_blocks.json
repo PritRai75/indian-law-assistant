@@ -1,0 +1,25 @@
+{
+  "_about": "Starred (*[) blocks inside general CPC units, checked by hand against the text (session 5, CPC as on 10 Jan 2026). The footnote verb alone can't decide the direction: O.V r.1 and O.VIII r.1 both say 'Subs. ... for the Proviso', but O.V r.1's starred proviso is the general 90-day text (its commercial replacement isn't printed) while O.VIII r.1's is the commercial 120-day text. kind: commercial_only = applies only to commercial disputes of a specified value (Commercial Courts Act, 2015, as amended by Act 4 of 2016); not_for_commercial = general law that does not apply to those disputes; split_rules = a starred unit holding several rules that are not in the contents list. segment.py stops with an error if it meets a starred block that is not listed here.",
+  "blocks": [
+    {"unit": "CPC-S26", "starts_with": "*[Provided that such an affidavit", "kind": "commercial_only",
+     "why": "Ins. by Act 4 of 2016; refers to the commercial Order VI r.15A affidavit."},
+    {"unit": "CPC-S35A", "starts_with": "*[(2) No Court shall make any such order", "kind": "not_for_commercial",
+     "why": "Footnote: sub-section (2) omitted in its application to commercial disputes."},
+    {"unit": "CPC-OV-R1", "starts_with": "*[Provided further that where the defendant fails", "kind": "not_for_commercial",
+     "why": "This is the general 90-day proviso; the footnote says it was substituted for commercial disputes, and the commercial text isn't printed here."},
+    {"unit": "CPC-OVIII-R1", "starts_with": "*[Provided that where the defendant fails", "kind": "commercial_only",
+     "why": "The 120-day proviso with forfeiture; the general 90-day proviso is printed above it."},
+    {"unit": "CPC-OVIII-R5", "starts_with": "*[Provided further that every allegation", "kind": "commercial_only",
+     "why": "Ins. by Act 4 of 2016; refers to the commercial r.3A."},
+    {"unit": "CPC-OVIII-R10", "starts_with": "*[Provided that no Court shall make an order to extend", "kind": "commercial_only",
+     "why": "Ins. by Act 4 of 2016."},
+    {"unit": "CPC-OXVIII-R2", "starts_with": "*[(3A) A party shall, within four weeks", "kind": "commercial_only",
+     "why": "Commercial sub-rules (3A)-(3F); the general (3A)-(3D) are printed above them."},
+    {"unit": "CPC-OXVIII-R4", "starts_with": "*[(1A) The affidavits of evidence", "kind": "commercial_only",
+     "why": "Ins. by Act 4 of 2016 (sub-rules (1A)-(1C))."},
+    {"unit": "CPC-OXX-R1", "starts_with": "*[(1) The Commercial Court", "kind": "commercial_only",
+     "why": "Commercial sub-rule (1), judgment within 90 days; the general (1) is printed above it."},
+    {"unit": "CPC-OXIX-R4", "kind": "split_rules", "rules": ["5", "6"],
+     "why": "Rules 4-6 were inserted together for commercial disputes and are not in the contents list."}
+  ]
+}

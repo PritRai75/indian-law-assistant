@@ -11,7 +11,8 @@
   at block starts (Explanation, Exception, Illustrations, Provided that, a lettered clause), packed to
   about PART_TOKENS each: BNS-S101#2. A part is not a legal unit, so answers cite the unit ID.
 
-Every chunk keeps its unit's metadata, the footnotes whose markers fall inside the chunk, and an
+Commercial Courts Act pieces split out by segment.py (CPC-OVIII-R1@commercial, CPC-OV-R1@noncommercial)
+say their scope in the header. Every chunk keeps its unit's metadata, the footnotes whose markers fall inside the chunk, and an
 `embed_text`: the Act, chapter and heading prefixed to the text, so a chunk cut from the middle of a
 section still says where it comes from. Footnote text is not embedded (spec: footnotes are passed to
 the model with the passage, not searched).
@@ -125,7 +126,7 @@ def parts(lines, budget=PART_TOKENS):
 
 def ref_of(unit_id):
     """'BNSS-S187' -> 'Section 187'; 'CPC-OXXI-R46I@commercial' -> 'Order XXI, Rule 46I'."""
-    m = re.match(r"^[A-Z]+-(?:O(.+)-R(\w+)|S(\w+))(@commercial)?$", unit_id)
+    m = re.match(r"^[A-Z]+-(?:O(.+)-R(\w+)|S(\w+))(@\w+)?$", unit_id)
     return f"Order {m.group(1)}, Rule {m.group(2)}" if m.group(1) else f"Section {m.group(3)}"
 
 
@@ -139,21 +140,27 @@ def make_chunk(act, unit, cid, label, lines, line_pages, part=None):
     head = f"{ref}: {unit['heading']}" if unit["heading"] else ref
     if part:
         head += f" (part {part[0]} of {part[1]})"
-    if unit["regime"] == "commercial":
+    scope = unit.get("scope")
+    if scope == "commercial_only":
+        head += " (added for commercial disputes only)"
+    elif scope == "not_for_commercial" or not unit["applies_to_commercial"]:
+        head += " (does not apply to commercial disputes)"
+    elif unit["regime"] == "commercial":
         head += " (version for commercial disputes)"
     if unit["status"] == "repealed":
         head += " (repealed)"
     prefix = "\n".join(x for x in (title, unit["chapter"], head) if x)
     return {"id": cid, "unit_id": unit["id"], "act": act, "chapter": unit["chapter"], "heading": unit["heading"],
             "label": label, "part": part[0] if part else None, "status": unit["status"], "regime": unit["regime"],
-            "applies_to_commercial": unit["applies_to_commercial"], "page": line_pages[0], "as_on": as_on,
+            "applies_to_commercial": unit["applies_to_commercial"], "scope": unit.get("scope"),
+            "piece_of": unit.get("piece_of"), "page": line_pages[0], "as_on": as_on,
             "footnotes": notes, "text": text, "embed_text": prefix + "\n\n" + text, "tokens": tok(text)}
 
 
 def chunk_unit(act, unit):
     lines, pages = unit["text"].split("\n"), unit["line_pages"]
-    base = unit["id"].replace("@commercial", "")
-    sfx = "@commercial" if unit["id"].endswith("@commercial") else ""
+    base, _, sfx = unit["id"].partition("@")
+    sfx = "@" + sfx if sfx else ""
     if unit["id"] in DEFINITIONS:
         # one chunk per clause; words before the first clause ("In this Sanhita, unless …") go with it
         starts = definition_clauses(lines)

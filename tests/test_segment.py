@@ -50,9 +50,10 @@ def units(tmp_path, monkeypatch):
     for act in ("BNS", "BNSS", "BSA", "CPC"):
         (tmp_path / "txt" / f"{act}.notes.jsonl").write_text("", encoding="utf-8")
 
-    def run(body, contents=CONTENTS, act="CPC"):
+    def run(body, contents=CONTENTS, act="CPC", listing=None):
+        listing = [] if listing is None else listing
         rows = rows_of(contents, body)
-        return {x["id"]: x for x in sg.units(act, rows, sg.segment(act, rows))}
+        return {x["id"]: x for x in sg.units(act, rows, sg.segment(act, rows), commercial=listing)}
     return run
 
 
@@ -553,7 +554,81 @@ def test_footnotes_link_by_same_page_and_number_only(tmp_path, monkeypatch):
     rows = [(t, 1) for t in contents] + [(PREAMBLE, 92), ("ORDER V", 92),
             ("⟨4⟩[9. Delivery of summons by Court.—(1) Where the defendant resides within the jurisdiction", 93),
             ("may be made by such mode of service of summons as is referred to in ⟨1⟩[sub-rule (3)]", 94)]
-    u = {x["id"]: x for x in sg.units("CPC", rows, sg.segment("CPC", rows))}
+    u = {x["id"]: x for x in sg.units("CPC", rows, sg.segment("CPC", rows), commercial=[])}
     fn = u["CPC-OV-R9"]["footnotes"]
     assert [(f["marker"], f["page"]) for f in fn] == [("4", 93)]   # ⟨1⟩ on p.94 isn't linked to p.95's note
     assert u["CPC-OV-R9"]["line_pages"] == [93, 94]
+
+
+# ---------------------------------------------------------------- Commercial Courts Act blocks (session 5)
+
+O8_CONTENTS = ["ARRANGEMENT OF SECTIONS", "ORDER VIII", "1. Written statement.", "2. New facts must be specially pleaded."]
+O8_BODY = [
+    PREAMBLE,
+    "ORDER VIII",
+    "⟨2⟩[1. Written Statement.—The Defendant shall, within thirty days from the date of service of",
+    "summons on him, present a written statement of his defence:",
+    "Provided that where the defendant fails to file the written statement within the said period of thirty",
+    "days, he shall be allowed to file the same on such other day, as may be specified by the Court, for reasons",
+    "summons.]",
+    "*[Provided that where the defendant fails to file the written statement within the said period of thirty",
+    "not later than one hundred twenty days from the date of service of summons and on expiry of one",
+    "written statement and the Court shall not allow the written statement to be taken on record.]",
+    "2. New facts must be specially pleaded.—The defendant must raise by his pleading all matters",
+]
+O8_LIST = [{"unit": "CPC-OVIII-R1", "starts_with": "*[Provided that where the defendant fails", "kind": "commercial_only"}]
+
+
+def test_commercial_proviso_becomes_its_own_unit(units):
+    u = units(O8_BODY, contents=O8_CONTENTS, listing=O8_LIST)
+    general, comm = u["CPC-OVIII-R1"], u["CPC-OVIII-R1@commercial"]
+    assert "one hundred twenty days" not in general["text"] and general["text"].endswith("summons.]")
+    assert comm["text"].startswith("*[Provided") and comm["text"].endswith("taken on record.]")
+    assert (comm["regime"], comm["scope"], comm["piece_of"]) == ("commercial", "commercial_only", "CPC-OVIII-R1")
+    assert comm["heading"] == "Written Statement"
+    assert u["CPC-OVIII-R2"]["text"].startswith("2. New facts")
+
+
+def test_general_proviso_not_for_commercial_disputes(units):
+    listing = [dict(O8_LIST[0], kind="not_for_commercial")]
+    u = units(O8_BODY, contents=O8_CONTENTS, listing=listing)
+    x = u["CPC-OVIII-R1@noncommercial"]
+    assert (x["regime"], x["applies_to_commercial"], x["scope"]) == ("general", False, "not_for_commercial")
+
+
+def test_unlisted_starred_block_stops_the_run(units):
+    with pytest.raises(ValueError, match="not in commercial_blocks.json"):
+        units(O8_BODY, contents=O8_CONTENTS, listing=[])
+
+
+def test_listed_block_that_is_missing_stops_the_run(units):
+    listing = O8_LIST + [{"unit": "CPC-S26", "starts_with": "*[Provided that such an affidavit", "kind": "commercial_only"}]
+    with pytest.raises(ValueError, match="weren't found"):
+        units(O8_BODY, contents=O8_CONTENTS, listing=listing)
+
+
+def test_split_rules_for_order_xix(units):
+    body = [
+        PREAMBLE,
+        "ORDER XIX",
+        "3. Matters to which affidavits shall be confined.—(1) Affidavits shall be confined to such facts",
+        "*[4. Court may control evidence.—(1) The Court may, by directions, regulate the evidence as to",
+        "5. Redacting or rejecting evidence.— A Court may, in its discretion, for reasons to be recorded in",
+        "6. Format and guidelines of affidavit of evidence.—An affidavit must comply with the form and",
+        "(a) such affidavit should be confined to, and should follow the chronological sequence of, the",
+        "ORDER XX",
+    ]
+    u = units(body, contents=O19_CONTENTS, listing=[{"unit": "CPC-OXIX-R4", "kind": "split_rules", "rules": ["5", "6"]}])
+    assert u["CPC-OXIX-R4"]["text"].startswith("*[4.") and "Redacting" not in u["CPC-OXIX-R4"]["text"]
+    assert u["CPC-OXIX-R5"]["heading"] == "Redacting or rejecting evidence"
+    assert u["CPC-OXIX-R6"]["text"].endswith("chronological sequence of, the")
+    assert u["CPC-OXIX-R6"]["regime"] == "commercial"
+
+
+def test_real_list_is_well_formed():
+    import json
+    blocks = json.load(open(sg.COMMERCIAL_BLOCKS, encoding="utf-8"))["blocks"]
+    assert len(blocks) == 10
+    for b in blocks:
+        assert b["kind"] in ("commercial_only", "not_for_commercial", "split_rules") and b["why"]
+        assert b["kind"] == "split_rules" or b["starts_with"].startswith("*[")

@@ -1,7 +1,8 @@
 # Corpus pipeline (Project 1). v0 from session 3; v1 (session 4, 30 Oct 2026) fixes state-amendment
 # leaks and 8 missed CPC units; v2 (session 5) fixes heading metadata (hyphens, 80-char cap, wrapped
 # compounds, BNS s.255), marks CPC O.V r.20A repealed, and opens every file as UTF-8; v3 (session 5) adds
-# chapter, line_pages and footnotes to each unit, fixes Order XL IDs and the BSA schedule. Tests:
+# chapter, line_pages and footnotes to each unit, fixes Order XL IDs and the BSA schedule; v4 (session 5)
+# splits Commercial Courts Act blocks out of CPC units (ingest/commercial_blocks.json). Tests:
 # tests/test_segment.py. Run from a folder containing raw/BNS.pdf,
 # raw/BNSS.pdf, raw/BSA.pdf, raw/CPC.pdf (the India Code PDFs) and an empty txt/ folder.
 # Order: python extract.py BNS BNSS BSA CPC  ->  python segment.py BNS BNSS BSA CPC  ->  python schedule.py
@@ -10,6 +11,7 @@
 Then parse provision units and report token stats. Tokens are estimated as chars / 4
 (no tokenizer reachable offline here; treat as +-15%)."""
 import json, re, sys, collections
+from pathlib import Path
 
 
 tok = lambda s: round(len(s) / 4)
@@ -205,8 +207,9 @@ SEC_DASH_FIRST = re.compile(rf"^{MARK}{NUM}\.\s*[—–]+\s*([A-Z][^—–]*?)\s
 SEC_DASH_FIRST_LOOSE = re.compile(rf"^{MARK}{NUM}\.\s*[—–]+\s*([A-Z].{{0,80}})")
 
 
-def units(act, rows, seg):
+def units(act, rows, seg, commercial=None):
     """Split body into provision units: section N (BNS/BNSS/BSA/CPC sections) or ORDER/RULE (CPC).
+    `commercial` is the commercial_blocks.json list for the CPC split (None reads the file).
     A heading is accepted only if its number appears in the Act's own arrangement for that Order and
     has not been seen yet -- this rejects line-initial years ("2023. A may be...") and list items."""
     toc = toc_of(act, rows, seg)
@@ -293,7 +296,101 @@ def units(act, rows, seg):
             cur["text"] += "\n" + t
             cur["line_pages"].append(pg)
     for u in out:
+        u.setdefault("piece_of", None)
+        u.setdefault("scope", None)
+    if act == "CPC":
+        out = split_commercial(out, commercial)
+    for u in out:
         u["footnotes"] = link_footnotes(u, numbered)
+    return out
+
+
+COMMERCIAL_BLOCKS = Path(__file__).resolve().parent / "commercial_blocks.json"
+
+
+def starred_blocks(lines):
+    """Line ranges [start, end) of "*[" blocks that begin after a unit's first line. A block ends at
+    the line holding the bracket that closes its "*[", counting nested amendment brackets."""
+    out, i = [], 1
+    while i < len(lines):
+        if not lines[i].lstrip().startswith("*["):
+            i += 1
+            continue
+        depth, end = 0, len(lines) - 1
+        for j in range(i, len(lines)):
+            s = lines[j][lines[j].index("*[") + 1:] if j == i else lines[j]
+            for ch in s:
+                depth += (ch == "[") - (ch == "]")
+                if depth == 0:
+                    break
+            if depth == 0:
+                end = j
+                break
+        out.append((i, end + 1))
+        i = end + 1
+    return out
+
+
+def split_commercial(units, listing=None):
+    """Split Commercial Courts Act text out of CPC units, using the hand-checked list in
+    commercial_blocks.json (why a list: see its "_about").
+
+    - A starred block in a general unit becomes its own unit: "<id>@commercial" (commercial_only:
+      applies only to commercial disputes) or "<id>@noncommercial" (not_for_commercial: general law
+      that does not apply to them). It keeps the parent's heading and chapter, and records
+      `piece_of` (the parent ID) and `scope` (the kind). The parent keeps the rest of its text.
+    - split_rules: a starred unit holding several rules (O.XIX r.4-6) is split at each listed rule.
+    A starred block that isn't listed, or a listed block that isn't found, stops the run: the list is
+    checked by hand, so new India Code text must be read before it is labelled.
+    """
+    if listing is None:   # tests pass their own (often empty) list; a real run reads the file
+        listing = json.load(open(COMMERCIAL_BLOCKS, encoding="utf-8"))["blocks"]
+    by_unit = collections.defaultdict(list)
+    for e in listing:
+        by_unit[e["unit"]].append(e)
+    used, out = set(), []
+    for u in units:
+        lines, pages = u["text"].split("\n"), u["line_pages"]
+        extra = []
+        for e in [e for e in by_unit.get(u["id"], []) if e["kind"] == "split_rules"]:
+            used.add(id(e))
+            starts = []
+            for r in e["rules"]:
+                k = next((i for i, l in enumerate(lines) if re.match(rf"^{MARK}{r}\.\s*[A-Z]", l)), None)
+                if k is None:
+                    raise ValueError(f"{u['id']}: rule {r} listed in commercial_blocks.json not found")
+                starts.append((k, r))
+            bounds = [k for k, _ in starts] + [len(lines)]
+            for (k, r), end in zip(starts, bounds[1:]):
+                m = SEC.match(lines[k])
+                extra.append(dict(u, id=re.sub(r"-R[0-9A-Z]+$", f"-R{r}", u["id"]), page=pages[k],
+                                  heading=m.group(2).strip().rstrip(".").rstrip() if m else u["heading"],
+                                  text="\n".join(lines[k:end]), line_pages=pages[k:end]))
+            lines, pages = lines[:starts[0][0]], pages[:starts[0][0]]
+        keep = [True] * len(lines)
+        if u["regime"] == "general":
+            for a, b in starred_blocks(lines):
+                e = next((e for e in by_unit.get(u["id"], [])
+                          if e["kind"] != "split_rules" and lines[a].lstrip().startswith(e["starts_with"])), None)
+                if e is None:
+                    raise ValueError(f"{u['id']}: starred block not in commercial_blocks.json: {lines[a][:70]!r}. "
+                                     "Read it, decide its kind, and add it to the list.")
+                used.add(id(e))
+                suffix = "@commercial" if e["kind"] == "commercial_only" else "@noncommercial"
+                extra.insert(0, dict(u, id=u["id"] + suffix, page=pages[a], text="\n".join(lines[a:b]),
+                                     line_pages=pages[a:b], piece_of=u["id"], scope=e["kind"],
+                                     regime="commercial" if e["kind"] == "commercial_only" else "general",
+                                     applies_to_commercial=e["kind"] == "commercial_only", status="in_force"))
+                keep[a:b] = [False] * (b - a)
+        u = dict(u, text="\n".join(l for l, k in zip(lines, keep) if k),
+                 line_pages=[p for p, k in zip(pages, keep) if k])
+        out += [u] + extra
+    missing = [e["unit"] for e in listing if id(e) not in used]
+    if missing:
+        raise ValueError(f"commercial_blocks.json lists blocks that weren't found: {missing}")
+    ids = collections.Counter(x["id"] for x in out)
+    if any(v > 1 for v in ids.values()):
+        raise ValueError(f"duplicate unit IDs after the commercial split: {[k for k, v in ids.items() if v > 1]}")
     return out
 
 

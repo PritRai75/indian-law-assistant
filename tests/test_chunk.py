@@ -141,3 +141,15 @@ def test_references_and_flags():
     s35 = ck.chunk_unit("CPC", unit("CPC-S35@commercial", ["*[35. Costs.— (1) In relation to any Commercial dispute"],
                                     heading="Costs", regime="commercial"))[0]
     assert s35["id"] == "CPC-S35@commercial" and "(version for commercial disputes)" in s35["embed_text"]
+
+
+def test_scope_in_header_for_commercial_pieces():
+    base = dict(heading="Written Statement", chapter="Order VIII: Written Statement, Set-off and Counter Claim")
+    comm = unit("CPC-OVIII-R1@commercial", ["*[Provided that where the defendant fails to file"], regime="commercial", **base)
+    comm.update(scope="commercial_only", piece_of="CPC-OVIII-R1")
+    c = ck.chunk_unit("CPC", comm)[0]
+    assert c["id"] == "CPC-OVIII-R1@commercial" and c["piece_of"] == "CPC-OVIII-R1"
+    assert "Order VIII, Rule 1: Written Statement (added for commercial disputes only)" in c["embed_text"]
+    non = unit("CPC-OV-R1@noncommercial", ["*[Provided further that where the defendant fails"], heading="Summons")
+    non.update(scope="not_for_commercial", piece_of="CPC-OV-R1", applies_to_commercial=False)
+    assert "Order V, Rule 1: Summons (does not apply to commercial disputes)" in ck.chunk_unit("CPC", non)[0]["embed_text"]
