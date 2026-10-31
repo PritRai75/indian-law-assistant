@@ -15,7 +15,8 @@ by side.
   embeddings blur.
 - hybrid: reciprocal rank fusion (RRF) of the two lists. Each chunk scores 1/(60 + rank) in each
   list it appears in, and the sums are ranked. It uses only ranks, so the two scorers' very
-  different score scales never need to be made comparable.
+  different score scales never need to be made comparable. A provision the question names still
+  comes first, as in bm25.
 
 `query_vec` lets a caller pass a ready-made question vector (CI uses committed question embeddings),
 so search runs without any AWS call. The BM25 statistics are built from index/chunks.json when the
@@ -173,7 +174,10 @@ def search(query, k=5, mode="hybrid", query_vec=None):
     elif mode == "bm25":
         top, score = ranked(b_scores, k), b_scores
     else:
-        top, fused = rrf([ranked(v_scores, POOL), ranked(b_scores, POOL)], k)
+        order, fused = rrf([ranked(v_scores, POOL), ranked(b_scores, POOL)], 2 * POOL)
+        # named provisions first here too: fusion alone sank BNS s.318 for "Is an offence under
+        # BNS 318(4) bailable?", because the vector list never ranked it (its fused score is shown as is)
+        top = ([i for i in order if named[i]] + [i for i in order if not named[i]])[:k]
         score = np.array([fused.get(i, 0.0) for i in range(len(chunks))])
     return [{"rank": r, "score": round(float(score[i]), 4), "id": chunks[i]["id"],
              "unit_id": chunks[i]["unit_id"], "piece_of": chunks[i].get("piece_of"), "chunk": chunks[i]}

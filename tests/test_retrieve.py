@@ -103,6 +103,20 @@ def test_lawyer_reference_beats_same_number_in_other_acts():
     assert rt.search("Is BNSS 318 about the same thing?", k=1, mode="bm25")[0]["unit_id"] == "BNSS-S318"
 
 
+@needs_index
+def test_named_provision_first_in_hybrid_too():
+    # On Prit's machine, hybrid dropped BNS s.318 from the top 5 for this question: the vector list
+    # never ranked it, so fusion gave it only one of its two scores. A stand-in vector that favours the
+    # BNSS bail sections recreates that.
+    chunks, vecs, _, _ = rt.load()
+    q = vecs[[c["id"] for c in chunks].index("BNSS-S2(1)(c)")]
+    top = rt.search("Is an offence under BNS 318(4) bailable?", k=5, query_vec=q)
+    assert top[0]["unit_id"] == "BNS-S318"
+    assert "BNSS-S2(1)(c)" in [r["id"] for r in top]          # the rest of the fused list is kept
+    plain = rt.search("Is bailable offence defined?", k=5, query_vec=q)
+    assert "BNS-S318" not in [r["unit_id"] for r in plain]    # nothing named, nothing promoted
+
+
 def test_bad_mode_is_refused():
     with pytest.raises(ValueError):
         rt.search("x", mode="keyword")
