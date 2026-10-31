@@ -5,5 +5,5 @@ __pycache__/
 *.pyc
 .aws-sam/
 runs.db
-corpus/raw/
-corpus/txt/
+corpus/txt/*.v0.json
+corpus/txt/*.seg.json
