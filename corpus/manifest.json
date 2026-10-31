@@ -1,0 +1,57 @@
+{
+  "description": "Source documents of the Indian Law Assistant corpus. Each file in corpus/raw/ is the India Code PDF named here, renamed to <ACT>.pdf; bytes and sha256 identify it exactly (checked by tests/test_manifest.py). as_on is the date the India Code text is current to. downloaded is the local date (IST).",
+  "documents": [
+    {
+      "act": "BNS",
+      "title": "The Bharatiya Nyaya Sanhita, 2023",
+      "act_number": "45 of 2023",
+      "file": "raw/BNS.pdf",
+      "original_filename": "a2023-45.pdf",
+      "pdf_url": "https://indiacode.gov.in/server/api/core/bitstreams/8007a80e-259b-429d-9ca4-1a2f474b5000/content",
+      "as_on": "2025-10-06",
+      "downloaded": "2026-10-30",
+      "pages": 112,
+      "bytes": 1115210,
+      "sha256": "d4449e9995b21fd52627811d08f9d21feda6a3678b7e5355b651242d152167f5"
+    },
+    {
+      "act": "BNSS",
+      "title": "The Bharatiya Nagarik Suraksha Sanhita, 2023",
+      "act_number": "46 of 2023",
+      "file": "raw/BNSS.pdf",
+      "original_filename": "A2023-46.pdf",
+      "pdf_url": "https://indiacode.gov.in/server/api/core/bitstreams/73f93470-5f6a-4f0f-bc23-1309e32b9554/content",
+      "as_on": "2025-10-06",
+      "downloaded": "2026-10-30",
+      "pages": 282,
+      "bytes": 2872470,
+      "sha256": "572c79880b9f8effc8fa6e39b864101835a0fb5d85b194b90a99d170121a0562"
+    },
+    {
+      "act": "BSA",
+      "title": "The Bharatiya Sakshya Adhiniyam, 2023",
+      "act_number": "47 of 2023",
+      "file": "raw/BSA.pdf",
+      "original_filename": "a2023-47.pdf",
+      "pdf_url": "https://indiacode.gov.in/server/api/core/bitstreams/fa0f7526-d871-41f2-a644-2a42952211f5/content",
+      "as_on": "2025-10-06",
+      "downloaded": "2026-10-30",
+      "pages": 54,
+      "bytes": 642831,
+      "sha256": "554b2b4ae3d9f09bf31e6e1ba2b2cb8a4e7f4f5ffd6f3156736752cbbce116d5"
+    },
+    {
+      "act": "CPC",
+      "title": "The Code of Civil Procedure, 1908",
+      "act_number": "5 of 1908",
+      "file": "raw/CPC.pdf",
+      "original_filename": "a1908-05.pdf",
+      "pdf_url": "https://indiacode.gov.in/server/api/core/bitstreams/fc9dad3f-97a9-4216-843b-934665693468/content",
+      "as_on": "2026-01-10",
+      "downloaded": "2026-10-30",
+      "pages": 347,
+      "bytes": 4532621,
+      "sha256": "393b8848fdfc476a21cc3abf4f0d3f510557e2dff6fc6914b1f379bea1730614"
+    }
+  ]
+}
