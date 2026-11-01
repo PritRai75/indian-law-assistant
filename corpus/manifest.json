@@ -1,0 +1,33 @@
+{
+  "source": "eCFR versioner API (www.ecfr.gov), US Government Publishing Office / Office of the Federal Register",
+  "title": 12,
+  "as_of": "2026-10-23",
+  "downloaded_at": "2026-11-01T21:14:42Z",
+  "title_info": {
+    "number": 12,
+    "name": "Banks and Banking",
+    "latest_amended_on": "2026-10-23",
+    "latest_issue_date": "2026-10-23",
+    "up_to_date_as_of": "2026-10-29",
+    "reserved": false
+  },
+  "files": [
+    {
+      "part": "1005",
+      "regulation": "E",
+      "path": "corpus/raw/part-1005.xml",
+      "url": "https://www.ecfr.gov/api/versioner/v1/full/2026-10-23/title-12.xml?part=1005",
+      "bytes": 859423,
+      "sha256": "0669a14f83f836f4086de21514f3bcd40041784e50c444b415f4d8e1909a10d0"
+    },
+    {
+      "part": "1026",
+      "regulation": "Z",
+      "path": "corpus/raw/part-1026.xml",
+      "url": "https://www.ecfr.gov/api/versioner/v1/full/2026-10-23/title-12.xml?part=1026",
+      "bytes": 3946980,
+      "sha256": "d4b9040e205b27a1dd300fe0cf26c97eb173bee53cdaec758573a65450e500f0"
+    }
+  ],
+  "warnings": []
+}
