@@ -1,5 +1,6 @@
 # Let git manage line endings for text files (LF inside the repo).
 * text=auto
 
-# Never touch the bytes of the source PDFs: their SHA-256 in corpus/manifest.json must keep matching.
-*.pdf binary
+# Never change the bytes of the downloaded eCFR XML: their size and SHA-256
+# in corpus/manifest.json must keep matching on every machine.
+corpus/raw/*.xml -text

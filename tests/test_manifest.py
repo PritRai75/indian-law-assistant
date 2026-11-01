@@ -1,43 +1,56 @@
-"""Tests for corpus/manifest.json: the record of which India Code PDFs the corpus was built from.
+"""The committed corpus must match corpus/manifest.json exactly.
 
-The manifest's fingerprints (sha256) and sizes must match the PDFs in corpus/raw/, and the "as on"
-dates that chunk.py stamps on every chunk must match the manifest's. If India Code's file is ever
-replaced, or a PDF is damaged on checkout, these tests fail instead of the corpus changing silently.
+If any of these fail, a raw XML file was changed, re-downloaded or altered by git
+line-ending conversion after the manifest was written.
 """
+
 import hashlib
 import json
 import re
-import sys
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
-CORPUS = ROOT / "corpus"
-sys.path.insert(0, str(ROOT / "ingest"))
-import chunk as ck  # noqa: E402
+import pytest
 
-DOCS = json.loads((CORPUS / "manifest.json").read_text(encoding="utf-8"))["documents"]
+REPO = Path(__file__).resolve().parents[1]
+MANIFEST = REPO / "corpus" / "manifest.json"
 
 
-def test_one_entry_per_act():
-    assert sorted(d["act"] for d in DOCS) == sorted(ck.ACTS)
+@pytest.fixture(scope="module")
+def manifest():
+    assert MANIFEST.exists(), "corpus/manifest.json is missing: run python -m ingest.fetch"
+    return json.loads(MANIFEST.read_text(encoding="utf-8"))
 
 
-def test_fields_are_filled_in():
-    for d in DOCS:
-        assert re.fullmatch(r"[0-9a-f]{64}", d["sha256"]), d["act"]
-        for key in ("as_on", "downloaded"):
-            assert re.fullmatch(r"\d{4}-\d{2}-\d{2}", d[key]), (d["act"], key)
-        assert re.match(r"https://(www\.)?indiacode\.(gov|nic)\.in/", d["pdf_url"]), d["act"]
-        assert d["file"] == f"raw/{d['act']}.pdf", d["act"]
+def test_top_level_fields(manifest):
+    assert manifest["title"] == 12
+    assert re.fullmatch(r"\d{4}-\d{2}-\d{2}", manifest["as_of"])
+    assert re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z", manifest["downloaded_at"])
 
 
-def test_pdfs_match_their_fingerprints():
-    for d in DOCS:
-        data = (CORPUS / d["file"]).read_bytes()   # bytes, exactly as stored: no text decoding
-        assert len(data) == d["bytes"], d["act"]
-        assert hashlib.sha256(data).hexdigest() == d["sha256"], d["act"]
+def test_both_parts_listed_once(manifest):
+    assert sorted(f["part"] for f in manifest["files"]) == ["1005", "1026"]
 
 
-def test_chunk_dates_match_manifest():
-    for d in DOCS:
-        assert ck.ACTS[d["act"]][1] == d["as_on"], d["act"]
+def test_urls_use_the_as_of_date(manifest):
+    for f in manifest["files"]:
+        assert f["url"] == (
+            f"https://www.ecfr.gov/api/versioner/v1/full/{manifest['as_of']}"
+            f"/title-12.xml?part={f['part']}"
+        )
+
+
+@pytest.mark.parametrize("part", ["1005", "1026"])
+def test_file_matches_size_and_hash(manifest, part):
+    entry = next(f for f in manifest["files"] if f["part"] == part)
+    body = (REPO / entry["path"]).read_bytes()
+    assert len(body) == entry["bytes"], (
+        f"{entry['path']} size changed. If git converted line endings, check .gitattributes"
+    )
+    assert hashlib.sha256(body).hexdigest() == entry["sha256"]
+
+
+@pytest.mark.parametrize("part", ["1005", "1026"])
+def test_file_is_well_formed_xml(manifest, part):
+    entry = next(f for f in manifest["files"] if f["part"] == part)
+    ET.parse(REPO / entry["path"])  # raises if not well-formed
