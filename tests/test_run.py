@@ -352,3 +352,24 @@ def test_runs_and_regrade_on_an_empty_database(tmp_path, capsys):
     assert R.main(["--runs", "--db", db]) == 0 and "No runs logged yet." in capsys.readouterr().out
     with pytest.raises(SystemExit):
         R.main(["--regrade", "r20990101T000000Z", "--db", db])
+
+
+def reg_tier_item(reg, tier):
+    text = ANSWERABLE.replace('type = "reg_e_account"', 'type = "unauthorized"')
+    text += ('\n[question.expected_tool_call]\nname = "dispute_timeline"\n'
+             f'args = {{ regulation = "{reg}", event = "unauthorized", notice_date = 2026-12-01 }}\n'
+             f'\n[question.expected_result]\nliability_tiers = ["{tier}"]\n')
+    return G.parse(tomllib.loads(text)["question"])[0][0]
+
+
+def test_reg_e_tier_amount_must_appear_in_the_answer():
+    item = reg_tier_item("E", "max_50")
+    assert R.grade(item, resp(answer="At most $50 [§ 1005.17(b)(1)]."), IX)["calc_exact"] is True
+    m = R.grade(item, resp(answer="Nothing [§ 1005.17(b)(1)]."), IX)
+    assert m["calc_exact"] is False and m["calc_missing"] == ["tier max_50"]
+
+
+def test_reg_z_tier_is_a_cap_so_its_amount_is_not_required():
+    item = reg_tier_item("Z", "max_50")
+    m = R.grade(item, resp(answer="He owes $0 [§ 1005.17(b)(1)]."), IX)
+    assert (m["calc_checks"], m["calc_missing"], m["calc_exact"]) == (0, [], None)

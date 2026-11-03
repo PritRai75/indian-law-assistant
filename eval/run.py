@@ -35,8 +35,11 @@ How each metric is graded (choices marked * are Claude's, session 14, open to Pr
   unneeded_call, wrong_args (with the differing argument names).
 - Calculation exactness, items with expected_result: every expected deadline date must appear in the
   final answer text*, in any common form (2026-11-20, November 20, 2026, 20 November, 11/20/2026; a
-  date written without a year counts), and max_50 / max_500 tiers as "$50" / "$500". Only the dates
-  are checked, not which deadline each is written for: deadlines sharing a date are met by one mention. Tiers "none"
+  date written without a year counts), and for Regulation E calls the max_50 / max_500 tiers as
+  "$50" / "$500". Only the dates are checked, not which deadline each is written for: deadlines
+  sharing a date are met by one mention. A Regulation Z tier is a cap that depends on conditions the
+  tool can't check (1026.12(b)), not the outcome, so its amount isn't required in the text; the
+  final amount is graded by the key facts and the judge (Prit's choice, session 14). Tiers "none"
   and "later_transfers_unprotected" and notice_timely can't be read reliably from prose: they are left
   to the judge, and an item with nothing code-checkable gets None. An abstention is never exact.
   tool_result_right separately records whether a tool result the model got agrees with the label,
@@ -68,7 +71,7 @@ from eval import golden as G
 
 REPO = Path(__file__).resolve().parents[1]
 DB_FILE = REPO / "runs.db"
-GRADER_VERSION = "g1"                 # bump when a grading rule changes, so old and new numbers aren't mixed
+GRADER_VERSION = "g2"                 # bump when a grading rule changes, so old and new numbers aren't mixed
 EVAL_TODAY = date(2026, 11, 3)        # "today" for questions that don't state their own
 GUARD_CAUSES = ("no_valid_citation", "output_invalid", "tool_limit")
 
@@ -179,7 +182,8 @@ def grade_calc(item: G.GoldenItem, resp: dict) -> dict:
         checks += 1
         if not date_written(d.date, found):
             missing.append(f"{d.rule} {d.date.isoformat()}")
-    for tier in want.liability_tiers:
+    reg_e = (item.expected_tool_call.args.get("regulation") if item.expected_tool_call else None) == "E"
+    for tier in (want.liability_tiers if reg_e else []):          # a Reg Z tier is a cap, not the outcome
         if tier in AMOUNTS:
             checks += 1
             if not AMOUNTS[tier].search(resp["answer"]):
