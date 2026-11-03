@@ -193,17 +193,27 @@ deadlines = [
 
 [[question]]
 id = "q005"
-stage = "draft"
+stage = "labelled"
 persona = "compliance"
 type = "fees_terms"
 question = """
 We want to raise the APR on existing fixed-rate cards from 21.99% to 24.99% because funding costs \
 increased. What notice is required, and can the new rate apply to existing balances?
 """
+regulation = "Z"
+gold_ids = ["1026.9(c)(2)(i)", "1026.55(b)(3)"]
+reference_answer = """
+To increase the APR on fixed-rate credit cards, the card issuer must provide a written change-in-terms notice at least 45 days before the effective date of the change. Under Regulation Z, the increased rate can only apply to new transactions and cannot be applied to existing balances.
+"""
+key_facts = [
+  "at least 45 days written advance notice is required",
+  "the new rate cannot apply to existing balances"
+]
+should_abstain = false
 
 [[question]]
 id = "q006"
-stage = "draft"
+stage = "labelled"
 persona = "frontline"
 type = "payments_disclosures"
 question = """
@@ -211,6 +221,16 @@ A customer paid her credit-card bill online at 7:30 p.m. Eastern on the due date
 10 November 2026. Our website says payments after 5 p.m. Eastern count as next-day payments, so hers \
 posted on 11 November and she was charged a late fee. Can we treat the payment as late and charge the fee?
 """
+regulation = "Z"
+gold_ids = ["1026.10(b)(2)(ii)"]
+reference_answer = """
+Under Regulation Z, a creditor may set a reasonable cut-off time for electronic payments on the due date, provided it is no earlier than 5 p.m. in the specified time zone. Because the customer made her online payment at 7:30 p.m. Eastern on the due date—after the permissible 5 p.m. Eastern cut-off time—the creditor may treat the payment as received on the next day and assess a late fee.
+"""
+key_facts = [
+  "creditors may set an electronic payment cut-off time no earlier than 5 p.m. on the due date",
+  "payments made after the 5 p.m. cut-off time may be treated as late and charged a fee"
+]
+should_abstain = false
 
 [[question]]
 id = "q007"
