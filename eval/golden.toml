@@ -1,0 +1,171 @@
+# RegZE Assistant golden set. Written and labelled by Prit Raithatha.
+# Format and checks: eval/golden.py. Check the file any time with:  python -m eval.golden
+#
+# One [[question]] block per question. TOML has no null: leave out any field that doesn't apply.
+# Text in """ ... """ can span lines and contain "quotes". A \ at the end of a line joins it to the next
+# line with no line break (used below to keep lines short). A # starts a comment.
+#
+# Pass 1 (stage = "draft"): id, stage, persona, type, question, and optionally trap (a private note).
+# Pass 2 (stage = "labelled"), regulation open, in a separate sitting. Never reword a question to fit
+# a label: relabel instead (a question that needs network rules, state law, a statute and so on
+# becomes a decline). Fields:
+#   regulation        "E", "Z" or "both" (leave out for most declines)
+#   gold_ids          provision IDs exactly as in the index: rule paragraphs like "1005.6(b)(1)",
+#                     comments like "1005.6(b)-1". The deepest paragraph that supports the answer.
+#                     Declines may list related provisions or none: gold_ids = []
+#   reference_answer  two to four sentences a correct answer would say
+#   key_facts         1 to 3 short facts the answer must contain (0 to 3 for a decline)
+#   should_abstain    true for a decline; then type = "decline" and abstain_category is one of
+#                     network_rules, state_law, issuer_terms, other_law, excluded_part,
+#                     not_in_force, sign_off
+#   today             the date the question treats as today, if it says one (unquoted: 2026-11-03)
+#   uncertain         true leaves the question out of scoring (default false)
+#   expected_tool_call / expected_result   only when the answer needs dispute_timeline. Compute the
+#                     result by hand from the regulation text and a calendar first (labeling rule 3);
+#                     python -m eval.golden then compares it with the tool. Investigate any mismatch.
+#
+# Types: unauthorized, dispute, deadline, fees_terms, payments_disclosures, reg_e_account, cross_reg,
+# decline. The pass-1 types below are guesses; change them in pass 2 if the question is really another.
+#
+# A labelled block looks like this (placeholder values, not a real label):
+#
+# [[question]]
+# id = "q999"
+# stage = "labelled"
+# persona = "compliance"
+# type = "deadline"
+# question = """..."""
+# regulation = "E"
+# today = 2026-11-05
+# gold_ids = ["1005.x(y)(1)", "1005.x(y)-2"]
+# reference_answer = """
+# Two to four sentences.
+# """
+# key_facts = ["first fact", "second fact"]
+# should_abstain = false
+#
+# [question.expected_tool_call]
+# name = "dispute_timeline"
+# args = { regulation = "E", event = "error", notice_date = "2026-11-05", transfer_kind = "standard" }
+#
+# [question.expected_result]
+# notice_timely = true
+# deadlines = [
+#   { what = "first deadline in your words", date = 2026-11-19, rule = "1005.x(y)(1)" },
+# ]
+#
+# (Put the two [question.…] tables after the plain fields of their block, as above.)
+
+
+# ============================================================ batch 1 (session 13, 3 Nov 2026)
+
+[[question]]
+id = "q001"
+stage = "draft"
+persona = "frontline"
+type = "unauthorized"
+trap = "debit vs credit (pair with q002)"
+question = """
+A customer says he still has his debit card in his wallet, but his statement dated 30 September 2026 \
+shows online purchases on 18 and 22 September that he didn’t make. He noticed and reported them today, \
+3 November 2026. What’s the most he could owe?
+"""
+
+[[question]]
+id = "q002"
+stage = "draft"
+persona = "frontline"
+type = "unauthorized"
+trap = "debit vs credit (pair with q001)"
+question = """
+A customer says he still has his credit card in his wallet, but his statement dated 30 September 2026 \
+shows online purchases on 18 and 22 September that he didn’t make. He noticed and reported them today, \
+3 November 2026. What’s the most he could owe?
+"""
+
+[[question]]
+id = "q003"
+stage = "draft"
+persona = "frontline"
+type = "dispute"
+question = """
+A customer paid $1,800 by credit card for a sofa on 10 August 2026. Delivery was promised by \
+15 September, but it never arrived, and the charge is on her 30 September 2026 statement. She’s calling \
+on 3 November 2026. Can she dispute it, and must she pay while it’s reviewed?
+"""
+
+[[question]]
+id = "q004"
+stage = "draft"
+persona = "compliance"
+type = "deadline"
+question = """
+We received written notice on Thursday, 5 November 2026, that a gym took an ACH payment after the \
+customer cancelled. Her account has been open since 2019, and the transfer was within the United \
+States. What deadlines apply, and what are the dates?
+"""
+
+[[question]]
+id = "q005"
+stage = "draft"
+persona = "compliance"
+type = "fees_terms"
+question = """
+We want to raise the APR on existing fixed-rate cards from 21.99% to 24.99% because funding costs \
+increased. What notice is required, and can the new rate apply to existing balances?
+"""
+
+[[question]]
+id = "q006"
+stage = "draft"
+persona = "frontline"
+type = "payments_disclosures"
+question = """
+A customer paid her credit-card bill online at 7:30 p.m. Eastern on the due date, Tuesday, \
+10 November 2026. Our website says payments after 5 p.m. Eastern count as next-day payments, so hers \
+posted on 11 November and she was charged a late fee. Can we treat the payment as late and charge the fee?
+"""
+
+[[question]]
+id = "q007"
+stage = "draft"
+persona = "compliance"
+type = "unauthorized"
+trap = "Reg E vs Reg Z"
+question = """
+A thief used a customer’s debit card, draining her checking balance and then drawing on its overdraft \
+credit line. Which regulation determines her liability?
+"""
+
+[[question]]
+id = "q008"
+stage = "draft"
+persona = "frontline"
+type = "decline"
+trap = "card-network zero liability"
+question = """
+A customer says someone used her Mastercard debit card and PIN for a fraudulent store purchase. Does \
+Mastercard’s zero-liability protection cover it?
+"""
+
+[[question]]
+id = "q009"
+stage = "draft"
+persona = "compliance"
+type = "decline"
+trap = "credit report after a card dispute"
+question = """
+We resolved a credit-card dispute in the customer’s favour, but her credit report still shows a late \
+payment. How soon must the bureaus correct it after we notify them?
+"""
+
+[[question]]
+id = "q010"
+stage = "draft"
+persona = "compliance"
+type = "decline"
+trap = "international transfer"
+question = """
+A customer sent $400 to family in Mexico through our online transfer service and asked to cancel the \
+next morning. What cancellation rights apply?
+"""
