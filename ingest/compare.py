@@ -5,6 +5,11 @@ Run from the repo root:
     python -m ingest.compare                      # every change in scope since 2024-01-01
     python -m ingest.compare --since 2025-01-01   # a later start
     python -m ingest.compare --dates 2024-05-14,2025-10-01   # only these change dates
+    python -m ingest.compare --pairs 2024-05-13:2024-05-20 --pack   # any two dates; zip the results
+
+Downloads are kept in scratch/compare/ and reused, so re-running is quick.
+Older eCFR versions are parsed leniently (markup slips become notes in the
+report); the corpus itself is always parsed strictly by ingest/parse.py.
 
 Why it exists: the eCFR prints amendments as of their effective date, even
 when a court later vacates them or Congress overturns them, and nothing in
@@ -21,7 +26,8 @@ What it does, in order:
    changes).
 3. Parses both with ingest/parse.py and lists provisions added, removed and
    changed, with the changed words.
-4. Prints a summary and writes the full list to scratch/compare/report.md.
+4. Prints a summary and writes the full list to scratch/compare/report.md,
+   and the same with complete texts to scratch/compare/changes.json.
 
 Only the Python standard library is used.
 """
@@ -171,15 +177,67 @@ def raw_diff(before: list[dict], after: list[dict]) -> dict:
 
 
 def compare_files(part: str, path_before: Path, path_after: Path) -> dict:
-    """Parse two downloads of one part and diff them. Falls back to raw paragraphs on a parse error."""
+    """Parse two downloads of one part and diff them.
+
+    Older eCFR versions have markup slips the current one doesn't, so they are
+    parsed leniently: problems become notes (listed in the report) instead of
+    errors. Only if even that fails does it compare raw paragraphs.
+    """
+    notes: list[str] = []
     try:
-        before = parse_part(part, path_before)
-        after = parse_part(part, path_after)
+        before = parse_part(part, path_before, notes=notes, strict=False)
+        after = parse_part(part, path_after, notes=notes, strict=False)
     except ParseError as e:
         res = raw_diff(raw_paragraphs(part, path_before), raw_paragraphs(part, path_after))
         res["warning"] = f"parse error ({e}); compared raw paragraphs instead"
         return res
-    return diff_provisions(before, after)
+    res = diff_provisions(before, after)
+    lenient = sorted(set(n for n in notes if n.startswith("LENIENT")))
+    if lenient:
+        res["warning"] = f"{len(lenient)} markup problem(s) handled leniently: " + " | ".join(lenient)
+    return res
+
+
+def parse_pairs(s: str) -> list[tuple[str, str]]:
+    """'2024-05-13:2024-05-20,2025-09-30:2025-10-01' -> [(before, after), ...]"""
+    pairs = []
+    for item in s.split(","):
+        item = item.strip()
+        if not item:
+            continue
+        a, sep, b = item.partition(":")
+        for d in (a, b):
+            date.fromisoformat(d)  # raises ValueError on a bad date
+        if not sep or a >= b:
+            raise ValueError(f"bad pair {item!r}: use BEFORE:AFTER with BEFORE earlier")
+        pairs.append((a, b))
+    if not pairs:
+        raise ValueError("no pairs given")
+    return pairs
+
+
+def changes_json(results: list[tuple[str, str, str, dict]]) -> list[dict]:
+    """Machine-readable version of the comparison, with full before/after texts."""
+    out = []
+    for before, after, part, res in results:
+        out.append({
+            "before": before, "after": after, "part": part,
+            "warning": res.get("warning"),
+            "added": {i: res["texts_after"][i] for i in res["added"]},
+            "removed": {i: res["texts_before"][i] for i in res["removed"]},
+            "changed": {i: {"before": res["texts_before"][i], "after": res["texts_after"][i]}
+                        for i in res["changed"]},
+        })
+    return out
+
+
+def pack(zip_path: Path, files: list[Path]) -> None:
+    """Zip files (compressed) so they can be attached to a chat as one file."""
+    import zipfile
+
+    with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED, compresslevel=9) as z:
+        for f in files:
+            z.write(f, f.name)
 
 
 # ------------------------------------------------------------------- report
@@ -207,31 +265,52 @@ def report_lines(d: str, part: str, res: dict, full: bool) -> list[str]:
     return lines
 
 
+def show(p: Path) -> str:
+    """A path relative to the repo when it is inside it, for printing."""
+    try:
+        return p.relative_to(REPO).as_posix()
+    except ValueError:
+        return p.as_posix()
+
+
 def main(argv: list[str] | None = None) -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--since", default="2024-01-01", help="first day to look for changes (YYYY-MM-DD)")
     ap.add_argument("--dates", help="comma-separated change dates; skips the versions lookup")
+    ap.add_argument("--pairs", help="comma-separated BEFORE:AFTER dates to compare directly, "
+                                    "e.g. 2024-05-13:2024-05-20")
+    ap.add_argument("--pack", action="store_true",
+                    help="also zip the XML files, report and changes.json into scratch/compare/compare.zip")
     args = ap.parse_args(argv)
 
     until = json.loads(MANIFEST.read_text(encoding="utf-8"))["as_of"]
     WORK.mkdir(parents=True, exist_ok=True)
 
-    if args.dates:
-        dates = {d.strip(): ["(given)"] for d in args.dates.split(",") if d.strip()}
-    else:
+    if args.pairs:
         try:
-            dates = fetch_change_dates(args.since, until)
-        except (ValueError, SystemExit) as e:
-            print(f"Could not read the eCFR versions list ({e}).")
-            print(f"Falling back to the two known dates: {', '.join(KNOWN_DATES)}")
-            dates = {d: ["(known date)"] for d in KNOWN_DATES}
-    print(f"Changes in scope between {args.since} and the corpus date {until}:")
-    for d, idents in dates.items():
-        print(f"  {d}: {', '.join(sorted(set(idents)))}")
+            pairs = parse_pairs(args.pairs)
+        except ValueError as e:
+            raise SystemExit(f"--pairs: {e}")
+        print("Comparing the pairs given:")
+        for a, b in pairs:
+            print(f"  {a} -> {b}")
+    else:
+        if args.dates:
+            dates = {d.strip(): ["(given)"] for d in args.dates.split(",") if d.strip()}
+        else:
+            try:
+                dates = fetch_change_dates(args.since, until)
+            except (ValueError, SystemExit) as e:
+                print(f"Could not read the eCFR versions list ({e}).")
+                print(f"Falling back to the two known dates: {', '.join(KNOWN_DATES)}")
+                dates = {d: ["(known date)"] for d in KNOWN_DATES}
+        print(f"Changes in scope between {args.since} and the corpus date {until}:")
+        for d, idents in dates.items():
+            print(f"  {d}: {', '.join(sorted(set(idents)))}")
+        pairs = [((date.fromisoformat(d) - timedelta(days=1)).isoformat(), d) for d in dates]
 
-    summary, full = [], []
-    for d in dates:
-        prev = (date.fromisoformat(d) - timedelta(days=1)).isoformat()
+    summary, full, results, used = [], [], [], []
+    for prev, d in pairs:
         summary.append(f"\n=== {prev} -> {d}")
         full.append(f"\n## {prev} -> {d}\n")
         for part in PARTS:
@@ -243,14 +322,25 @@ def main(argv: list[str] | None = None) -> None:
                     p.write_bytes(http_get(part_url(day, part)))
                     time.sleep(1)
                 paths.append(p)
+                if p not in used:
+                    used.append(p)
             res = compare_files(part, *paths)
+            results.append((prev, d, part, res))
             summary += report_lines(d, part, res, full=False)
             full += report_lines(d, part, res, full=True)
 
     report = WORK / "report.md"
     report.write_text("# eCFR changes in scope\n" + "\n".join(full) + "\n", encoding="utf-8", newline="\n")
+    changes = WORK / "changes.json"
+    changes.write_text(json.dumps(changes_json(results), indent=1, ensure_ascii=False) + "\n",
+                       encoding="utf-8", newline="\n")
     print("\n".join(summary))
-    print(f"\nFull list: {report.relative_to(REPO).as_posix()}")
+    print(f"\nFull list: {show(report)} (open it in VS Code with: code {show(report)})")
+    if args.pack:
+        z = WORK / "compare.zip"
+        pack(z, used + [report, changes])
+        print(f"Packed {len(used)} XML files, the report and changes.json into "
+              f"{show(z)} ({z.stat().st_size / 1e6:.1f} MB)")
 
 
 if __name__ == "__main__":

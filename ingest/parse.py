@@ -256,7 +256,7 @@ def label_display(raw: str) -> str:
 
 
 def parse_rules(part: str, root: ET.Element, overrides: dict[str, int],
-                notes: list[str]) -> list[dict]:
+                notes: list[str], strict: bool = True) -> list[dict]:
     out = []
     for d6 in root.iter("DIV6"):
         sub = d6.get("N")
@@ -270,6 +270,11 @@ def parse_rules(part: str, root: ET.Element, overrides: dict[str, int],
             tree = Tree(sec_id, overrides)
             for el in d8:
                 if el.tag in ("HEAD", "CITA", "SECAUTH", "EDNOTE"):
+                    continue
+                if el.tag == "XREF":
+                    # eCFR's editorial link to an amendment published but not yet in
+                    # the text, e.g. "Link to an amendment published at 89 FR 64538".
+                    notes.append(f"{sec_id}: eCFR links a pending amendment: {text_of(el)}")
                     continue
                 if el.tag != "P":
                     raise ParseError(f"{sec_id}: unexpected <{el.tag}> in rule text")
@@ -287,7 +292,17 @@ def parse_rules(part: str, root: ET.Element, overrides: dict[str, int],
                         out[-1]["text"] += "\n" + text
                         notes.append(f"{out[-1]['id']}: unlabelled paragraph joined to it ({text[:50]}...)")
                         continue
-                    pid, level, amb = tree.place(raw_label)
+                    try:
+                        pid, level, amb = tree.place(raw_label)
+                    except ParseError as e:
+                        if strict or not out or out[-1]["section"] != sec_id:
+                            raise
+                        # Lenient mode (older eCFR versions, for comparisons only):
+                        # keep the text with the previous provision and carry on.
+                        tree.pending = tree.pending_next = None
+                        notes.append(f"LENIENT {e}; text joined to {out[-1]['id']}")
+                        out[-1]["text"] += "\n" + f"{label_display(raw_label)} {text}".strip()
+                        continue
                     notes.extend(amb)
                     parent = pid[: pid.rindex("(")] if "(" in pid else None
                     out.append({
@@ -302,7 +317,12 @@ def parse_rules(part: str, root: ET.Element, overrides: dict[str, int],
                         "depth": pid.count("("),
                         "text": f"{label_display(raw_label)} {text}".strip(),
                     })
-            tree.finish()
+            try:
+                tree.finish()
+            except ParseError as e:
+                if strict:
+                    raise
+                notes.append(f"LENIENT {e}")
     return out
 
 
@@ -353,7 +373,8 @@ def is_heading(el: ET.Element, t: str) -> bool:
     return bool(P_REF_TITLE.match(t))
 
 
-def parse_commentary(part: str, root: ET.Element, notes: list[str]) -> list[dict]:
+def parse_commentary(part: str, root: ET.Element, notes: list[str],
+                     strict: bool = True) -> list[dict]:
     supp = next(d for d in root.iter("DIV9") if d.get("N", "").startswith("Supplement I"))
     out: list[dict] = []
     sec: int | None = None
@@ -429,7 +450,9 @@ def parse_commentary(part: str, root: ET.Element, notes: list[str]) -> list[dict
                              f"comments after {key}-{want - 1} assigned to {fix}")
                 key, para_heading, want = fix, f"{fix} (heading missing from the eCFR XML)", 1
             if n != want:
-                raise ParseError(f"{part} comment {key}-{n}: expected number {want}")
+                if strict:
+                    raise ParseError(f"{part} comment {key}-{n}: expected number {want}")
+                notes.append(f"LENIENT {part} comment {key}-{n}: expected number {want}; kept {n}")
             expected[key] = n
             close()
             target = f"{part}.{key}"
@@ -448,7 +471,16 @@ def parse_commentary(part: str, root: ET.Element, notes: list[str]) -> list[dict
             }
             continue
         if current is None:
-            raise ParseError(f"{part} Supp I, section {sec}, under {key!r}: text before comment 1: {t[:80]!r}")
+            msg = f"{part} Supp I, section {sec}, under {key!r}: text before comment 1: {t[:80]!r}"
+            if strict:
+                raise ParseError(msg)
+            notes.append(f"LENIENT {msg}; kept as {part}.{key}-0")
+            current = {
+                "id": f"{part}.{key}-0", "kind": "commentary", "reg": REG[part], "part": part,
+                "subpart": None, "section": f"{part}.{sec}", "section_heading": sec_heading,
+                "comment": f"{key}-0", "target": None, "paragraph_heading": para_heading or None,
+                "_lines": [],
+            }
         current["_lines"].append(t)
     close()
     return out
@@ -500,19 +532,30 @@ def apply_status(records: list[dict], entries: list[dict]) -> None:
 # ------------------------------------------------------------------------ main
 
 def parse_part(part: str, path: Path, overrides: dict[str, int] | None = None,
-               notes: list[str] | None = None) -> list[dict]:
+               notes: list[str] | None = None, strict: bool = True) -> list[dict]:
+    """Parse one part. strict=False is for comparing older eCFR versions only:
+    problems become notes starting "LENIENT" instead of errors. The corpus itself
+    is always parsed strictly."""
     notes = notes if notes is not None else []
     root = ET.parse(path).getroot()
-    rules = parse_rules(part, root, overrides or {}, notes)
-    comments = parse_commentary(part, root, notes)
+    rules = parse_rules(part, root, overrides or {}, notes, strict)
+    comments = parse_commentary(part, root, notes, strict)
     subparts = {r["section"]: r["subpart"] for r in rules}
     for c in comments:
         c["subpart"] = subparts.get(c["section"])
-    ids = Counter(r["id"] for r in rules + comments)
+    records = rules + comments
+    ids = Counter(r["id"] for r in records)
     dupes = [i for i, n in ids.items() if n > 1]
-    if dupes:
+    if dupes and strict:
         raise ParseError(f"duplicate provision IDs in {part}: {dupes[:10]}")
-    return rules + comments
+    if dupes:
+        seen = Counter()
+        for r in records:
+            seen[r["id"]] += 1
+            if seen[r["id"]] > 1:
+                notes.append(f"LENIENT duplicate ID {r['id']}; renamed {r['id']}~{seen[r['id']]}")
+                r["id"] = f"{r['id']}~{seen[r['id']]}"
+    return records
 
 
 # Labels that read both ways and are settled by hand: provision id -> level.
