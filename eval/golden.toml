@@ -170,7 +170,7 @@ customer cancelled. Her account has been open since 2019, and the transfer was w
 States. What deadlines apply, and what are the dates?
 """
 regulation = "E"
-today = 2026-11-03
+today = 2026-11-05
 gold_ids = ["1005.11(c)(1)", "1005.11(c)(2)"]
 reference_answer = """
 Under Regulation E, after receiving written notice on Thursday, 5 November 2026, the institution must investigate and determine if an error occurred within 10 business days (by Friday, 20 November 2026). If the institution requires additional time, it must provisionally credit the account by 20 November 2026 and complete its investigation within 45 calendar days (by Sunday, 20 December 2026). Results of the investigation must be reported to the consumer within three business days of completion.
@@ -268,8 +268,8 @@ reference_answer = """
 Whether Mastercard's zero-liability policy covers this transaction is governed by private payment network rules rather than federal regulations. Regulation E provides statutory liability limits for unauthorized electronic fund transfers under federal law, but it does not regulate or enforce card network policies.
 """
 key_facts = [
-  "card-network zero-liability protections are governed by private network rules, not federal regulation",
-  "Regulation E governs statutory liability limits for unauthorized transfers"
+  "card network zero-liability rules are private policies not governed by Regulation E or Regulation Z",
+  "the provided regulations do not contain card network zero-liability rules"
 ]
 should_abstain = true
 abstain_category = "network_rules"
@@ -289,7 +289,7 @@ reference_answer = """
 Credit bureau correction timelines are governed by the Fair Credit Reporting Act (FCRA), not Regulation Z. Under Regulation Z, the card issuer is only required to promptly notify credit bureaus of corrected billing error determinations, but Regulation Z does not set or enforce deadlines for credit bureaus to update their reports.
 """
 key_facts = [
-  "credit bureau report correction timelines are governed by the Fair Credit Reporting Act (FCRA), not Regulation Z",
+  "credit bureau correction timelines for reporting agencies are not governed by Regulation Z",
   "Regulation Z requires the creditor to promptly notify bureaus of billing error corrections"
 ]
 should_abstain = true
@@ -307,11 +307,11 @@ next morning. What cancellation rights apply?
 """
 gold_ids = []
 reference_answer = """
-Remittance transfer cancellation rights are governed by Subpart B of Regulation E (12 CFR §§ 1005.30–1005.36), which is an excluded part of the regulation index. Under Subpart B (§ 1005.34), a sender generally has a 30-minute window after payment to cancel a remittance transfer, making a next-morning cancellation request untimely.
+International remittance transfers are governed by Subpart B of Regulation E (12 CFR Part 1005), which is outside the scope of the covered regulations in this corpus. Because the governing rules for remittance transfer cancellations are not contained in the provided text, no specific cancellation rights or deadlines can be determined from the sources.
 """
 key_facts = [
-  "remittance transfer rules are governed by Subpart B of Regulation E, which is excluded from coverage",
-  "Subpart B grants a 30-minute cancellation window after payment, so next-morning notice is untimely"
+  "international remittance transfers are governed by Subpart B of Regulation E, which is not in the covered corpus",
+  "the covered regulations do not contain cancellation rules for remittance transfers"
 ]
 should_abstain = true
 abstain_category = "excluded_part"
