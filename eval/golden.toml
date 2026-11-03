@@ -276,7 +276,7 @@ abstain_category = "network_rules"
 
 [[question]]
 id = "q009"
-stage = "draft"
+stage = "labelled"
 persona = "compliance"
 type = "decline"
 trap = "credit report after a card dispute"
@@ -284,10 +284,20 @@ question = """
 We resolved a credit-card dispute in the customer’s favour, but her credit report still shows a late \
 payment. How soon must the bureaus correct it after we notify them?
 """
+gold_ids = ["1026.13(g)(4)"]
+reference_answer = """
+Credit bureau correction timelines are governed by the Fair Credit Reporting Act (FCRA), not Regulation Z. Under Regulation Z, the card issuer is only required to promptly notify credit bureaus of corrected billing error determinations, but Regulation Z does not set or enforce deadlines for credit bureaus to update their reports.
+"""
+key_facts = [
+  "credit bureau report correction timelines are governed by the Fair Credit Reporting Act (FCRA), not Regulation Z",
+  "Regulation Z requires the creditor to promptly notify bureaus of billing error corrections"
+]
+should_abstain = true
+abstain_category = "other_law"
 
 [[question]]
 id = "q010"
-stage = "draft"
+stage = "labelled"
 persona = "compliance"
 type = "decline"
 trap = "international transfer"
@@ -295,3 +305,13 @@ question = """
 A customer sent $400 to family in Mexico through our online transfer service and asked to cancel the \
 next morning. What cancellation rights apply?
 """
+gold_ids = []
+reference_answer = """
+Remittance transfer cancellation rights are governed by Subpart B of Regulation E (12 CFR §§ 1005.30–1005.36), which is an excluded part of the regulation index. Under Subpart B (§ 1005.34), a sender generally has a 30-minute window after payment to cancel a remittance transfer, making a next-morning cancellation request untimely.
+"""
+key_facts = [
+  "remittance transfer rules are governed by Subpart B of Regulation E, which is excluded from coverage",
+  "Subpart B grants a 30-minute cancellation window after payment, so next-morning notice is untimely"
+]
+should_abstain = true
+abstain_category = "excluded_part"
