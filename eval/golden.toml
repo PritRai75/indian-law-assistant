@@ -281,12 +281,11 @@ persona = "compliance"
 type = "decline"
 trap = "credit report after a card dispute"
 question = """
-We resolved a credit-card dispute in the customer’s favour, but her credit report still shows a late \
-payment. How soon must the bureaus correct it after we notify them?
+We resolved a credit-card dispute in the customer’s favour, but her credit report still shows a late payment. How soon must the bureaus correct it after we notify them?
 """
 gold_ids = ["1026.13(g)(4)"]
 reference_answer = """
-Credit bureau correction timelines are governed by the Fair Credit Reporting Act (FCRA), not Regulation Z. Under Regulation Z, the card issuer is only required to promptly notify credit bureaus of corrected billing error determinations, but Regulation Z does not set or enforce deadlines for credit bureaus to update their reports.
+Credit bureau correction timelines for reporting agencies are not governed by Regulation Z or Regulation E. Under Regulation Z (§ 1026.13(g)(4)), the card issuer is required to promptly notify credit bureaus of corrected billing errors, but the regulation does not set or enforce deadlines for credit bureaus themselves to update their reports.
 """
 key_facts = [
   "credit bureau correction timelines for reporting agencies are not governed by Regulation Z",
