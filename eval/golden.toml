@@ -234,7 +234,7 @@ should_abstain = false
 
 [[question]]
 id = "q007"
-stage = "draft"
+stage = "labelled"
 persona = "compliance"
 type = "unauthorized"
 trap = "Reg E vs Reg Z"
@@ -242,10 +242,20 @@ question = """
 A thief used a customer’s debit card, draining her checking balance and then drawing on its overdraft \
 credit line. Which regulation determines her liability?
 """
+regulation = "E"
+gold_ids = ["1005.12(a)(1)(iv)(A)"]
+reference_answer = """
+Regulation E determines the customer's liability. Under 12 CFR § 1005.12(a)(1)(iv)(A), when an unauthorized electronic fund transfer involves an overdraft credit line linked to a checking account, Regulation E's liability limitations and error resolution rules govern the transaction rather than Regulation Z.
+"""
+key_facts = [
+  "Regulation E determines liability",
+  "Regulation E governs debit card transfers even when credit is extended via an overdraft line"
+]
+should_abstain = false
 
 [[question]]
 id = "q008"
-stage = "draft"
+stage = "labelled"
 persona = "frontline"
 type = "decline"
 trap = "card-network zero liability"
@@ -253,6 +263,16 @@ question = """
 A customer says someone used her Mastercard debit card and PIN for a fraudulent store purchase. Does \
 Mastercard’s zero-liability protection cover it?
 """
+gold_ids = ["1005.6(b)"]
+reference_answer = """
+Whether Mastercard's zero-liability policy covers this transaction is governed by private payment network rules rather than federal regulations. Regulation E provides statutory liability limits for unauthorized electronic fund transfers under federal law, but it does not regulate or enforce card network policies.
+"""
+key_facts = [
+  "card-network zero-liability protections are governed by private network rules, not federal regulation",
+  "Regulation E governs statutory liability limits for unauthorized transfers"
+]
+should_abstain = true
+abstain_category = "network_rules"
 
 [[question]]
 id = "q009"
