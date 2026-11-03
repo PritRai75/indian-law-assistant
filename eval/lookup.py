@@ -8,6 +8,7 @@ written from the exact text the assistant answers from, with each provision's st
     python -m eval.lookup "comment 13(c)(2)-1" "Reg E 11(c)"   several at once, in any form a question can use
     python -m eval.lookup --outline 1026.13           one line per provision: ID, status, opening words
     python -m eval.lookup --find "provisional credit" [--reg E]   plain text match across the corpus
+    python -m eval.lookup --sections [--reg Z]        the table of contents: every indexed section and its title
 
 References are read the way the assistant's search reads them (app.retrieve.read_refs), so a short
 form without the part ("13(c)(2)") shows both parts when both exist. --find is a plain substring
@@ -172,17 +173,39 @@ def suggest(written: str) -> str:
     return f"== {written}: not found in the index" + (f" ({hint})" if hint else ". Check the spelling.")
 
 
+def sections(reg: str | None = None) -> str:
+    """The table of contents: every indexed section with its title, in order, for one or both regulations."""
+    with open(CHUNKS_FILE, encoding="utf-8") as f:
+        chunks = json.load(f)
+    seen = {}
+    for c in chunks:
+        if reg in (None, c["reg"]) and c["section"] not in seen:
+            seen[c["section"]] = (c["reg"], c["section_heading"])
+    order = sorted(seen, key=lambda s: (s.split(".")[0], int(s.split(".")[1])))
+    lines, last = [], None
+    for s in order:
+        r, heading = seen[s]
+        if r != last:
+            lines.append(("" if last is None else "\n") + f"{REG_NAME[r]} (12 CFR {s.split('.')[0]}), the sections indexed:")
+            last = r
+        lines.append(f"  § {s}  {heading}")
+    return "\n".join(lines)
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(prog="python -m eval.lookup", description=__doc__.split("\n\n")[0])
     ap.add_argument("refs", nargs="*", help="provision references, e.g. 1005.6(b) or \"comment 13(c)(2)-1\"")
     ap.add_argument("--outline", action="store_true", help="one line per provision instead of the full text")
     ap.add_argument("--find", metavar="PHRASE", help="list provisions whose text contains PHRASE")
-    ap.add_argument("--reg", choices=["E", "Z"], help="with --find: one regulation only")
+    ap.add_argument("--reg", choices=["E", "Z"], help="with --find or --sections: one regulation only")
+    ap.add_argument("--sections", action="store_true", help="the table of contents: every indexed section and its title")
     args = ap.parse_args(argv)
-    if not args.refs and not args.find:
+    if not args.refs and not args.find and not args.sections:
         ap.print_help()
         return 2
     out, missing = [], False
+    if args.sections:
+        out.append(sections(args.reg))
     if args.find:
         out.append(find(args.find, args.reg))
     for written in args.refs:

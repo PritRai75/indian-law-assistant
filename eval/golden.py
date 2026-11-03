@@ -11,6 +11,12 @@ Two stages:
 `check()` returns every problem it finds as a readable line, so one run shows them all;
 tests/test_golden.py fails while the real file has any. `python -m eval.golden` prints the counts
 and the problems.
+
+Gold IDs match as a family (Prit's choice, session 14): a gold ID covers itself, the paragraphs
+under it and the comments on any of them, the same rule as the search's named sets and
+`python -m eval.lookup`. `in_family()` is that rule; eval/run.py scores retrieval and citations
+with it. `warnings()` flags a gold ID whose family spans more than one rule chunk, since a broad
+ID makes retrieval easy to hit; a warning never fails the check.
 """
 from __future__ import annotations
 
@@ -138,6 +144,39 @@ def check_id(pid: str, statuses: dict[str, str]) -> str | None:
     close = difflib.get_close_matches(pid, list(statuses), n=3, cutoff=0.8)
     hint = f"; did you mean {', '.join(map(repr, close))}?" if close else ""
     return f"{pid!r} is not a provision ID in the index{hint}"
+
+
+def in_family(gold_id: str, provision_id: str) -> bool:
+    """True if `provision_id` is `gold_id`, a paragraph under it, or a comment on either (any case).
+    A comment gold ID ("1005.6(b)-1") covers only that comment."""
+    from app.retrieve import covered_by
+    return covered_by(gold_id.lower(), provision_id.lower())
+
+
+def rule_chunk_owners(path: Path = CHUNKS_FILE) -> dict[str, str]:
+    """Every provision ID in a rule chunk, mapped to that chunk's ID."""
+    with open(path, encoding="utf-8") as f:
+        return {p: c["id"] for c in json.load(f) if c["kind"] == "rule" for p in c["provision_ids"]}
+
+
+BROAD_AFTER = 1          # rule chunks a gold ID's family may span before it is called broad
+
+
+def warnings(items: list[GoldenItem], owners: dict[str, str] | None = None) -> list[str]:
+    """Labelled items whose gold IDs are broad. Advice only: never a problem."""
+    owners = rule_chunk_owners() if owners is None else owners
+    out = []
+    for item in items:
+        if item.stage != "labelled" or not item.gold_ids:
+            continue
+        for gid in item.gold_ids:
+            chunks = sorted({c for p, c in owners.items() if in_family(gid, p)})
+            if len(chunks) > BROAD_AFTER:
+                shown = ", ".join(chunks[:4]) + (", ..." if len(chunks) > 4 else "")
+                out.append(f"{item.id}: gold ID {gid} covers {len(chunks)} rule chunks ({shown}), so almost any of "
+                           "them counts as a retrieval hit. Use a narrower ID if one answers the question; "
+                           "keep it if the whole paragraph is the answer.")
+    return out
 
 
 def tool_spec():
@@ -313,6 +352,10 @@ def main(argv=None) -> int:
     problems += check(items)
     problems += [x for i in items for x in compare_with_tool(i)]
     print(summary(items))
+    advice = warnings(items)
+    if advice:
+        print(f"\n{len(advice)} warning(s), advice only:")
+        print("\n".join(f"  {x}" for x in advice))
     if problems:
         print(f"\n{len(problems)} problem(s):")
         print("\n".join(f"  {x}" for x in problems))

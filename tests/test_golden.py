@@ -226,3 +226,44 @@ def test_summary_counts():
     text = G.summary(items)
     assert text.startswith("2 questions: 1 draft, 1 labelled")
     assert "labelled: 1 answerable, 0 declines, 0 uncertain, 0 expecting the tool" in text
+
+
+# ------------------------------------------------------------------ gold-ID families (session 14)
+
+OWNERS = G.rule_chunk_owners()
+
+
+def labelled_with(gold_ids):
+    text = LABELLED.replace('gold_ids = ["1005.17(b)(1)", "1005.17(b)(1)(i)"]', f"gold_ids = {gold_ids!r}".replace("'", '"'))
+    items, problems = items_from(text)
+    assert problems == [], problems
+    return items
+
+
+def test_in_family_covers_paragraphs_under_and_comments():
+    assert G.in_family("1005.17(b)(1)", "1005.17(b)(1)")
+    assert G.in_family("1005.17(b)(1)", "1005.17(b)(1)(i)")
+    assert G.in_family("1005.17(b)(1)", "1005.17(b)(1)-1")
+    assert G.in_family("1005.17(b)", "1005.17(b)(1)(i)")
+    assert G.in_family("1005.17(B)(1)", "1005.17(b)(1)")           # any case
+    assert not G.in_family("1005.17(b)(1)", "1005.17(b)")          # not the parent
+    assert not G.in_family("1005.17(b)(1)", "1005.17(b)(10)")      # not a look-alike number
+    assert not G.in_family("1005.17(b)(1)", "1026.17(b)(1)")       # not the other part
+    assert not G.in_family("1005.17(b)-1", "1005.17(b)-2")          # a comment covers only itself
+
+
+def test_rule_chunk_owners_holds_rules_only():
+    assert OWNERS and not any(p.split(".", 1)[1].count("-") for p in OWNERS)
+
+
+def test_broad_gold_id_warns_and_narrow_does_not():
+    assert G.warnings(labelled_with(["1005.17(b)(1)"]), OWNERS) == []
+    broad = G.warnings(labelled_with(["1026.2(a)"]), OWNERS)
+    assert len(broad) == 1 and "1026.2(a) covers" in broad[0] and "rule chunks" in broad[0]
+
+
+def test_warnings_skip_drafts_and_never_fail_the_check():
+    items, problems = items_from(DRAFT)
+    assert G.warnings(items, OWNERS) == [] and problems == []
+    broad = labelled_with(["1026.2(a)"])
+    assert G.check(broad, STATUSES) == []                        # advice, not a problem

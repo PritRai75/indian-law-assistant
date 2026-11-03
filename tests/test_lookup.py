@@ -89,3 +89,19 @@ def test_main_exit_codes(capsys):
     assert "§ 1005.6(b)(1)  (in force)" in capsys.readouterr().out
     assert L.main(["1005.6(b)(1)", "1026.18"]) == 1
     assert L.main([]) == 2
+
+
+def test_sections_lists_every_indexed_section_in_order(capsys):
+    assert L.main(["--sections"]) == 0
+    out = capsys.readouterr().out
+    lines = [x.strip() for x in out.splitlines() if x.strip().startswith("§")]
+    assert len(lines) == 20 + 28                                  # E 1-20; Z 1-16 and 51-62
+    assert lines[0].startswith("§ 1005.1 ") and lines[-1].startswith("§ 1026.62 ")
+    assert "§ 1005.10 " in out and out.index("§ 1005.9 ") < out.index("§ 1005.10 ")   # numeric order, not text order
+    assert "§ 1026.17 " not in out                                # closed-end credit is not indexed
+
+
+def test_sections_for_one_regulation(capsys):
+    assert L.main(["--sections", "--reg", "Z"]) == 0
+    out = capsys.readouterr().out
+    assert "1005." not in out and "§ 1026.13 " in out

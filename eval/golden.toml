@@ -11,7 +11,10 @@
 # becomes a decline). Fields:
 #   regulation        "E", "Z" or "both" (leave out for most declines)
 #   gold_ids          provision IDs exactly as in the index: rule paragraphs like "1005.6(b)(1)",
-#                     comments like "1005.6(b)-1". The deepest paragraph that supports the answer.
+#                     comments like "1005.6(b)-1". The narrowest paragraph that fully answers.
+#                     A gold ID also covers the paragraphs under it and the comments on them
+#                     (exactly what python -m eval.lookup prints for it), so don't list those too.
+#                     python -m eval.golden warns when one spans more than one rule chunk.
 #                     Declines may list related provisions or none: gold_ids = []
 #   reference_answer  two to four sentences a correct answer would say
 #   key_facts         1 to 3 short facts the answer must contain (0 to 3 for a decline)
