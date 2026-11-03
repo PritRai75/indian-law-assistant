@@ -11,6 +11,20 @@ Status: work in progress. Nothing has been evaluated yet, and no results are cla
 
 Not legal or compliance advice. Card network rules, state law and an issuer's own account terms are out of scope.
 
+## Corpus pipeline (so far)
+
+| Step | Command | Output |
+| --- | --- | --- |
+| Download | `python -m ingest.fetch` | `corpus/raw/part-1005.xml`, `part-1026.xml`, `corpus/manifest.json` (as-of date, hashes) |
+| Parse | `python -m ingest.parse` | `corpus/txt/provisions.jsonl`: one record per rule paragraph or numbered official interpretation, with its citation ID |
+| Compare versions | `python -m ingest.compare` | Which provisions changed at each eCFR amendment date (used for the status register, and when the corpus is refreshed) |
+
+**Provision IDs.** Rule paragraphs use their CFR citation (`1026.52(b)(1)(ii)(A)`); official interpretations use the part plus the comment number (`1026.52(b)(1)(ii)-1` is Reg Z comment 52(b)(1)(ii)-1).
+
+**Source defects handled.** The eCFR XML omits one commentary heading (Reg E 17(b)(3)) and repeats a comment number (Reg Z 11(c)); the parser corrects both to match the CFPB's published commentary and logs them. It stops with an error on any label or comment number it can't place, rather than guessing.
+
+**Text the eCFR prints that is not law in force.** The eCFR shows amendments as of their effective date even after a court vacates them or Congress overturns them, and the XML doesn't mark them. `corpus/status.json` is a hand-checked register of such provisions (status, reason, source), and every provision carries its `status`, so the assistant can decline with an explanation instead of stating a vacated rule as law.
+
 ## History
 
 This repository began as an Indian law Q&A project (commits before the switch to Regulations Z and E). That corpus and pipeline were retired; the embedding and search code carried over.
