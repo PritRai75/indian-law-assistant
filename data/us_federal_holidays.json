@@ -1,0 +1,42 @@
+{
+ "description": "Weekdays on which Federal Reserve Banks are closed for a holiday, used by app/tools.py to count business days. Assumption stated in every tool result: business days are Monday to Friday except these dates. Reg E defines a business day as a day the consumer's own institution is open (12 CFR 1005.2(d)); a bank open on Saturdays or on a holiday counts differently.",
+ "weekend_rule": "A holiday on a Saturday closes no weekday (Federal Reserve Banks are open the preceding Friday). A holiday on a Sunday closes the following Monday.",
+ "sources": [
+  "https://www.frbservices.org/about/holiday-schedules (2026 and 2027, read 3 Nov 2026)",
+  "https://www.federalreserve.gov/aboutthefed/k8.htm (2026 and 2027, read 3 Nov 2026)",
+  "2025 is derived from the same holiday rules (fixed dates and nth weekdays); the Federal Reserve pages no longer list 2025. tests/test_tools.py checks that these rules reproduce the published 2026 and 2027 tables."
+ ],
+ "covers": ["2025-01-01", "2027-12-31"],
+ "closed": [
+  {"date": "2025-01-01", "holiday": "New Year's Day"},
+  {"date": "2025-01-20", "holiday": "Birthday of Martin Luther King, Jr."},
+  {"date": "2025-02-17", "holiday": "Washington's Birthday"},
+  {"date": "2025-05-26", "holiday": "Memorial Day"},
+  {"date": "2025-06-19", "holiday": "Juneteenth National Independence Day"},
+  {"date": "2025-07-04", "holiday": "Independence Day"},
+  {"date": "2025-09-01", "holiday": "Labor Day"},
+  {"date": "2025-10-13", "holiday": "Columbus Day"},
+  {"date": "2025-11-11", "holiday": "Veterans Day"},
+  {"date": "2025-11-27", "holiday": "Thanksgiving Day"},
+  {"date": "2025-12-25", "holiday": "Christmas Day"},
+  {"date": "2026-01-01", "holiday": "New Year's Day"},
+  {"date": "2026-01-19", "holiday": "Birthday of Martin Luther King, Jr."},
+  {"date": "2026-02-16", "holiday": "Washington's Birthday"},
+  {"date": "2026-05-25", "holiday": "Memorial Day"},
+  {"date": "2026-06-19", "holiday": "Juneteenth National Independence Day"},
+  {"date": "2026-09-07", "holiday": "Labor Day"},
+  {"date": "2026-10-12", "holiday": "Columbus Day"},
+  {"date": "2026-11-11", "holiday": "Veterans Day"},
+  {"date": "2026-11-26", "holiday": "Thanksgiving Day"},
+  {"date": "2026-12-25", "holiday": "Christmas Day"},
+  {"date": "2027-01-01", "holiday": "New Year's Day"},
+  {"date": "2027-01-18", "holiday": "Birthday of Martin Luther King, Jr."},
+  {"date": "2027-02-15", "holiday": "Washington's Birthday"},
+  {"date": "2027-05-31", "holiday": "Memorial Day"},
+  {"date": "2027-07-05", "holiday": "Independence Day (Sunday, observed Monday)"},
+  {"date": "2027-09-06", "holiday": "Labor Day"},
+  {"date": "2027-10-11", "holiday": "Columbus Day"},
+  {"date": "2027-11-11", "holiday": "Veterans Day"},
+  {"date": "2027-11-25", "holiday": "Thanksgiving Day"}
+ ]
+}
