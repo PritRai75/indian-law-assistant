@@ -1,0 +1,5 @@
+# What the assistant needs to run (search, answer flow, tool, ingest scripts).
+# boto3 is only imported when a live AWS call is made, so the tests don't need AWS.
+boto3==1.43.123
+numpy==2.5.4
+pydantic==2.14.2
