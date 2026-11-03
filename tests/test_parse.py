@@ -307,3 +307,45 @@ def test_status_rejects_unknown_value_and_missing_fields(tmp_path):
 def test_committed_status_file_applies(records):
     """If corpus/status.json exists, every entry matches something (checked in apply_status)."""
     assert {r["status"] for r in records} <= P.STATUSES
+
+
+# ------------------------------------------------ the committed status register
+
+def test_status_counts_pinned(records):
+    assert Counter(r["status"] for r in records) == {
+        "in_force": 3314, "mixed": 38, "nullified": 38, "vacated": 10}
+
+
+@pytest.mark.parametrize("pid,status", [
+    ("1026.52(b)(1)(ii)", "mixed"),          # the $8 late-fee sentence
+    ("1026.52(b)(1)(ii)(A)", "vacated"),     # $32
+    ("1026.52(b)(1)(ii)(D)", "in_force"),    # only a cross-reference was shortened
+    ("1026.52(b)(3)(ii)", "vacated"),        # subtree entry
+    ("1026.52(b)(3)(i)-1", "vacated"),       # commentary under the subtree
+    ("1026.52(b)(2)", "in_force"),           # untouched by the rule
+    ("1026.62(d)(1)(ii)", "nullified"),      # "$5." in the overdraft section
+    ("1026.4(b)(12)(iii)(A)", "nullified"),
+    ("1005.10(e)(1)", "mixed"),
+    ("1026.3(i)", "in_force"),               # AVM rule, same eCFR date, in force
+    ("1026.2(a)(11)", "in_force"),           # AVM rule
+])
+def test_status_of_key_provisions(by_id, pid, status):
+    assert by_id[pid]["status"] == status
+
+
+def test_flagged_provisions_carry_a_note(records):
+    for r in records:
+        assert (r["status"] == "in_force") == (r["status_note"] is None), r["id"]
+
+
+def test_status_register_is_consistent(by_id):
+    doc = json.loads(P.STATUS.read_text(encoding="utf-8"))
+    for e in doc["entries"]:
+        assert e["rule"] in doc["rules"]
+        if e["change"] == "amended":
+            # the corpus really shows the amended text, not the text before the rule
+            assert " ".join(e["text_before_rule"].split()) != " ".join(by_id[e["id"]]["text"].split())
+    for m in doc["missing_in_force"]:
+        assert m["id"] not in by_id
+    flagged = {e["id"] for e in doc["entries"]}
+    assert not flagged & {n["id"] for n in doc["not_flagged"]}

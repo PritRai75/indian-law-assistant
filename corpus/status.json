@@ -1,0 +1,681 @@
+{
+ "about": "Provisions of the corpus that the eCFR prints but that are not law in force, hand-checked. Read by ingest/parse.py: each entry sets `status` and `status_note` on the provision with that ID (with \"subtree\": true, also on everything under it, commentary included). Status values: vacated, nullified (Congressional Review Act), mixed (in-force text with wording from either rule). Everything not listed is in_force.",
+ "corpus_as_of": "2026-10-23",
+ "checked": "2026-11-03",
+ "method": "ingest/compare.py diffs of the eCFR on 2024-05-13 vs 2024-05-20 (late-fee rule, applied in two steps) and 2025-09-30 vs 2025-10-01 (overdraft rule, same day as the AVM rule); every changed provision classified by reading its full before/after text. `text_before_rule` is the eCFR text the day before the rule was applied, kept for reference only: whether it is the text in force today is not established here.",
+ "rules": {
+  "late_fee_2024": {
+   "name": "Credit Card Penalty Fees (Regulation Z)",
+   "citation": "89 FR 19128 (15 Mar 2024)",
+   "in_ecfr": "applied 2024-05-14, with a commentary correction on 2024-05-20",
+   "status": "vacated",
+   "what_happened": "Vacated by the U.S. District Court for the Northern District of Texas in April 2025, so its changes never took effect.",
+   "sources": [
+    "https://www.federalregister.gov/documents/2024/03/15/2024-05011/credit-card-penalty-fees-regulation-z",
+    "https://www.consumerfinancemonitor.com/2025/04/16/federal-judge-voids-cfpb-credit-card-late-fee-rule/"
+   ]
+  },
+  "overdraft_2024": {
+   "name": "Overdraft Lending: Very Large Financial Institutions",
+   "citation": "89 FR 106768 (30 Dec 2024)",
+   "in_ecfr": "applied 2025-10-01",
+   "status": "nullified",
+   "what_happened": "Disapproved by Congress under the Congressional Review Act (S.J.Res. 18, Pub. L. 119-10, May 2025): treated as never having taken effect.",
+   "sources": [
+    "https://www.federalregister.gov/documents/2024/12/30/2024-29699/overdraft-lending-very-large-financial-institutions",
+    "https://www.congress.gov/119/plaws/publ10/PLAW-119publ10.htm",
+    "https://www.everycrsreport.com/reports/IN12513.html"
+   ]
+  }
+ },
+ "entries": [
+  {
+   "id": "1026.52(b)(1)(ii)",
+   "status": "mixed",
+   "rule": "late_fee_2024",
+   "change": "amended",
+   "what_changed": "adds the $8 late-fee safe harbor; other limits now apply to 'other types of violations'",
+   "note": "Contains wording from the 2024 credit card penalty fees rule (89 FR 19128), which a federal court vacated in April 2025; that wording is not law in force, the rest is unchanged from before the rule.",
+   "source": "https://www.consumerfinancemonitor.com/2025/04/16/federal-judge-voids-cfpb-credit-card-late-fee-rule/",
+   "text_before_rule": "(ii) Safe harbors. A card issuer may impose a fee for violating the terms or other requirements of an account if the dollar amount of the fee does not exceed, as applicable:"
+  },
+  {
+   "id": "1026.52(b)(1)(ii)(A)",
+   "status": "vacated",
+   "rule": "late_fee_2024",
+   "change": "amended",
+   "what_changed": "safe-harbor amount changed from $30 to $32",
+   "note": "Added or set by the 2024 credit card penalty fees rule (89 FR 19128), which a federal court vacated in April 2025; not law in force.",
+   "source": "https://www.consumerfinancemonitor.com/2025/04/16/federal-judge-voids-cfpb-credit-card-late-fee-rule/",
+   "text_before_rule": "(A) $30;"
+  },
+  {
+   "id": "1026.52(b)(1)(ii)(B)",
+   "status": "vacated",
+   "rule": "late_fee_2024",
+   "change": "amended",
+   "what_changed": "safe-harbor amount changed from $41 to $43",
+   "note": "Added or set by the 2024 credit card penalty fees rule (89 FR 19128), which a federal court vacated in April 2025; not law in force.",
+   "source": "https://www.consumerfinancemonitor.com/2025/04/16/federal-judge-voids-cfpb-credit-card-late-fee-rule/",
+   "text_before_rule": "(B) $41 if the card issuer previously imposed a fee pursuant to paragraph (b)(1)(ii)(A) of this section for a violation of the same type that occurred during the same billing cycle or one of the next six billing cycles; or"
+  },
+  {
+   "id": "1026.52(b)(1)(ii)(C)",
+   "status": "mixed",
+   "rule": "late_fee_2024",
+   "change": "amended",
+   "what_changed": "adds 'notwithstanding the limitation on the amount of a late payment fee'",
+   "note": "Contains wording from the 2024 credit card penalty fees rule (89 FR 19128), which a federal court vacated in April 2025; that wording is not law in force, the rest is unchanged from before the rule.",
+   "source": "https://www.consumerfinancemonitor.com/2025/04/16/federal-judge-voids-cfpb-credit-card-late-fee-rule/",
+   "text_before_rule": "(C) Three percent of the delinquent balance on a charge card account that requires payment of outstanding balances in full at the end of each billing cycle if the card issuer has not received the required payment for two or more consecutive billing cycles."
+  },
+  {
+   "id": "1026.52(b)(1)(ii)(E)",
+   "status": "vacated",
+   "rule": "late_fee_2024",
+   "change": "added",
+   "what_changed": "new: smaller card issuer exception",
+   "note": "Added or set by the 2024 credit card penalty fees rule (89 FR 19128), which a federal court vacated in April 2025; not law in force.",
+   "source": "https://www.consumerfinancemonitor.com/2025/04/16/federal-judge-voids-cfpb-credit-card-late-fee-rule/"
+  },
+  {
+   "id": "1026.52(b)(3)",
+   "subtree": true,
+   "status": "vacated",
+   "rule": "late_fee_2024",
+   "change": "added",
+   "what_changed": "new: smaller card issuer definition and its commentary",
+   "note": "Added or set by the 2024 credit card penalty fees rule (89 FR 19128), which a federal court vacated in April 2025; not law in force.",
+   "source": "https://www.consumerfinancemonitor.com/2025/04/16/federal-judge-voids-cfpb-credit-card-late-fee-rule/"
+  },
+  {
+   "id": "1026.58(b)(6)",
+   "status": "mixed",
+   "rule": "late_fee_2024",
+   "change": "amended",
+   "what_changed": "extends the 'open credit card account' definition to § 1026.52",
+   "note": "Contains wording from the 2024 credit card penalty fees rule (89 FR 19128), which a federal court vacated in April 2025; that wording is not law in force, the rest is unchanged from before the rule.",
+   "source": "https://www.consumerfinancemonitor.com/2025/04/16/federal-judge-voids-cfpb-credit-card-late-fee-rule/",
+   "text_before_rule": "(6) Open account. For purposes of this section, an account is an “open account” or “open credit card account” if it is a credit card account under an open-end (not home-secured) consumer credit plan and either:"
+  },
+  {
+   "id": "1026.7(b)(11)-4",
+   "status": "mixed",
+   "rule": "late_fee_2024",
+   "change": "amended",
+   "what_changed": "example changed from 'up to $29' to 'up to $8'",
+   "note": "Contains wording from the 2024 credit card penalty fees rule (89 FR 19128), which a federal court vacated in April 2025; that wording is not law in force, the rest is unchanged from before the rule.",
+   "source": "https://www.consumerfinancemonitor.com/2025/04/16/federal-judge-voids-cfpb-credit-card-late-fee-rule/",
+   "text_before_rule": "4. Range of late fees or penalty rates. A card issuer that imposes a range of late payment fees or rates on a credit card account under an open-end (not home-secured) consumer credit plan may state the highest fee or rate along with an indication lower fees or rates could be imposed. For example, a phrase indicating the late payment fee could be “up to $29” complies with this requirement."
+  },
+  {
+   "id": "1026.52(a)(1)-1",
+   "status": "mixed",
+   "rule": "late_fee_2024",
+   "change": "amended",
+   "what_changed": "examples changed from a $15 to an $8 late fee; adds 'not a smaller card issuer'",
+   "note": "Contains wording from the 2024 credit card penalty fees rule (89 FR 19128), which a federal court vacated in April 2025; that wording is not law in force, the rest is unchanged from before the rule.",
+   "source": "https://www.consumerfinancemonitor.com/2025/04/16/federal-judge-voids-cfpb-credit-card-late-fee-rule/",
+   "text_before_rule": "1. Application. The 25 percent limit in § 1026.52(a)(1) applies to fees that the card issuer charges to the account as well as to fees that the card issuer requires the consumer to pay with respect to the account through other means (such as through a payment from the consumer's asset account, including a prepaid account as defined in § 1026.61, to the card issuer or from another credit account provided by the card issuer). For example:\ni. Assume that, under the terms of a credit card account, a consumer is required to pay $120 in fees for the issuance or availability of credit at account opening. The consumer is also required to pay a cash advance fee that is equal to five percent of the cash advance and a late payment fee of $15 if the required minimum periodic payment is not received by the payment due date (which is the twenty-fifth of the month). At account opening on January 1 of year one, the credit limit for the account is $500. Section 1026.52(a)(1) permits the card issuer to charge to the account the $120 in fees for the issuance or availability of credit at account opening. On February 1 of year one, the consumer uses the account for a $100 cash advance. Section 1026.52(a)(1) permits the card issuer to charge a $5 cash-advance fee to the account. On March 26 of year one, the card issuer has not received the consumer's required minimum periodic payment. Section 1026.52(a)(2) permits the card issuer to charge a $15 late payment fee to the account. On July 15 of year one, the consumer uses the account for a $50 cash advance. Section 1026.52(a)(1) does not permit the card issuer to charge a $2.50 cash advance fee to the account. Furthermore, § 1026.52(a)(1) prohibits the card issuer from collecting the $2.50 cash advance fee from the consumer by other means.\nii. Assume that, under the terms of a credit card account, a consumer is required to pay $125 in fees for the issuance or availability of credit during the first year after account opening. At account opening on January 1 of year one, the credit limit for the account is $500. Section 1026.52(a)(1) permits the card issuer to charge the $125 in fees to the account. However, § 1026.52(a)(1) prohibits the card issuer from requiring the consumer to make payments to the card issuer for additional non-exempt fees with respect to the account during the first year after account opening. Section 1026.52(a)(1) also prohibits the card issuer from requiring the consumer to open a separate credit account with the card issuer to fund the payment of additional non-exempt fees during the first year after the credit card account is opened.\niii. Assume that a consumer opens a prepaid account accessed by a prepaid card on January 1 of year one and opens a covered separate credit feature accessible by a hybrid prepaid-credit card as defined by § 1026.61 that is a credit card account under an open-end (not home-secured) consumer credit plan on March 1 of year one. Assume that, under the terms of the covered separate credit feature accessible by the hybrid prepaid-credit card, a consumer is required to pay $50 in fees for the issuance or availability of credit at account opening. At credit account opening on March 1 of year one, the credit limit for the account is $200. Section 1026.52(a)(1) permits the card issuer to charge the $50 in fees to the credit account. However, § 1026.52(a)(1) prohibits the card issuer from requiring the consumer to make payments to the card issuer for additional non-exempt fees with respect to the credit account during the first year after account opening. Section 1026.52(a)(1) also prohibits the card issuer from requiring the consumer to open an additional credit feature with the card issuer to fund the payment of additional non-exempt fees during the first year after the covered separate credit feature is opened.\niv. Assume that a consumer opens a prepaid account accessed by a prepaid card on January 1 of year one and opens a covered separate credit feature accessible by a hybrid prepaid-credit card as defined in § 1026.61 that is a credit card account under an open-end (not home-secured) consumer credit plan on March 1 of year one. Assume that, under the terms of the covered separate credit feature accessible by the hybrid prepaid-credit card, a consumer is required to pay $120 in fees for the issuance or availability of credit at account opening. The consumer is also required to pay a cash advance fee that is equal to 5 percent of any cash advance and a late payment fee of $15 if the required minimum periodic payment is not received by the payment due date (which is the 25th of the month). At credit account opening on March 1 of year one, the credit limit for the account is $500. Section 1026.52(a)(1) permits the card issuer to charge to the account the $120 in fees for the issuance or availability of credit at account opening. On April 1 of year one, the consumer uses the account for a $100 cash advance. Section 1026.52(a)(1) permits the card issuer to charge a $5 cash advance fee to the account. On April 26 of year one, the card issuer has not received the consumer's required minimum periodic payment. Section 1026.52(a)(2) permits the card issuer to charge a $15 late payment fee to the account. On July 15 of year one, the consumer uses the account for a $50 cash advance. Section 1026.52(a)(1) does not permit the card issuer to charge a $2.50 cash advance fee to the account, because the total amount of non-exempt fees reached the 25 percent limit with the $5 cash advance fee on April 1 (the $15 late fee on April 26 is exempt pursuant to § 1026.52(a)(2)(i)). Furthermore, § 1026.52(a)(1) prohibits the card issuer from collecting the $2.50 cash advance fee from the consumer by other means."
+  },
+  {
+   "id": "1026.52(b)-1",
+   "status": "mixed",
+   "rule": "late_fee_2024",
+   "change": "amended",
+   "what_changed": "adds a definition of late payment fee",
+   "note": "Contains wording from the 2024 credit card penalty fees rule (89 FR 19128), which a federal court vacated in April 2025; that wording is not law in force, the rest is unchanged from before the rule.",
+   "source": "https://www.consumerfinancemonitor.com/2025/04/16/federal-judge-voids-cfpb-credit-card-late-fee-rule/",
+   "text_before_rule": "1. Fees for violating the account terms or other requirements. For purposes of § 1026.52(b), a fee includes any charge imposed by a card issuer based on an act or omission that violates the terms of the account or any other requirements imposed by the card issuer with respect to the account, other than charges attributable to periodic interest rates. Accordingly, for purposes of § 1026.52(b), a fee does not include charges attributable to an increase in an annual percentage rate based on an act or omission that violates the terms or other requirements of an account.\ni. The following are examples of fees that are subject to the limitations in § 1026.52(b) or are prohibited by § 1026.52(b):\nA. Late payment fees and any other fees imposed by a card issuer if an account becomes delinquent or if a payment is not received by a particular date.\nB. Returned payment fees and any other fees imposed by a card issuer if a payment received via check, automated clearing house, or other payment method is returned.\nC. Any fee or charge for an over-the-limit transaction as defined in § 1026.56(a), to the extent the imposition of such a fee or charge is permitted by § 1026.56.\nD. Any fee imposed by a card issuer if payment on a check that accesses a credit card account is declined.\nE. Any fee or charge for a transaction that the card issuer declines to authorize. See § 1026.52(b)(2)(i)(B).\nF. Any fee imposed by a card issuer based on account inactivity (including the consumer's failure to use the account for a particular number or dollar amount of transactions or a particular type of transaction). See § 1026.52(b)(2)(i)(B).\nG. Any fee imposed by a card issuer based on the closure or termination of an account. See § 1026.52(b)(2)(i)(B).\nii. The following are examples of fees to which § 1026.52(b) does not apply:\nA. Balance transfer fees.\nB. Cash advance fees.\nC. Foreign transaction fees.\nD. Annual fees and other fees for the issuance or availability of credit described in § 1026.60(b)(2), except to the extent that such fees are based on account inactivity. See § 1026.52(b)(2)(i)(B).\nE. Fees for insurance described in § 1026.4(b)(7) or debt cancellation or debt suspension coverage described in § 1026.4(b)(10) written in connection with a credit transaction, provided that such fees are not imposed as a result of a violation of the account terms or other requirements of an account.\nF. Fees for making an expedited payment (to the extent permitted by § 1026.10(e)).\nG. Fees for optional services (such as travel insurance).\nH. Fees for reissuing a lost or stolen card."
+  },
+  {
+   "id": "1026.52(b)-2",
+   "status": "mixed",
+   "rule": "late_fee_2024",
+   "change": "amended",
+   "what_changed": "rounding example amounts changed ($21.50/$22 to $5.50/$6)",
+   "note": "Contains wording from the 2024 credit card penalty fees rule (89 FR 19128), which a federal court vacated in April 2025; that wording is not law in force, the rest is unchanged from before the rule.",
+   "source": "https://www.consumerfinancemonitor.com/2025/04/16/federal-judge-voids-cfpb-credit-card-late-fee-rule/",
+   "text_before_rule": "2. Rounding to nearest whole dollar. A card issuer may round any fee that complies with § 1026.52(b) to the nearest whole dollar. For example, if § 1026.52(b) permits a card issuer to impose a late payment fee of $21.50, the card issuer may round that amount up to the nearest whole dollar and impose a late payment fee of $22. However, if the late payment fee permitted by § 1026.52(b) were $21.49, the card issuer would not be permitted to round that amount up to $22, although the card issuer could round that amount down and impose a late payment fee of $21."
+  },
+  {
+   "id": "1026.52(b)-5",
+   "status": "vacated",
+   "rule": "late_fee_2024",
+   "change": "added",
+   "what_changed": "new: dollar examples based on the $8 late-fee threshold",
+   "note": "Added or set by the 2024 credit card penalty fees rule (89 FR 19128), which a federal court vacated in April 2025; not law in force.",
+   "source": "https://www.consumerfinancemonitor.com/2025/04/16/federal-judge-voids-cfpb-credit-card-late-fee-rule/"
+  },
+  {
+   "id": "1026.52(b)(1)-1",
+   "status": "mixed",
+   "rule": "late_fee_2024",
+   "change": "amended",
+   "what_changed": "examples rewritten around the $8 late fee and over-the-limit fees",
+   "note": "Contains wording from the 2024 credit card penalty fees rule (89 FR 19128), which a federal court vacated in April 2025; that wording is not law in force, the rest is unchanged from before the rule.",
+   "source": "https://www.consumerfinancemonitor.com/2025/04/16/federal-judge-voids-cfpb-credit-card-late-fee-rule/",
+   "text_before_rule": "1. Relationship between § 1026.52(b)(1)(i), (b)(1)(ii), and (b)(2). i. Relationship between § 1026.52(b)(1)(i) and (b)(1)(ii). A card issuer may impose a fee for violating the terms or other requirements of an account pursuant to either § 1026.52(b)(1)(i) or (b)(1)(ii).\nA. A card issuer that complies with the safe harbors in § 1026.52(b)(1)(ii) is not required to determine that its fees represent a reasonable proportion of the total costs incurred by the card issuer as a result of a type of violation under § 1026.52(b)(1)(i).\nB. A card issuer may impose a fee for one type of violation pursuant to § 1026.52(b)(1)(i) and may impose a fee for a different type of violation pursuant to § 1026.52(b)(1)(ii). For example, a card issuer may impose a late payment fee of $30 based on a cost determination pursuant to § 1026.52(b)(1)(i) but impose returned payment and over-the-limit fees of $25 or $35 pursuant to the safe harbors in § 1026.52(b)(1)(ii).\nC. A card issuer that previously based the amount of a penalty fee for a particular type of violation on a cost determination pursuant to § 1026.52(b)(1)(i) may begin to impose a penalty fee for that type of violation that is consistent with § 1026.52(b)(1)(ii) at any time (subject to the notice requirements in § 1026.9), provided that the first fee imposed pursuant to § 1026.52(b)(1)(ii) is consistent with § 1026.52(b)(1)(ii)(A). For example, assume that a late payment occurs on January 15 and that, based on a cost determination pursuant to § 1026.52(b)(1)(i), the card issuer imposes a $30 late payment fee. Another late payment occurs on July 15. The card issuer may impose another $30 late payment fee pursuant to § 1026.52(b)(1)(i) or may impose a $25 late payment fee pursuant to § 1026.52(b)(1)(ii)(A). However, the card issuer may not impose a $35 late payment fee pursuant to § 1026.52(b)(1)(ii)(B). If the card issuer imposes a $25 fee pursuant to § 1026.52(b)(1)(ii)(A) for the July 15 late payment and another late payment occurs on September 15, the card issuer may impose a $35 fee for the September 15 late payment pursuant to § 1026.52(b)(1)(ii)(B).\nii. Relationship between § 1026.52(b)(1) and (b)(2). Section 1026.52(b)(1) does not permit a card issuer to impose a fee that is inconsistent with the prohibitions in § 1026.52(b)(2). For example, if § 1026.52(b)(2)(i) prohibits the card issuer from imposing a late payment fee that exceeds $15, § 1026.52(b)(1)(ii) does not permit the card issuer to impose a higher late payment fee."
+  },
+  {
+   "id": "1026.52(b)(1)(i)-2",
+   "status": "mixed",
+   "rule": "late_fee_2024",
+   "change": "amended",
+   "what_changed": "adds post-charge-off collection costs to the excluded amounts",
+   "note": "Contains wording from the 2024 credit card penalty fees rule (89 FR 19128), which a federal court vacated in April 2025; that wording is not law in force, the rest is unchanged from before the rule.",
+   "source": "https://www.consumerfinancemonitor.com/2025/04/16/federal-judge-voids-cfpb-credit-card-late-fee-rule/",
+   "text_before_rule": "2. Amounts excluded from cost analysis. The following amounts are not costs incurred by a card issuer as a result of violations of the terms or other requirements of an account for purposes of § 1026.52(b)(1)(i):\ni. Losses and associated costs (including the cost of holding reserves against potential losses and the cost of funding delinquent accounts).\nii. Costs associated with evaluating whether consumers who have not violated the terms or other requirements of an account are likely to do so in the future (such as the costs associated with underwriting new accounts). However, once a violation of the terms or other requirements of an account has occurred, the costs associated with preventing additional violations for a reasonable period of time are costs incurred by a card issuer as a result of violations of the terms or other requirements of an account for purposes of § 1026.52(b)(1)(i)."
+  },
+  {
+   "id": "1026.52(b)(1)(ii)-1",
+   "status": "mixed",
+   "rule": "late_fee_2024",
+   "change": "amended",
+   "what_changed": "adds the $8 limit for issuers other than smaller card issuers; examples rewritten",
+   "note": "Contains wording from the 2024 credit card penalty fees rule (89 FR 19128), which a federal court vacated in April 2025; that wording is not law in force, the rest is unchanged from before the rule.",
+   "source": "https://www.consumerfinancemonitor.com/2025/04/16/federal-judge-voids-cfpb-credit-card-late-fee-rule/",
+   "text_before_rule": "1. Multiple violations of same type. i. Same billing cycle or next six billing cycles. A card issuer cannot impose a fee for a violation pursuant to § 1026.52(b)(1)(ii)(B) unless a fee has previously been imposed for the same type of violation pursuant to § 1026.52(b)(1)(ii)(A). Once a fee has been imposed for a violation pursuant to § 1026.52(b)(1)(ii)(A), the card issuer may impose a fee pursuant to § 1026.52(b)(1)(ii)(B) for any subsequent violation of the same type until that type of violation has not occurred for a period of six consecutive complete billing cycles. A fee has been imposed for purposes of § 1026.52(b)(1)(ii) even if the card issuer waives or rebates all or part of the fee.\nA. Late payments. For purposes of § 1026.52(b)(1)(ii), a late payment occurs during the billing cycle in which the payment may first be treated as late consistent with the requirements of this part and the terms or other requirements of the account.\nB. Returned payments. For purposes of § 1026.52(b)(1)(ii), a returned payment occurs during the billing cycle in which the payment is returned to the card issuer.\nC. Transactions that exceed the credit limit. For purposes of § 1026.52(b)(1)(ii), a transaction that exceeds the credit limit for an account occurs during the billing cycle in which the transaction occurs or is authorized by the card issuer.\nD. Declined access checks. For purposes of § 1026.52(b)(1)(ii), a check that accesses a credit card account is declined during the billing cycle in which the card issuer declines payment on the check.\nii. Relationship to §§ 1026.52(b)(2)(ii) and 1026.56(j)(1). If multiple violations are based on the same event or transaction such that § 1026.52(b)(2)(ii) prohibits the card issuer from imposing more than one fee, the event or transaction constitutes a single violation for purposes of § 1026.52(b)(1)(ii). Furthermore, consistent with § 1026.56(j)(1)(i), no more than one violation for exceeding an account's credit limit can occur during a single billing cycle for purposes of § 1026.52(b)(1)(ii). However, § 1026.52(b)(2)(ii) does not prohibit a card issuer from imposing fees for exceeding the credit limit in consecutive billing cycles based on the same over-the-limit transaction to the extent permitted by § 1026.56(j)(1). In these circumstances, the second and third over-the-limit fees permitted by § 1026.56(j)(1) may be imposed pursuant to § 1026.52(b)(1)(ii)(B). See comment 52(b)(2)(ii)-1.\niii. Examples. The following examples illustrate the application of § 1026.52(b)(1)(ii)(A) and (b)(1)(ii)(B) with respect to credit card accounts under an open-end (not home-secured) consumer credit plan that are not charge card accounts. For purposes of these examples, assume that the billing cycles for the account begin on the first day of the month and end on the last day of the month and that the payment due date for the account is the twenty-fifth day of the month.\nA. Violations of same type (late payments). A required minimum periodic payment of $50 is due on March 25. On March 26, a late payment has occurred because no payment has been received. Accordingly, consistent with § 1026.52(b)(1)(ii)(A), the card issuer imposes a $25 late payment fee on March 26. In order for the card issuer to impose a $35 late payment fee pursuant to § 1026.52(b)(1)(ii)(B), a second late payment must occur during the April, May, June, July, August, or September billing cycles.\n1. The card issuer does not receive any payment during the March billing cycle. A required minimum periodic payment of $100 is due on April 25. On April 20, the card issuer receives a $50 payment. No further payment is received during the April billing cycle. Accordingly, consistent with § 1026.52(b)(1)(ii)(B), the card issuer may impose a $35 late payment fee on April 26. Furthermore, the card issuer may impose a $35 late payment fee for any late payment that occurs during the May, June, July, August, September, or October billing cycles.\n2. Same facts as in paragraph A above. On March 30, the card issuer receives a $50 payment and the required minimum periodic payments for the April, May, June, July, August, and September billing cycles are received on or before the payment due date. A required minimum periodic payment of $60 is due on October 25. On October 26, a late payment has occurred because the required minimum periodic payment due on October 25 has not been received. However, because this late payment did not occur during the six billing cycles following the March billing cycle, § 1026.52(b)(1)(ii) only permits the card issuer to impose a late payment fee of $25.\nB. Violations of different types (late payment and over the credit limit). The credit limit for an account is $1,000. Consistent with § 1026.56, the consumer has affirmatively consented to the payment of transactions that exceed the credit limit. A required minimum periodic payment of $30 is due on August 25. On August 26, a late payment has occurred because no payment has been received. Accordingly, consistent with § 1026.52(b)(1)(ii)(A), the card issuer imposes a $25 late payment fee on August 26. On August 30, the card issuer receives a $30 payment. On September 10, a transaction causes the account balance to increase to $1,150, which exceeds the account's $1,000 credit limit. On September 11, a second transaction increases the account balance to $1,350. On September 23, the card issuer receives the $50 required minimum periodic payment due on September 25, which reduces the account balance to $1,300. On September 30, the card issuer imposes a $25 over-the-limit fee, consistent with § 1026.52(b)(1)(ii)(A). On October 26, a late payment has occurred because the $60 required minimum periodic payment due on October 25 has not been received. Accordingly, consistent with § 1026.52(b)(1)(ii)(B), the card issuer imposes a $35 late payment fee on October 26.\nC. Violations of different types (late payment and returned payment). A required minimum periodic payment of $50 is due on July 25. On July 26, a late payment has occurred because no payment has been received. Accordingly, consistent with § 1026.52(b)(1)(ii)(A), the card issuer imposes a $25 late payment fee on July 26. On July 30, the card issuer receives a $50 payment. A required minimum periodic payment of $50 is due on August 25. On August 24, a $50 payment is received. On August 27, the $50 payment is returned to the card issuer for insufficient funds. In these circumstances, § 1026.52(b)(2)(ii) permits the card issuer to impose either a late payment fee or a returned payment fee but not both because the late payment and the returned payment result from the same event or transaction. Accordingly, for purposes of § 1026.52(b)(1)(ii), the event or transaction constitutes a single violation. However, if the card issuer imposes a late payment fee, § 1026.52(b)(1)(ii)(B) permits the issuer to impose a fee of $35 because the late payment occurred during the six billing cycles following the July billing cycle. In contrast, if the card issuer imposes a returned payment fee, the amount of the fee may be no more than $25 pursuant to § 1026.52(b)(1)(ii)(A)."
+  },
+  {
+   "id": "1026.52(b)(1)(ii)-2",
+   "status": "mixed",
+   "rule": "late_fee_2024",
+   "change": "amended",
+   "what_changed": "adds historical item J ($30/$41 'through May 13, 2024')",
+   "note": "Contains wording from the 2024 credit card penalty fees rule (89 FR 19128), which a federal court vacated in April 2025; that wording is not law in force, the rest is unchanged from before the rule.",
+   "source": "https://www.consumerfinancemonitor.com/2025/04/16/federal-judge-voids-cfpb-credit-card-late-fee-rule/",
+   "text_before_rule": "2. Adjustments based on Consumer Price Index. For purposes of § 1026.52(b)(1)(ii)(A) and (b)(1)(ii)(B), the Bureau shall calculate each year price level adjusted amounts using the Consumer Price Index in effect on June 1 of that year. When the cumulative change in the adjusted minimum value derived from applying the annual Consumer Price level to the current amounts in § 1026.52(b)(1)(ii)(A) and (b)(1)(ii)(B) has risen by a whole dollar, those amounts will be increased by $1.00. Similarly, when the cumulative change in the adjusted minimum value derived from applying the annual Consumer Price level to the current amounts in § 1026.52(b)(1)(ii)(A) and (b)(1)(ii)(B) has decreased by a whole dollar, those amounts will be decreased by $1.00. The Bureau will publish adjustments to the amounts in § 1026.52(b)(1)(ii)(A) and (b)(1)(ii)(B).\ni. Historical thresholds.\nA. Card issuers were permitted to impose a fee for violating the terms of an agreement if the fee did not exceed $25 under § 1026.52(b)(1)(ii)(A) and $35 under § 1026.52(b)(1)(ii)(B), through December 31, 2013.\nB. Card issuers were permitted to impose a fee for violating the terms of an agreement if the fee did not exceed $26 under § 1026.52(b)(1)(ii)(A) and $37 under § 1026.52(b)(1)(ii)(B), through December 31, 2014.\nC. Card issuers were permitted to impose a fee for violating the terms of an agreement if the fee did not exceed $27 under § 1026.52(b)(1)(ii)(A) and $38 under § 1026.52(b)(1)(ii)(B), through December 31, 2015.\nD. Card issuers were permitted to impose a fee for violating the terms of an agreement if the fee did not exceed $27 under § 1026.52(b)(1)(ii)(A), through December 31, 2016. Card issuers were permitted to impose a fee for violating the terms of an agreement if the fee did not exceed $37 under § 1026.52(b)(1)(ii)(B), through June 26, 2016, and $38 under § 1026.52(b)(1)(ii)(B) from June 27, 2016 through December 31, 2016.\nE. Card issuers were permitted to impose a fee for violating the terms of an agreement if the fee did not exceed $27 under § 1026.52(b)(1)(ii)(A) and $38 under § 1026.52(b)(1)(ii)(B), through December 31, 2017.\nF. Card issuers were permitted to impose a fee for violating the terms of an agreement if the fee did not exceed $27 under § 1026.52(b)(1)(ii)(A) and $38 under § 1026.52(b)(1)(ii)(B), through December 31, 2018.\nG. Card issuers were permitted to impose a fee for violating the terms of an agreement if the fee did not exceed $28 under § 1026.52(b)(1)(ii)(A) and $39 under § 1026.52(b)(1)(ii)(B), through December 31, 2019.\nH. Card issuers were permitted to impose a fee for violating the terms of an agreement if the fee did not exceed $29 under § 1026.52(b)(1)(ii)(A) and $40 under § 1026.52(b)(1)(ii)(B), through December 31, 2020.\nI. Card issuers were permitted to impose a fee for violating the terms of an agreement if the fee did not exceed $29 under § 1026.52(b)(1)(ii)(A) and $40 under § 1026.52(b)(1)(ii)(B), through December 31, 2021."
+  },
+  {
+   "id": "1026.52(b)(1)(ii)-3",
+   "status": "mixed",
+   "rule": "late_fee_2024",
+   "change": "amended",
+   "what_changed": "charge-card example figures changed; adds 'not a smaller card issuer'",
+   "note": "Contains wording from the 2024 credit card penalty fees rule (89 FR 19128), which a federal court vacated in April 2025; that wording is not law in force, the rest is unchanged from before the rule.",
+   "source": "https://www.consumerfinancemonitor.com/2025/04/16/federal-judge-voids-cfpb-credit-card-late-fee-rule/",
+   "text_before_rule": "3. Delinquent balance for charge card accounts. Section 1026.52(b)(1)(ii)(C) provides that, when a charge card issuer that requires payment of outstanding balances in full at the end of each billing cycle has not received the required payment for two or more consecutive billing cycles, the card issuer may impose a late payment fee that does not exceed three percent of the delinquent balance. For purposes of § 1026.52(b)(1)(ii)(C), the delinquent balance is any previously billed amount that remains unpaid at the time the late payment fee is imposed pursuant to § 1026.52(b)(1)(ii)(C). Consistent with § 1026.52(b)(2)(ii), a charge card issuer that imposes a fee pursuant to § 1026.52(b)(1)(ii)(C) with respect to a late payment may not impose a fee pursuant to § 1026.52(b)(1)(ii)(B) with respect to the same late payment. The following examples illustrate the application of § 1026.52(b)(1)(ii)(C):\ni. Assume that a charge card issuer requires payment of outstanding balances in full at the end of each billing cycle and that the billing cycles for the account begin on the first day of the month and end on the last day of the month. At the end of the June billing cycle, the account has a balance of $1,000. On July 5, the card issuer provides a periodic statement disclosing the $1,000 balance consistent with § 1026.7. During the July billing cycle, the account is used for $300 in transactions, increasing the balance to $1,300. At the end of the July billing cycle, no payment has been received and the card issuer imposes a $25 late payment fee consistent with § 1026.52(b)(1)(ii)(A). On August 5, the card issuer provides a periodic statement disclosing the $1,325 balance consistent with § 1026.7. During the August billing cycle, the account is used for $200 in transactions, increasing the balance to $1,525. At the end of the August billing cycle, no payment has been received. Consistent with § 1026.52(b)(1)(ii)(C), the card issuer may impose a late payment fee of $40, which is 3% of the $1,325 balance that was due at the end of the August billing cycle. Section 1026.52(b)(1)(ii)(C) does not permit the card issuer to include the $200 in transactions that occurred during the August billing cycle.\nii. Same facts as above except that, on August 25, a $100 payment is received. Consistent with § 1026.52(b)(1)(ii)(C), the card issuer may impose a late payment fee of $37, which is 3% of the unpaid portion of the $1,325 balance that was due at the end of the August billing cycle ($1,225).\niii. Same facts as in paragraph A above except that, on August 25, a $200 payment is received. Consistent with § 1026.52(b)(1)(ii)(C), the card issuer may impose a late payment fee of $34, which is 3% of the unpaid portion of the $1,325 balance that was due at the end of the August billing cycle ($1,125). In the alternative, the card issuer may impose a late payment fee of $35 consistent with § 1026.52(b)(1)(ii)(B). However, § 1026.52(b)(2)(ii) prohibits the card issuer from imposing both fees."
+  },
+  {
+   "id": "1026.52(b)(1)(ii)-4",
+   "status": "vacated",
+   "rule": "late_fee_2024",
+   "change": "added",
+   "what_changed": "new: smaller card issuers",
+   "note": "Added or set by the 2024 credit card penalty fees rule (89 FR 19128), which a federal court vacated in April 2025; not law in force.",
+   "source": "https://www.consumerfinancemonitor.com/2025/04/16/federal-judge-voids-cfpb-credit-card-late-fee-rule/"
+  },
+  {
+   "id": "1026.52(b)(2)(ii)-1",
+   "status": "mixed",
+   "rule": "late_fee_2024",
+   "change": "amended",
+   "what_changed": "examples changed to an $8 late fee; adds 'not a smaller card issuer'",
+   "note": "Contains wording from the 2024 credit card penalty fees rule (89 FR 19128), which a federal court vacated in April 2025; that wording is not law in force, the rest is unchanged from before the rule.",
+   "source": "https://www.consumerfinancemonitor.com/2025/04/16/federal-judge-voids-cfpb-credit-card-late-fee-rule/",
+   "text_before_rule": "1. Single event or transaction. Section 1026.52(b)(2)(ii) prohibits a card issuer from imposing more than one fee for violating the terms or other requirements of an account based on a single event or transaction. If § 1026.56(j)(1) permits a card issuer to impose fees for exceeding the credit limit in consecutive billing cycles based on the same over-the-limit transaction, those fees are not based on a single event or transaction for purposes of § 1026.52(b)(2)(ii). The following examples illustrate the application of § 1026.52(b)(2)(ii). Assume for purposes of these examples that the billing cycles for a credit card account begin on the first day of the month and end on the last day of the month and that the payment due date for the account is the twenty-fifth day of the month.\ni. Assume that the required minimum periodic payment due on March 25 is $20. On March 26, the card issuer has not received any payment and imposes a late payment fee. Consistent with §§ 1026.52(b)(1)(ii)(A) and (b)(2)(i), the card issuer may impose a $20 late payment fee on March 26. However, § 1026.52(b)(2)(ii) prohibits the card issuer from imposing an additional late payment fee if the $20 minimum payment has not been received by a subsequent date (such as March 31).\nA. On April 3, the card issuer provides a periodic statement disclosing that a $70 required minimum periodic payment is due on April 25. This minimum payment includes the $20 minimum payment due on March 25 and the $20 late payment fee imposed on March 26. On April 20, the card issuer receives a $20 payment. No additional payments are received during the April billing cycle. Section 1026.52(b)(2)(ii) does not prohibit the card issuer from imposing a late payment fee based on the consumer's failure to make the $70 required minimum periodic payment on or before April 25. Accordingly, consistent with § 1026.52(b)(1)(ii)(B) and (b)(2)(i), the card issuer may impose a $35 late payment fee on April 26.\nB. On April 3, the card issuer provides a periodic statement disclosing that a $20 required minimum periodic payment is due on April 25. This minimum payment does not include the $20 minimum payment due on March 25 or the $20 late payment fee imposed on March 26. On April 20, the card issuer receives a $20 payment. No additional payments are received during the April billing cycle. Because the card issuer has received the required minimum periodic payment due on April 25 and because § 1026.52(b)(2)(ii) prohibits the card issuer from imposing a second late payment fee based on the consumer's failure to make the $20 minimum payment due on March 25, the card issuer cannot impose a late payment fee in these circumstances.\nii. Assume that the required minimum periodic payment due on March 25 is $30.\nA. On March 25, the card issuer receives a check for $50, but the check is returned for insufficient funds on March 27. Consistent with §§ 1026.52(b)(1)(ii)(A) and (b)(2)(i)(A), the card issuer may impose a late payment fee of $25 or a returned payment fee of $25. However, § 1026.52(b)(2)(ii) prohibits the card issuer from imposing both fees because those fees would be based on a single event or transaction.\nB. Same facts as paragraph ii.A above except that that card issuer receives the $50 check on March 27 and the check is returned for insufficient funds on March 29. Consistent with §§ 1026.52(b)(1)(ii)(A) and (b)(2)(i)(A), the card issuer may impose a late payment fee of $25 or a returned payment fee of $25. However, § 1026.52(b)(2)(ii) prohibits the card issuer from imposing both fees because those fees would be based on a single event or transaction. If no payment is received on or before the next payment due date (April 25), § 1026.52(b)(2)(ii) does not prohibit the card issuer from imposing a late payment fee.\niii. Assume that the required minimum periodic payment due on July 25 is $30. On July 10, the card issuer receives a $50 payment, which is not returned. On July 20, the card issuer receives a $100 payment, which is returned for insufficient funds on July 24. Consistent with § 1026.52(b)(1)(ii)(A) and (b)(2)(i)(A), the card issuer may impose a returned payment fee of $25. Nothing in § 1026.52(b)(2)(ii) prohibits the imposition of this fee.\niv. Assume that the credit limit for an account is $1,000 and that, consistent with § 1026.56, the consumer has affirmatively consented to the payment of transactions that exceed the credit limit. On March 31, the balance on the account is $970 and the card issuer has not received the $35 required minimum periodic payment due on March 25. On that same date (March 31), a $70 transaction is charged to the account, which increases the balance to $1,040. Consistent with § 1026.52(b)(1)(ii)(A) and (b)(2)(i)(A), the card issuer may impose a late payment fee of $25 and an over-the-limit fee of $25. Section 1026.52(b)(2)(ii) does not prohibit the imposition of both fees because those fees are based on different events or transactions. No additional transactions are charged to the account during the March, April, or May billing cycles. If the account balance remains more than $35 above the credit limit on April 26, the card issuer may impose an over-the-limit fee of $35 pursuant to § 1026.52(b)(1)(ii)(B), to the extent consistent with § 1026.56(j)(1). Furthermore, if the account balance remains more than $35 above the credit limit on May 26, the card issuer may again impose an over-the-limit fee of $35 pursuant to § 1026.52(b)(1)(ii)(B), to the extent consistent with § 1026.56(j)(1). Thereafter, § 1026.56(j)(1) does not permit the card issuer to impose additional over-the-limit fees unless another over-the-limit transaction occurs. However, if an over-the-limit transaction occurs during the six billing cycles following the May billing cycle, the card issuer may impose an over-the-limit fee of $35 pursuant to § 1026.52(b)(1)(ii)(B).\nv. Assume that the credit limit for an account is $5,000 and that, consistent with § 1026.56, the consumer has affirmatively consented to the payment of transactions that exceed the credit limit. On July 23, the balance on the account is $4,950. On July 24, the card issuer receives the $100 required minimum periodic payment due on July 25, reducing the balance to $4,850. On July 26, a $75 transaction is charged to the account, which increases the balance to $4,925. On July 27, the $100 payment is returned for insufficient funds, increasing the balance to $5,025. Consistent with §§ 1026.52(b)(1)(ii)(A) and (b)(2)(i)(A), the card issuer may impose a returned payment fee of $25 or an over-the-limit fee of $25. However, § 1026.52(b)(2)(ii) prohibits the card issuer from imposing both fees because those fees would be based on a single event or transaction.\nvi. Assume that the required minimum periodic payment due on March 25 is $50. On March 20, the card issuer receives a check for $50, but the check is returned for insufficient funds on March 22. Consistent with §§ 1026.52(b)(1)(ii)(A) and (b)(2)(i)(A), the card issuer may impose a returned payment fee of $25. On March 25, the card issuer receives a second check for $50, but the check is returned for insufficient funds on March 27. Consistent with §§ 1026.52(b)(1)(ii)(A), (b)(1)(ii)(B), and (b)(2)(i)(A), the card issuer may impose a late payment fee of $25 or a returned payment fee of $35. However, § 1026.52(b)(2)(ii) prohibits the card issuer from imposing both fees because those fees would be based on a single event or transaction.\nvii. Assume that the required minimum periodic payment due on February 25 is $100. On February 25, the card issuer receives a check for $100. On March 3, the card issuer provides a periodic statement disclosing that a $120 required minimum periodic payment is due on March 25. On March 4, the $100 check is returned to the card issuer for insufficient funds. Consistent with §§ 1026.52(b)(1)(ii)(A) and (b)(2)(i)(A), the card issuer may impose a late payment fee of $25 or a returned payment fee of $25 with respect to the $100 payment. However, § 1026.52(b)(2)(ii) prohibits the card issuer from imposing both fees because those fees would be based on a single event or transaction. On March 20, the card issuer receives a $120 check, which is not returned. No additional payments are received during the March billing cycle. Because the card issuer has received the required minimum periodic payment due on March 25 and because § 1026.52(b)(2)(ii) prohibits the card issuer from imposing a second fee based on the $100 payment that was returned for insufficient funds, the card issuer cannot impose a late payment fee in these circumstances."
+  },
+  {
+   "id": "1026.60(a)(2)-5",
+   "status": "mixed",
+   "rule": "late_fee_2024",
+   "change": "amended",
+   "what_changed": "maximum late-fee example changed from $35 to $8",
+   "note": "Contains wording from the 2024 credit card penalty fees rule (89 FR 19128), which a federal court vacated in April 2025; that wording is not law in force, the rest is unchanged from before the rule.",
+   "source": "https://www.consumerfinancemonitor.com/2025/04/16/federal-judge-voids-cfpb-credit-card-late-fee-rule/",
+   "text_before_rule": "5. Highlighting of annual percentage rates and fee amounts. i. In general. See Samples G-10(B) and G-10(C) for guidance on providing the disclosures described in § 1026.60(a)(2)(iv) in bold text. Other annual percentage rates or fee amounts disclosed in the table may not be in bold text. Samples G-10(B) and G-10(C) also provide guidance to issuers on how to disclose the rates and fees described in § 1026.60(a)(2)(iv) in a clear and conspicuous manner, by including these rates and fees generally as the first text in the applicable rows of the table so that the highlighted rates and fees generally are aligned vertically in the table.\nii. Maximum limits on fees. Section 1026.60(a)(2)(iv) provides that any maximum limits on fee amounts must be disclosed in bold text. For example, assume that, consistent with § 1026.52(b)(1)(ii), a card issuer's late payment fee will not exceed $35. The maximum limit of $35 for the late payment fee must be highlighted in bold. Similarly, assume an issuer will charge a cash advance fee of $5 or 3 percent of the cash advance transaction amount, whichever is greater, but the fee will not exceed $100. The maximum limit of $100 for the cash advance fee must be highlighted in bold.\niii. Periodic fees. Section 1026.60(a)(2)(iv) provides that any periodic fee disclosed pursuant to § 1026.60(b)(2) that is not an annualized amount must not be disclosed in bold. For example, if an issuer imposes a $10 monthly maintenance fee for a card account, the issuer must disclose in the table that there is a $10 monthly maintenance fee, and that the fee is $120 on an annual basis. In this example, the $10 fee disclosure would not be disclosed in bold, but the $120 annualized amount must be disclosed in bold. In addition, if an issuer must disclose any annual fee in the table, the amount of the annual fee must be disclosed in bold."
+  },
+  {
+   "id": "1005.10(e)(1)",
+   "status": "mixed",
+   "rule": "overdraft_2024",
+   "change": "amended",
+   "what_changed": "adds an exception for covered overdraft credit of very large financial institutions",
+   "note": "Contains wording from the 2024 overdraft lending rule (89 FR 106768), which Congress overturned (Pub. L. 119-10); that wording never took effect, the rest is unchanged from before the rule.",
+   "source": "https://www.congress.gov/119/plaws/publ10/PLAW-119publ10.htm",
+   "text_before_rule": "(1) Credit. No financial institution or other person may condition an extension of credit to a consumer on the consumer's repayment by preauthorized electronic fund transfers, except for credit extended under an overdraft credit plan or extended to maintain a specified minimum balance in the consumer's account. This exception does not apply to a covered separate credit feature accessible by a hybrid prepaid-credit card as defined in Regulation Z, 12 CFR 1026.61."
+  },
+  {
+   "id": "1005.10(e)(1)-2",
+   "status": "mixed",
+   "rule": "overdraft_2024",
+   "change": "amended",
+   "what_changed": "extends the comment to covered overdraft credit",
+   "note": "Contains wording from the 2024 overdraft lending rule (89 FR 106768), which Congress overturned (Pub. L. 119-10); that wording never took effect, the rest is unchanged from before the rule.",
+   "source": "https://www.congress.gov/119/plaws/publ10/PLAW-119publ10.htm",
+   "text_before_rule": "2. Overdraft credit plans not accessible by hybrid prepaid-credit cards. i. Section 1005.10(e)(1) provides an exception from the general rule for an overdraft credit plan other than for a covered separate credit feature accessible by a hybrid prepaid-credit card as defined in Regulation Z, 12 CFR 1026.61. A financial institution may therefore require the automatic repayment of an overdraft credit plan, other than a covered separate credit feature accessible by a hybrid prepaid-credit card, even if the overdraft extension is charged to an open-end account that may be accessed by the consumer in ways other than by overdrafts.\nii. Credit extended through a negative balance on the asset feature of a prepaid account that meets the conditions of Regulation Z, 12 CFR 1026.61(a)(4), is considered credit extended pursuant to an overdraft credit plan for purposes of § 1005.10(e)(1). Thus, the exception for overdraft credit plans in § 1005.10(e)(1) applies to this credit."
+  },
+  {
+   "id": "1005.17(a)-2",
+   "status": "nullified",
+   "rule": "overdraft_2024",
+   "change": "added",
+   "what_changed": "new: covered overdraft credit",
+   "note": "Added by the 2024 overdraft lending rule (89 FR 106768), which Congress overturned under the Congressional Review Act (Pub. L. 119-10); treated as never having taken effect.",
+   "source": "https://www.congress.gov/119/plaws/publ10/PLAW-119publ10.htm"
+  },
+  {
+   "id": "1026.2(a)(15)(i)",
+   "status": "mixed",
+   "rule": "overdraft_2024",
+   "change": "amended",
+   "what_changed": "adds hybrid debit-credit cards to 'credit card'",
+   "note": "Contains wording from the 2024 overdraft lending rule (89 FR 106768), which Congress overturned (Pub. L. 119-10); that wording never took effect, the rest is unchanged from before the rule.",
+   "source": "https://www.congress.gov/119/plaws/publ10/PLAW-119publ10.htm",
+   "text_before_rule": "(i) Credit card means any card, plate, or other single credit device that may be used from time to time to obtain credit. The term credit card includes a hybrid prepaid-credit card as defined in § 1026.61."
+  },
+  {
+   "id": "1026.2(a)(15)(ii)(B)",
+   "status": "mixed",
+   "rule": "overdraft_2024",
+   "change": "amended",
+   "what_changed": "exclusion rewritten for covered overdraft credit of smaller institutions",
+   "note": "Contains wording from the 2024 overdraft lending rule (89 FR 106768), which Congress overturned (Pub. L. 119-10); that wording never took effect, the rest is unchanged from before the rule.",
+   "source": "https://www.congress.gov/119/plaws/publ10/PLAW-119publ10.htm",
+   "text_before_rule": "(B) An overdraft line of credit that is accessed by a debit card; or"
+  },
+  {
+   "id": "1026.2(a)(15)(iii)",
+   "status": "mixed",
+   "rule": "overdraft_2024",
+   "change": "amended",
+   "what_changed": "charge card excludes hybrid debit-credit cards",
+   "note": "Contains wording from the 2024 overdraft lending rule (89 FR 106768), which Congress overturned (Pub. L. 119-10); that wording never took effect, the rest is unchanged from before the rule.",
+   "source": "https://www.congress.gov/119/plaws/publ10/PLAW-119publ10.htm",
+   "text_before_rule": "(iii) Charge card means a credit card on an account for which no periodic rate is used to compute a finance charge."
+  },
+  {
+   "id": "1026.4(b)(2)",
+   "status": "mixed",
+   "rule": "overdraft_2024",
+   "change": "amended",
+   "what_changed": "adds covered asset accounts",
+   "note": "Contains wording from the 2024 overdraft lending rule (89 FR 106768), which Congress overturned (Pub. L. 119-10); that wording never took effect, the rest is unchanged from before the rule.",
+   "source": "https://www.congress.gov/119/plaws/publ10/PLAW-119publ10.htm",
+   "text_before_rule": "(2) Service, transaction, activity, and carrying charges, including any charge imposed on a checking or other transaction account (except a prepaid account as defined in § 1026.61) to the extent that the charge exceeds the charge for a similar account without a credit feature."
+  },
+  {
+   "id": "1026.4(b)(12)",
+   "subtree": true,
+   "status": "nullified",
+   "rule": "overdraft_2024",
+   "change": "added",
+   "what_changed": "new: finance charges on covered asset accounts",
+   "note": "Added by the 2024 overdraft lending rule (89 FR 106768), which Congress overturned under the Congressional Review Act (Pub. L. 119-10); treated as never having taken effect.",
+   "source": "https://www.congress.gov/119/plaws/publ10/PLAW-119publ10.htm"
+  },
+  {
+   "id": "1026.4(c)(3)",
+   "status": "mixed",
+   "rule": "overdraft_2024",
+   "change": "amended",
+   "what_changed": "adds an exception for above breakeven overdraft credit",
+   "note": "Contains wording from the 2024 overdraft lending rule (89 FR 106768), which Congress overturned (Pub. L. 119-10); that wording never took effect, the rest is unchanged from before the rule.",
+   "source": "https://www.congress.gov/119/plaws/publ10/PLAW-119publ10.htm",
+   "text_before_rule": "(3) Charges imposed by a financial institution for paying items that overdraw an account, unless the payment of such items and the imposition of the charge were previously agreed upon in writing. This paragraph does not apply to credit offered in connection with a prepaid account as defined in § 1026.61."
+  },
+  {
+   "id": "1026.60(a)(5)(ii)",
+   "status": "mixed",
+   "rule": "overdraft_2024",
+   "change": "amended",
+   "what_changed": "exception rewritten as covered overdraft credit",
+   "note": "Contains wording from the 2024 overdraft lending rule (89 FR 106768), which Congress overturned (Pub. L. 119-10); that wording never took effect, the rest is unchanged from before the rule.",
+   "source": "https://www.congress.gov/119/plaws/publ10/PLAW-119publ10.htm",
+   "text_before_rule": "(ii) Overdraft lines of credit tied to asset accounts accessed by check-guarantee cards or by debit cards;"
+  },
+  {
+   "id": "1026.60(a)(5)(iii)",
+   "status": "mixed",
+   "rule": "overdraft_2024",
+   "change": "amended",
+   "what_changed": "adds 'other than covered overdraft credit accessed by hybrid debit-credit cards'",
+   "note": "Contains wording from the 2024 overdraft lending rule (89 FR 106768), which Congress overturned (Pub. L. 119-10); that wording never took effect, the rest is unchanged from before the rule.",
+   "source": "https://www.congress.gov/119/plaws/publ10/PLAW-119publ10.htm",
+   "text_before_rule": "(iii) Lines of credit accessed by check-guarantee cards or by debit cards that can be used only at automated teller machines;"
+  },
+  {
+   "id": "1026.60(a)(5)(iv)",
+   "status": "mixed",
+   "rule": "overdraft_2024",
+   "change": "amended",
+   "what_changed": "adds covered overdraft credit accessible by account number",
+   "note": "Contains wording from the 2024 overdraft lending rule (89 FR 106768), which Congress overturned (Pub. L. 119-10); that wording never took effect, the rest is unchanged from before the rule.",
+   "source": "https://www.congress.gov/119/plaws/publ10/PLAW-119publ10.htm",
+   "text_before_rule": "(iv) Lines of credit accessed solely by account numbers except for a covered separate credit feature solely accessible by an account number that is a hybrid prepaid-credit card as defined in § 1026.61;"
+  },
+  {
+   "id": "1026.62",
+   "subtree": true,
+   "status": "nullified",
+   "rule": "overdraft_2024",
+   "change": "added",
+   "what_changed": "new section: Overdraft credit",
+   "note": "Added by the 2024 overdraft lending rule (89 FR 106768), which Congress overturned under the Congressional Review Act (Pub. L. 119-10); treated as never having taken effect.",
+   "source": "https://www.congress.gov/119/plaws/publ10/PLAW-119publ10.htm"
+  },
+  {
+   "id": "1026.2(a)(15)-2",
+   "status": "mixed",
+   "rule": "overdraft_2024",
+   "change": "amended",
+   "what_changed": "examples extended to covered overdraft credit and hybrid debit-credit cards",
+   "note": "Contains wording from the 2024 overdraft lending rule (89 FR 106768), which Congress overturned (Pub. L. 119-10); that wording never took effect, the rest is unchanged from before the rule.",
+   "source": "https://www.congress.gov/119/plaws/publ10/PLAW-119publ10.htm",
+   "text_before_rule": "2. Examples. i. Examples of credit cards include:\nA. A card that guarantees checks or similar instruments, if the asset account is also tied to an overdraft line or if the instrument directly accesses a line of credit.\nB. A debit card (other than a debit card that is solely an account number) that also accesses a credit account (that is, a debit-credit card). See comment 2(a)(15)-2.ii.C for guidance on whether a debit card that is solely an account number is a credit card.\nC. An identification card that permits the consumer to defer payment on a purchase.\nD. An identification card indicating loan approval that is presented to a merchant or to a lender, whether or not the consumer signs a separate promissory note for each credit extension.\nE. A card or device that can be activated upon receipt to access credit, even if the card has a substantive use other than credit, such as a purchase-price discount card. Such a card or device is a credit card notwithstanding the fact that the recipient must first contact the card issuer to access or activate the credit feature.\nF. A prepaid card that is a hybrid prepaid-credit card as defined in § 1026.61.\nii. In contrast, credit card does not include, for example:\nA. A check-guarantee or debit card with no credit feature or agreement, even if the creditor occasionally honors an inadvertent overdraft.\nB. Any card, key, plate, or other device that is used in order to obtain petroleum products for business purposes from a wholesale distribution facility or to gain access to that facility, and that is required to be used without regard to payment terms.\nC. An account number that accesses a credit account, unless the account number can access an open-end line of credit to purchase goods or services or as provided in § 1026.61 with respect to a hybrid prepaid-credit card. For example, if a creditor provides a consumer with an open-end line of credit that can be accessed by an account number in order to transfer funds into another account (such as an asset account with the same creditor), the account number is not a credit card for purposes of § 1026.2(a)(15)(i). However, if the account number can also access the line of credit to purchase goods or services (such as an account number that can be used to purchase goods or services on the Internet), the account number is a credit card for purposes of § 1026.2(a)(15)(i), regardless of whether the creditor treats such transactions as purchases, cash advances, or some other type of transaction. Furthermore, if the line of credit can also be accessed by a card (such as a debit card), that card is a credit card for purposes of § 1026.2(a)(15)(i).\nD. A prepaid card that is not a hybrid prepaid-credit card as defined in § 1026.61."
+  },
+  {
+   "id": "1026.2(a)(15)-3",
+   "status": "mixed",
+   "rule": "overdraft_2024",
+   "change": "amended",
+   "what_changed": "charge card excludes hybrid debit-credit cards",
+   "note": "Contains wording from the 2024 overdraft lending rule (89 FR 106768), which Congress overturned (Pub. L. 119-10); that wording never took effect, the rest is unchanged from before the rule.",
+   "source": "https://www.congress.gov/119/plaws/publ10/PLAW-119publ10.htm",
+   "text_before_rule": "3. Charge card. i. Charge cards are credit cards where no periodic rate is used to compute the finance charge. Under the regulation, a reference to credit cards generally includes charge cards. In particular, references to credit card accounts under an open-end (not home-secured) consumer credit plan in subparts B and G generally include charge cards. The term charge card is, however, distinguished from credit card or credit card account under an open-end (not home-secured) consumer credit plan in §§ 1026.6(b)(2)(xiv), 1026.7(b)(11) (except as described in comment 2(a)(15)-3.ii below), 1026.7(b)(12), 1026.9(e), 1026.9(f), 1026.28(d), 1026.52(b)(1)(ii)(C), 1026.60, and appendices G-10 through G-13.\nii. A hybrid prepaid-credit card as defined in § 1026.61 is a charge card with respect to a covered separate credit feature if no periodic rate is used to compute the finance charge in connection with the covered separate credit feature. Unlike other charge card accounts, the requirements in § 1026.7(b)(11) apply to a covered separate credit feature accessible by a hybrid prepaid-credit card that is a charge card when that covered separate credit feature is a credit card account under an open-end (not home-secured) consumer credit plan. Thus, under § 1026.5(b)(2)(ii)(A), with respect to a covered separate credit feature that is a credit card account under an open-end (not home-secured) consumer credit plan, a card issuer of a hybrid prepaid-credit card that meets the definition of a charge card because no periodic rate is used to compute a finance charge in connection with the covered separate credit feature must adopt reasonable procedures for the covered separate credit feature designed to ensure that (1) periodic statements are mailed or delivered at least 21 days prior to the payment due date disclosed on the statement pursuant to § 1026.7(b)(11)(i)(A); and (2) the card issuer does not treat as late for any purposes a required minimum periodic payment received by the card issuer within 21 days after mailing or delivery of the periodic statement disclosing the due date for that payment."
+  },
+  {
+   "id": "1026.2(a)(15)-4",
+   "status": "mixed",
+   "rule": "overdraft_2024",
+   "change": "amended",
+   "what_changed": "rewritten after the removal of § 1026.2(a)(15)(ii)(C)",
+   "note": "Contains wording from the 2024 overdraft lending rule (89 FR 106768), which Congress overturned (Pub. L. 119-10); that wording never took effect, the rest is unchanged from before the rule.",
+   "source": "https://www.congress.gov/119/plaws/publ10/PLAW-119publ10.htm",
+   "text_before_rule": "4. Credit card account under an open-end (not home-secured) consumer credit plan. i. An open-end consumer credit account is a credit card account under an open-end (not home-secured) consumer credit plan for purposes of § 1026.2(a)(15)(ii) if:\nA. The account is accessed by a credit card, as defined in § 1026.2(a)(15)(i); and\nB. The account is not excluded under § 1026.2(a)(15)(ii)(A) through (C).\nii. As noted in § 1026.2(a)(15)(ii)(C), the exclusion from credit card account under an open-end (not home-secured) consumer credit plan provided by that paragraph for an overdraft line of credit that is accessed by an account number does not apply to a covered separate credit feature accessible by a hybrid prepaid-credit card (including a hybrid prepaid-credit card that is solely an account number) as defined in § 1026.61."
+  },
+  {
+   "id": "1026.2(a)(20)-2",
+   "status": "mixed",
+   "rule": "overdraft_2024",
+   "change": "amended",
+   "what_changed": "adds item iv on covered asset accounts",
+   "note": "Contains wording from the 2024 overdraft lending rule (89 FR 106768), which Congress overturned (Pub. L. 119-10); that wording never took effect, the rest is unchanged from before the rule.",
+   "source": "https://www.congress.gov/119/plaws/publ10/PLAW-119publ10.htm",
+   "text_before_rule": "2. Existence of a plan. i. The definition requires that there be a plan, which connotes a contractual arrangement between the creditor and the consumer.\nii. With respect to a covered separate credit feature accessible by a hybrid prepaid-credit card as defined in § 1026.61, a plan means a program where the consumer is obligated contractually to repay any credit extended by the creditor. For example, a plan includes a program under which a creditor routinely extends credit from a covered separate credit feature offered by the prepaid account issuer, its affiliate, or its business partner where the prepaid card can be used from time to time to draw, transfer, or authorize the draw or transfer of credit from the covered separate credit feature in the course of authorizing, settling, or otherwise completing transactions conducted with the card to obtain goods or services, obtain cash, or conduct person-to-person transfers, and the consumer is obligated contractually to repay those credit transactions. Such a program constitutes a plan notwithstanding that, for example, the creditor has not agreed in writing to extend credit for those transactions, the creditor retains discretion not to extend credit for those transactions, or the creditor does not extend credit for those transactions once the consumer has exceeded a certain amount of credit. See § 1026.61(a) and related commentary for guidance on the applicability of this regulation to credit accessible by hybrid prepaid-credit cards.\niii. Some creditors offer programs containing a number of different credit features. The consumer has a single account with the institution that can be accessed repeatedly via a number of sub-accounts established for the different program features and rate structures. Some features of the program might be used repeatedly (for example, an overdraft line) while others might be used infrequently (such as the part of the credit line available for secured credit). If the program as a whole is subject to prescribed terms and otherwise meets the definition of open-end credit, such a program would be considered a single, multifeatured plan."
+  },
+  {
+   "id": "1026.2(a)(20)-4",
+   "status": "mixed",
+   "rule": "overdraft_2024",
+   "change": "amended",
+   "what_changed": "adds item iii on charges on covered asset accounts",
+   "note": "Contains wording from the 2024 overdraft lending rule (89 FR 106768), which Congress overturned (Pub. L. 119-10); that wording never took effect, the rest is unchanged from before the rule.",
+   "source": "https://www.congress.gov/119/plaws/publ10/PLAW-119publ10.htm",
+   "text_before_rule": "4. Finance charge on an outstanding balance. i. The requirement that a finance charge may be computed and imposed from time to time on the outstanding balance means that there is no specific amount financed for the plan for which the finance charge, total of payments, and payment schedule can be calculated. A plan may meet the definition of open-end credit even though a finance charge is not normally imposed, provided the creditor has the right, under the plan, to impose a finance charge from time to time on the outstanding balance. For example, in some plans, a finance charge is not imposed if the consumer pays all or a specified portion of the outstanding balance within a given time period. Such a plan could meet the finance charge criterion, if the creditor has the right to impose a finance charge, even though the consumer actually pays no finance charges during the existence of the plan because the consumer takes advantage of the option to pay the balance (either in full or in installments) within the time necessary to avoid finance charges.\nii. With regard to a covered separate credit feature and an asset feature on a prepaid account that are both accessible by a hybrid prepaid-credit card as defined in § 1026.61, any service, transaction, activity, or carrying charges imposed on the covered separate credit feature, and any such charges imposed on the asset feature of the prepaid account to the extent that the amount of the charge exceeds comparable charges imposed on prepaid accounts in the same prepaid account program that do not have a covered separate credit feature accessible by a hybrid prepaid-credit card, generally is a finance charge. See § 1026.4(a) and (b)(11). Such charges include a periodic fee to participate in the covered separate credit feature, regardless of whether this fee is imposed on the credit feature or on the asset feature of the prepaid account. With respect to credit from a covered separate credit feature accessible by a hybrid prepaid-credit card, any service, transaction, activity, or carrying charges that are finance charges under § 1026.4 constitute finance charges imposed from time to time on an outstanding unpaid balance as described in § 1026.2(a)(20) if there is no specific amount financed for the credit feature for which the finance charge, total of payments, and payment schedule can be calculated."
+  },
+  {
+   "id": "1026.4(b)(2)-1",
+   "status": "mixed",
+   "rule": "overdraft_2024",
+   "change": "amended",
+   "what_changed": "adds covered asset accounts and § 1026.4(b)(12)",
+   "note": "Contains wording from the 2024 overdraft lending rule (89 FR 106768), which Congress overturned (Pub. L. 119-10); that wording never took effect, the rest is unchanged from before the rule.",
+   "source": "https://www.congress.gov/119/plaws/publ10/PLAW-119publ10.htm",
+   "text_before_rule": "1. Checking or transaction account charges. A charge imposed in connection with a credit feature on a checking or transaction account (other than a prepaid account as defined in § 1026.61) is a finance charge under § 1026.4(b)(2) to the extent the charge exceeds the charge for a similar account without a credit feature. If a charge for an account with a credit feature does not exceed the charge for an account without a credit feature, the charge is not a finance charge under § 1026.4(b)(2). To illustrate:\ni. A $5 service charge is imposed on an account with an overdraft line of credit (where the institution has agreed in writing to pay an overdraft), while a $3 service charge is imposed on an account without a credit feature; the $2 difference is a finance charge. (If the difference is not related to account activity, however, it may be excludable as a participation fee. See the commentary to § 1026.4(c)(4).)\nii. A $5 service charge is imposed for each item that results in an overdraft on an account with an overdraft line of credit, while a $25 service charge is imposed for paying or returning each item on a similar account without a credit feature; the $5 charge is not a finance charge."
+  },
+  {
+   "id": "1026.4(c)(3)-1",
+   "status": "mixed",
+   "rule": "overdraft_2024",
+   "change": "amended",
+   "what_changed": "adds above breakeven overdraft credit",
+   "note": "Contains wording from the 2024 overdraft lending rule (89 FR 106768), which Congress overturned (Pub. L. 119-10); that wording never took effect, the rest is unchanged from before the rule.",
+   "source": "https://www.congress.gov/119/plaws/publ10/PLAW-119publ10.htm",
+   "text_before_rule": "1. Assessing interest on an overdraft balance. Except with respect to credit offered in connection with a prepaid account as defined in § 1026.61, a charge on an overdraft balance computed by applying a rate of interest to the amount of the overdraft is not a finance charge, even though the consumer agrees to the charge in the account agreement, unless the financial institution agrees in writing that it will pay such items."
+  },
+  {
+   "id": "1026.4(c)(3)-3",
+   "status": "nullified",
+   "rule": "overdraft_2024",
+   "change": "added",
+   "what_changed": "new: credit accessed with a covered asset account",
+   "note": "Added by the 2024 overdraft lending rule (89 FR 106768), which Congress overturned under the Congressional Review Act (Pub. L. 119-10); treated as never having taken effect.",
+   "source": "https://www.congress.gov/119/plaws/publ10/PLAW-119publ10.htm"
+  },
+  {
+   "id": "1026.12-1",
+   "status": "mixed",
+   "rule": "overdraft_2024",
+   "change": "amended",
+   "what_changed": "applies § 1026.12(a)-(f) to hybrid debit-credit cards",
+   "note": "Contains wording from the 2024 overdraft lending rule (89 FR 106768), which Congress overturned (Pub. L. 119-10); that wording never took effect, the rest is unchanged from before the rule.",
+   "source": "https://www.congress.gov/119/plaws/publ10/PLAW-119publ10.htm",
+   "text_before_rule": "1. Scope. Sections 1026.12(a) and (b) deal with the issuance and liability rules for credit cards, whether the card is intended for consumer, business, or any other purposes. Sections 1026.12(a) and (b) are exceptions to the general rule that the regulation applies only to consumer credit. (See §§ 1026.1 and 1026.3.)"
+  },
+  {
+   "id": "1026.12(a)(1)-1",
+   "status": "mixed",
+   "rule": "overdraft_2024",
+   "change": "amended",
+   "what_changed": "adds the explicit-request rule for hybrid debit-credit cards",
+   "note": "Contains wording from the 2024 overdraft lending rule (89 FR 106768), which Congress overturned (Pub. L. 119-10); that wording never took effect, the rest is unchanged from before the rule.",
+   "source": "https://www.congress.gov/119/plaws/publ10/PLAW-119publ10.htm",
+   "text_before_rule": "1. Explicit request. A request or application for a card must be explicit. For example, a request for an overdraft plan tied to a checking account does not constitute an application for a credit card with overdraft checking features."
+  },
+  {
+   "id": "1026.12(a)(1)-2",
+   "status": "mixed",
+   "rule": "overdraft_2024",
+   "change": "amended",
+   "what_changed": "adds item iii on covered overdraft credit",
+   "note": "Contains wording from the 2024 overdraft lending rule (89 FR 106768), which Congress overturned (Pub. L. 119-10); that wording never took effect, the rest is unchanged from before the rule.",
+   "source": "https://www.congress.gov/119/plaws/publ10/PLAW-119publ10.htm",
+   "text_before_rule": "2. Addition of credit features. If the consumer has a non-credit card, including a prepaid card, the addition of a credit feature or plan to the card that would make the card into a credit card under § 1026.2(a)(15)(i) constitutes issuance of a credit card. For example, the following constitute issuance of a credit card:\ni. Granting overdraft privileges on a checking account when the consumer already has a check guarantee card; or\nii. Allowing a prepaid card to access a covered separate credit feature that would make the card into a hybrid prepaid-credit card as defined in § 1026.61 with respect to the covered separate credit feature."
+  },
+  {
+   "id": "1026.12(a)(2)-6",
+   "status": "mixed",
+   "rule": "overdraft_2024",
+   "change": "amended",
+   "what_changed": "adds hybrid debit-credit cards",
+   "note": "Contains wording from the 2024 overdraft lending rule (89 FR 106768), which Congress overturned (Pub. L. 119-10); that wording never took effect, the rest is unchanged from before the rule.",
+   "source": "https://www.congress.gov/119/plaws/publ10/PLAW-119publ10.htm",
+   "text_before_rule": "6. One-for-one rule—exceptions. The regulation does not prohibit the card issuer from:\ni. Replacing a single card that is both a debit card and a credit card with a credit card and a separate debit card with only debit functions (or debit functions plus an associated overdraft capability), since the latter card could be issued on an unsolicited basis under Regulation E.\nii. Replacing a single card that is both a prepaid card and a credit card with a credit card and a separate prepaid card where the latter card is not a hybrid prepaid-credit card as defined in § 1026.61.\niii. Replacing an accepted card with more than one renewal or substitute card, provided that:\nA. No replacement card accesses any account not accessed by the accepted card;\nB. For terms and conditions required to be disclosed under § 1026.6, all replacement cards are issued subject to the same terms and conditions, except that a creditor may vary terms for which no change in terms notice is required under § 1026.9(c); and\nC. Under the account's terms the consumer's total liability for unauthorized use with respect to the account does not increase."
+  },
+  {
+   "id": "1026.12(c)-3",
+   "status": "mixed",
+   "rule": "overdraft_2024",
+   "change": "amended",
+   "what_changed": "adds '(other than a hybrid debit-credit card)'",
+   "note": "Contains wording from the 2024 overdraft lending rule (89 FR 106768), which Congress overturned (Pub. L. 119-10); that wording never took effect, the rest is unchanged from before the rule.",
+   "source": "https://www.congress.gov/119/plaws/publ10/PLAW-119publ10.htm",
+   "text_before_rule": "3. Transactions excluded. Section 1026.12(c) does not apply to the use of a check guarantee card or a debit card in connection with an overdraft credit plan, or to a check guarantee card used in connection with cash-advance checks."
+  },
+  {
+   "id": "1026.12(c)(1)-1",
+   "status": "mixed",
+   "rule": "overdraft_2024",
+   "change": "amended",
+   "what_changed": "adds hybrid debit-credit card purchases",
+   "note": "Contains wording from the 2024 overdraft lending rule (89 FR 106768), which Congress overturned (Pub. L. 119-10); that wording never took effect, the rest is unchanged from before the rule.",
+   "source": "https://www.congress.gov/119/plaws/publ10/PLAW-119publ10.htm",
+   "text_before_rule": "1. Situations excluded and included. The consumer may assert claims or defenses only when the goods or services are “purchased with the credit card.” This would include when the goods or services are purchased by a consumer using a hybrid prepaid-credit card to access a covered separate credit feature as defined in § 1026.61. This could include mail, the Internet or telephone orders, if the purchase is charged to the credit card account. But it would exclude:\ni. Use of a credit card to obtain a cash advance, even if the consumer then uses the money to purchase goods or services. Such a transaction would not involve “property or services purchased with the credit card.”\nii. The purchase of goods or services by use of a check accessing an overdraft account and a credit card used solely for identification of the consumer. (On the other hand, if the credit card is used to make partial payment for the purchase and not merely for identification, the right to assert claims or defenses would apply to credit extended via the credit card, although not to credit extended by the overdraft line other than a covered separate credit feature accessible by a hybrid prepaid-credit card.)\niii. Purchases made by use of a check guarantee card in conjunction with a cash advance check (or by cash advance checks alone). (See comment 12(c)-3.) A cash advance check is a check that, when written, does not draw on an asset account; instead, it is charged entirely to an open-end credit account.\niv. Purchases effected by use of either a check guarantee card or a debit card when used to draw on overdraft credit plans. (See comment 12(c)-3.) The debit card exemption applies whether the card accesses an asset account via point of sale terminals, automated teller machines, or in any other way, and whether the card qualifies as an “access device” under Regulation E or is only a paper based debit card. If a card serves both as an ordinary credit card and also as check guarantee or debit card, a transaction will be subject to this rule on asserting claims and defenses when used as an ordinary credit card, but not when used as a check guarantee or debit card."
+  },
+  {
+   "id": "1026.55(a)-5",
+   "status": "nullified",
+   "rule": "overdraft_2024",
+   "change": "added",
+   "what_changed": "new: fees in connection with covered overdraft credit",
+   "note": "Added by the 2024 overdraft lending rule (89 FR 106768), which Congress overturned under the Congressional Review Act (Pub. L. 119-10); treated as never having taken effect.",
+   "source": "https://www.congress.gov/119/plaws/publ10/PLAW-119publ10.htm"
+  },
+  {
+   "id": "1026.57(a)(1)-1",
+   "status": "mixed",
+   "rule": "overdraft_2024",
+   "change": "amended",
+   "what_changed": "college student credit card definition rewritten for covered overdraft credit",
+   "note": "Contains wording from the 2024 overdraft lending rule (89 FR 106768), which Congress overturned (Pub. L. 119-10); that wording never took effect, the rest is unchanged from before the rule.",
+   "source": "https://www.congress.gov/119/plaws/publ10/PLAW-119publ10.htm",
+   "text_before_rule": "1. Definition. The definition of college student credit card excludes home-equity lines of credit accessed by credit cards and overdraft lines of credit accessed by debit cards. A college student credit card includes a college affinity card within the meaning of TILA section 127(r)(1)(A). In addition, a card may fall within the scope of the definition regardless of the fact that it is not intentionally targeted at or marketed to college students. For example, an agreement between a college and a card issuer may provide for marketing of credit cards to alumni, faculty, staff, and other non-student consumers who have a relationship with the college, but also contain provisions that contemplate the issuance of cards to students. A credit card issued to a student at the college in connection with such an agreement qualifies as a college student credit card. The definition of college student credit card includes a hybrid prepaid-credit card as defined by § 1026.61 that is issued to any college student where the card can access a covered separate credit feature that is a credit card account under an open-end (not home-secured) consumer credit plan. The definition of college student credit card also includes a prepaid account as defined in § 1026.61 that is issued to any college student where a covered separate credit feature that is a credit card account under an open-end (not home-secured) consumer credit plan accessible by a hybrid prepaid-credit card as defined by § 1026.61 may be added in the future to the prepaid account."
+  }
+ ],
+ "missing_in_force": [
+  {
+   "id": "1026.2(a)(15)(ii)(C)",
+   "rule": "overdraft_2024",
+   "text": "(C) An overdraft line of credit that is accessed by an account number, except if the account number is a hybrid prepaid-credit card that can access a covered separate credit feature as defined in § 1026.61.",
+   "note": "Removed from the eCFR by the overdraft rule, which never took effect; not in the corpus."
+  }
+ ],
+ "not_flagged": [
+  {
+   "id": "1026.52(b)(1)(ii)(D)",
+   "rule": "late_fee_2024",
+   "reason": "cross-reference shortened ('(b)(1)(ii)(B)' to '(B)')"
+  },
+  {
+   "id": "1026.7(b)(11)-2",
+   "rule": "late_fee_2024",
+   "reason": "'state' capitalised"
+  },
+  {
+   "id": "1026.7(b)(11)-9",
+   "rule": "late_fee_2024",
+   "reason": "comma added"
+  },
+  {
+   "id": "1026.52(a)(1)-2",
+   "rule": "late_fee_2024",
+   "reason": "cross-reference style"
+  },
+  {
+   "id": "1026.52(a)(1)-4",
+   "rule": "late_fee_2024",
+   "reason": "cross-reference style, word order"
+  },
+  {
+   "id": "1026.52(b)(1)(i)-3",
+   "rule": "late_fee_2024",
+   "reason": "hyphen ('third-party')"
+  },
+  {
+   "id": "1026.52(b)(1)(i)-5",
+   "rule": "late_fee_2024",
+   "reason": "'12 CFR Part 1026' to 'this part'"
+  },
+  {
+   "id": "1026.52(b)(1)(i)-6",
+   "rule": "late_fee_2024",
+   "reason": "'above' replaced by comment references"
+  },
+  {
+   "id": "1026.52(b)(1)(i)-7",
+   "rule": "late_fee_2024",
+   "reason": "'above' replaced by comment references"
+  },
+  {
+   "id": "1026.52(b)(1)(i)-8",
+   "rule": "late_fee_2024",
+   "reason": "'above' replaced by comment references"
+  },
+  {
+   "id": "1026.52(b)(2)-1",
+   "rule": "late_fee_2024",
+   "reason": "cross-reference shortened"
+  },
+  {
+   "id": "1026.52(b)(2)(i)-1",
+   "rule": "late_fee_2024",
+   "reason": "'above' replaced by comment references"
+  },
+  {
+   "id": "1026.52(b)(2)(i)-2",
+   "rule": "late_fee_2024",
+   "reason": "'above' replaced by comment references"
+  },
+  {
+   "id": "1026.52(b)(2)(i)-3",
+   "rule": "late_fee_2024",
+   "reason": "'above' replaced by comment references"
+  },
+  {
+   "id": "1026.52(b)(2)(i)-4",
+   "rule": "late_fee_2024",
+   "reason": "cross-reference shortened"
+  },
+  {
+   "id": "1026.60(a)(2)-1",
+   "rule": "late_fee_2024",
+   "reason": "'Web' to 'web'"
+  },
+  {
+   "id": "1026.60(a)(2)-4",
+   "rule": "late_fee_2024",
+   "reason": "comma added"
+  },
+  {
+   "id": "1026.60(a)(2)-6",
+   "rule": "late_fee_2024",
+   "reason": "cross-reference style, 'website'"
+  },
+  {
+   "id": "1026.60(a)(2)-7",
+   "rule": "late_fee_2024",
+   "reason": "appendix reference style"
+  },
+  {
+   "id": "1026.2(a)(15)(ii)(A)",
+   "rule": "overdraft_2024",
+   "reason": "'or' added because (C) was removed; meaning unchanged"
+  },
+  {
+   "id": "1026.4(b)(2)-2",
+   "rule": "overdraft_2024",
+   "reason": "'Fee' to 'Fees'"
+  },
+  {
+   "id": "1026.12(a)(2)-2",
+   "rule": "overdraft_2024",
+   "reason": "punctuation"
+  },
+  {
+   "id": "1026.1(c)(6)",
+   "rule": "avm_2024",
+   "reason": "AVM quality control rule (89 FR 64538), effective 2025-10-01, in force"
+  },
+  {
+   "id": "1026.2(a)(11)",
+   "rule": "avm_2024",
+   "reason": "AVM rule, in force"
+  },
+  {
+   "id": "1026.2(a)(19)-1",
+   "rule": "avm_2024",
+   "reason": "AVM rule, in force"
+  },
+  {
+   "id": "1026.2(a)(19)-4",
+   "rule": "avm_2024",
+   "reason": "AVM rule, in force"
+  },
+  {
+   "id": "1026.3(i)",
+   "rule": "avm_2024",
+   "reason": "AVM rule, in force"
+  },
+  {
+   "id": "1026.3-2",
+   "rule": "avm_2024",
+   "reason": "AVM rule, in force"
+  },
+  {
+   "id": "1026.2(a)(20)-5",
+   "rule": null,
+   "reason": "eCFR markup fix on 2025-10-01: comment 6 had been run into comment 5"
+  },
+  {
+   "id": "1026.2(a)(20)-6",
+   "rule": null,
+   "reason": "eCFR markup fix on 2025-10-01 (see 2(a)(20)-5)"
+  }
+ ],
+ "other_observations": [
+  "Comment 1026.2(a)(14)-4 'Overdraft credit' (overdraft rule) was in the eCFR from 2025-10-01 and removed on 2026-03-01, the date the PACE rule took effect; it is not in the corpus.",
+  "Supplement I to Part 1026 carries an eCFR link 'to an amendment published at 89 FR 106838, Dec. 30, 2024' (the overdraft rule, amendatory instruction 9) that has not been applied to the text."
+ ]
+}
