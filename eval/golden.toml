@@ -64,7 +64,7 @@
 
 [[question]]
 id = "q001"
-stage = "draft"
+stage = "labelled"
 persona = "frontline"
 type = "unauthorized"
 trap = "debit vs credit (pair with q002)"
@@ -73,10 +73,32 @@ A customer says he still has his debit card in his wallet, but his statement dat
 shows online purchases on 18 and 22 September that he didn’t make. He noticed and reported them today, \
 3 November 2026. What’s the most he could owe?
 """
+regulation = "E"
+today = 2026-11-03
+gold_ids = ["1005.6(b)(3)"]
+reference_answer = """
+Taking the statement as sent on 30 September 2026, the customer reported the unauthorized transactions on 3 November 2026, which is within 60 calendar days of statement transmittal. Because the debit card was not lost or stolen, the consumer bears no liability under Regulation E for transfers occurring within this 60-day window. Therefore, the most he could owe is $0.
+"""
+key_facts = [
+  "maximum liability is $0",
+  "notice was given within 60 days of periodic statement transmittal"
+]
+should_abstain = false
+
+[question.expected_tool_call]
+name = "dispute_timeline"
+args = { regulation = "E", event = "unauthorized", statement_sent = "2026-09-30", notice_date = "2026-11-03" }
+
+[question.expected_result]
+notice_timely = true
+liability_tiers = ["none"]
+deadlines = [
+  { what = "60-day reporting window after periodic statement", date = 2026-11-29, rule = "1005.6(b)(3)" }
+]
 
 [[question]]
 id = "q002"
-stage = "draft"
+stage = "labelled"
 persona = "frontline"
 type = "unauthorized"
 trap = "debit vs credit (pair with q001)"
@@ -85,10 +107,29 @@ A customer says he still has his credit card in his wallet, but his statement da
 shows online purchases on 18 and 22 September that he didn’t make. He noticed and reported them today, \
 3 November 2026. What’s the most he could owe?
 """
+regulation = "Z"
+today = 2026-11-03
+gold_ids = ["1026.12(b)(2)(iii)"]
+reference_answer = """
+Taking the statement as sent on 30 September 2026, the customer reported the unauthorized online credit card transactions on 3 November 2026. Under Regulation Z, the maximum liability for unauthorized credit card use cannot exceed $50, and because the credit card was not physically presented for the online purchases, the card issuer failed to provide a means of identification at the time of transaction. Therefore, no liability can be imposed, and the most the customer could owe is $0.
+"""
+key_facts = [
+  "maximum liability is $0",
+  "no liability for online transactions where the credit card is not presented"
+]
+should_abstain = false
+
+[question.expected_tool_call]
+name = "dispute_timeline"
+args = { regulation = "Z", event = "unauthorized", notice_date = "2026-11-03" }
+
+[question.expected_result]
+liability_tiers = ["max_50"]
+deadlines = []
 
 [[question]]
 id = "q003"
-stage = "draft"
+stage = "labelled"
 persona = "frontline"
 type = "dispute"
 question = """
@@ -96,10 +137,31 @@ A customer paid $1,800 by credit card for a sofa on 10 August 2026. Delivery was
 15 September, but it never arrived, and the charge is on her 30 September 2026 statement. She’s calling \
 on 3 November 2026. Can she dispute it, and must she pay while it’s reviewed?
 """
+regulation = "Z"
+today = 2026-11-03
+gold_ids = ["1026.13(a)(3)", "1026.13(b)(1)", "1026.13(d)(1)"]
+reference_answer = """
+Taking the statement as sent on 30 September 2026, the customer reported the non-delivery on 3 November 2026, which is within 60 days of periodic statement transmittal. Non-delivery of promised goods is a billing error under Regulation Z, so she can dispute the $1,800 charge. Pending resolution of the dispute, she is not required to pay the disputed amount, and the card issuer cannot attempt to collect it.
+"""
+key_facts = [
+  "she can dispute the $1,800 charge as a billing error within 60 days of statement transmittal",
+  "she is not required to pay the disputed amount while the billing error is reviewed"
+]
+should_abstain = false
+
+[question.expected_tool_call]
+name = "dispute_timeline"
+args = { regulation = "Z", event = "error", statement_sent = "2026-09-30", notice_date = "2026-11-03" }
+
+[question.expected_result]
+notice_timely = true
+deadlines = [
+  { what = "60-day billing error notice window after periodic statement", date = 2026-11-29, rule = "1026.13(b)(1)" }
+]
 
 [[question]]
 id = "q004"
-stage = "draft"
+stage = "labelled"
 persona = "compliance"
 type = "deadline"
 question = """
@@ -107,6 +169,27 @@ We received written notice on Thursday, 5 November 2026, that a gym took an ACH 
 customer cancelled. Her account has been open since 2019, and the transfer was within the United \
 States. What deadlines apply, and what are the dates?
 """
+regulation = "E"
+today = 2026-11-03
+gold_ids = ["1005.11(c)(1)", "1005.11(c)(2)"]
+reference_answer = """
+Under Regulation E, after receiving written notice on Thursday, 5 November 2026, the institution must investigate and determine if an error occurred within 10 business days (by Friday, 20 November 2026). If the institution requires additional time, it must provisionally credit the account by 20 November 2026 and complete its investigation within 45 calendar days (by Sunday, 20 December 2026). Results of the investigation must be reported to the consumer within three business days of completion.
+"""
+key_facts = [
+  "investigate or provisionally credit within 10 business days (20 November 2026)",
+  "complete investigation within 45 calendar days (20 December 2026)"
+]
+should_abstain = false
+
+[question.expected_tool_call]
+name = "dispute_timeline"
+args = { regulation = "E", event = "error", notice_date = "2026-11-05", transfer_kind = "standard" }
+
+[question.expected_result]
+deadlines = [
+  { what = "10-business-day provisional credit or investigation determination", date = 2026-11-20, rule = "1005.11(c)(1)" },
+  { what = "45-calendar-day complete investigation", date = 2026-12-20, rule = "1005.11(c)(2)" }
+]
 
 [[question]]
 id = "q005"
