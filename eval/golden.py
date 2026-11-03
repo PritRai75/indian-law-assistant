@@ -303,10 +303,19 @@ def compare_with_tool(item: GoldenItem) -> list[str]:
     from app.tools import dispute_timeline
     if item.expected_tool_call is None or item.expected_result is None:
         return []
+    if check_tool_args(item.expected_tool_call.args):
+        return []                                 # unknown, missing or rejected arguments: reported by check()
     got = dispute_timeline(**as_strings(item.expected_tool_call.args))
-    want, p = item.expected_result, []
     if "error" in got:
         return []                                 # reported by check()
+    return [f"{item.id}: {x}" for x in compare_result(item.expected_result, got)]
+
+
+def compare_result(want: ToolResult, got: dict) -> list[str]:
+    """Differences between a labelled result and one dispute_timeline result (empty: they agree)."""
+    if "error" in got:
+        return [f"the tool returned an error ({got['error'].get('message', '')})"]
+    p = []
     if sorted(got["liability_tiers"] or []) != sorted(want.liability_tiers):
         p.append(f"liability_tiers: label {want.liability_tiers}, tool {got['liability_tiers']}")
     if want.notice_timely is not None and got["notice_timely"] != want.notice_timely:
@@ -317,7 +326,7 @@ def compare_with_tool(item: GoldenItem) -> list[str]:
             p.append(f"deadline {d.rule}: the tool gives no deadline under this rule")
         elif d.date.isoformat() not in {g["date"] for g in same_rule}:
             p.append(f"deadline {d.rule}: label {d.date}, tool {', '.join(g['date'] for g in same_rule)}")
-    return [f"{item.id}: {x}" for x in p]
+    return p
 
 
 def rule_matches(label_rule: str, tool_rule: str) -> bool:

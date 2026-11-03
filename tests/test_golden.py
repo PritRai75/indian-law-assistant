@@ -267,3 +267,10 @@ def test_warnings_skip_drafts_and_never_fail_the_check():
     assert G.warnings(items, OWNERS) == [] and problems == []
     broad = labelled_with(["1026.2(a)"])
     assert G.check(broad, STATUSES) == []                        # advice, not a problem
+
+
+def test_unknown_tool_argument_is_reported_not_a_crash():
+    bad = CALL.replace("notice_date = 2026-12-01", "notice_date = 2026-12-01, statement_date = 2026-11-30")
+    items, problems = items_from(labelled_with_tool('deadlines = []\n').replace(CALL, bad))
+    assert any("unknown argument 'statement_date'" in p for p in problems)
+    assert G.compare_with_tool(items[0]) == []                  # skipped, no TypeError
