@@ -6,5 +6,5 @@
  "source": "corpus/txt/chunks.jsonl",
  "field": "embed_text",
  "chunks": 1115,
- "embed_tokens_total": 507294
+ "embed_tokens_total": 509219
 }

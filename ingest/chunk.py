@@ -36,6 +36,14 @@ at "(D)") also gets a "Lead-in" line quoting the start of its parent paragraph
 ("(ii) Safe harbors. A card issuer may impose a fee ..."), with that
 parent's status when it is not in force.
 
+Regulation Z states some rules twice: once for home-equity plans and once for
+other open-end plans such as credit cards (1026.6(a)/(b), 1026.7(a)/(b),
+1026.9(c)(1)/(2)), and the official interpretations of the two are often word
+for word the same. So every chunk inside one of these six paragraphs gets an
+"Applies to" line naming the paragraph and its heading ("Applies to: § 1026.7(a)
+Rules affecting home-equity plans"), unless it already holds that paragraph or
+its Lead-in quotes it (added in session 11).
+
 Chunk IDs never contain a space. Rule chunk IDs never contain "-"; commentary
 chunk IDs end in "-cmt" (before any "#n"); so the two kinds can't collide.
 Answers cite provisions (`provision_ids`), never chunk IDs.
@@ -197,6 +205,44 @@ def paragraph_range(ps: list[dict]) -> str:
 
 LEAD_IN_CHARS = 300
 
+# Paragraphs that split a rule by plan type (session 11). Found by their wording; the set is checked
+# against this list, so a new eCFR date that adds or drops one stops the build instead of passing silently.
+PLAN_SCOPE_RE = re.compile(r"\((\w+)\) (Rules affecting (?:home-equity plans|open-end \(not home-secured\) plans))")
+PLAN_SCOPE_IDS = ("1026.6(a)", "1026.6(b)", "1026.7(a)", "1026.7(b)", "1026.9(c)(1)", "1026.9(c)(2)")
+
+
+def plan_scopes(provisions: list[dict]) -> dict[str, str]:
+    """{paragraph ID: its heading} for the paragraphs that split a rule by plan type."""
+    found = {}
+    for p in provisions:
+        m = PLAN_SCOPE_RE.match(p["text"]) if p["kind"] == "rule" else None
+        if m:
+            if p["status"] != "in_force":
+                raise ValueError(f"plan-type paragraph {p['id']} is not in force; its heading can't be quoted")
+            found[p["id"]] = m.group(2)
+    if sorted(found) != sorted(PLAN_SCOPE_IDS):
+        raise ValueError(f"plan-type paragraphs changed: found {sorted(found)}, expected {sorted(PLAN_SCOPE_IDS)}")
+    return found
+
+
+def is_within(pid: str | None, para: str) -> bool:
+    """True for the paragraph itself or anything below it: ('1026.7(b)(1)', '1026.7(b)') -> True."""
+    return bool(pid) and (pid == para or pid.startswith(para + "("))
+
+
+def applies_to(ps: list[dict], parent: dict | None, scopes: dict[str, str]) -> str | None:
+    """'Applies to: § X <heading>' for a chunk inside a plan-type paragraph that doesn't already
+    show that heading (in its own text, or quoted by its Lead-in)."""
+    p0 = ps[0]
+    key = p0["id"] if p0["kind"] == "rule" else p0["target"]
+    for para, heading in scopes.items():
+        if not is_within(key, para):
+            continue
+        if para in {p["id"] for p in ps} or (parent is not None and parent["id"] == para):
+            return None
+        return f"Applies to: § {para} {heading}"
+    return None
+
 
 def lead_in(parent: dict) -> str:
     """'Lead-in from § X: <start of the parent's text>' for a chunk that starts inside a paragraph,
@@ -240,15 +286,14 @@ def header(kind: str, ps: list[dict], section_heading: str, status: str, note: s
 
 def make_chunk(chunk_id: str, unit_id: str, ps: list[dict], section_heading: str,
                piece: tuple[int, int] | None, extra: str | None = None,
-               parent: dict | None = None) -> dict:
+               parent: dict | None = None, scope: str | None = None) -> dict:
     p0 = ps[0]
     statuses = {(p["status"], p["status_note"]) for p in ps}
     if len(statuses) != 1:
         raise ValueError(f"{chunk_id}: mixes statuses {sorted(statuses, key=str)}")
     status, note = statuses.pop()
     text = "\n".join(p["text"] for p in ps)
-    if parent is not None:
-        extra = "\n".join(x for x in (lead_in(parent), extra) if x)
+    extra = "\n".join(x for x in (scope, lead_in(parent) if parent is not None else None, extra) if x) or None
     head = header(p0["kind"], ps, section_heading, status, note, p0["as_of"], extra)
     return {
         "id": chunk_id,
@@ -300,6 +345,7 @@ def build(provisions: list[dict], missing: list[dict], limit: int = LIMIT) -> li
         if p["kind"] == "rule":
             headings.setdefault(p["section"], p["section_heading"].rstrip(". "))
     by_id = {p["id"]: p for p in provisions}
+    scopes = plan_scopes(provisions)
 
     chunks = []
     for (section, kind), g in group_by(provisions, lambda p: (p["section"], p["kind"])):
@@ -313,7 +359,8 @@ def build(provisions: list[dict], missing: list[dict], limit: int = LIMIT) -> li
             ids = {p["id"] for p in ps}
             par = ps[0].get("parent")
             parent = by_id[par] if par and par not in ids else None
-            chunks.append(make_chunk(cid, unit_id, ps, headings[section], piece, parent=parent))
+            chunks.append(make_chunk(cid, unit_id, ps, headings[section], piece, parent=parent,
+                                     scope=applies_to(ps, parent, scopes)))
 
     for entry in missing:
         if entry["id"] in by_id:

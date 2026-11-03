@@ -283,6 +283,43 @@ def test_preceding_sibling():
         K.preceding_sibling("1026.2(a)(15)(ii)(A)")
 
 
+# ------------------------------------------------------------------ plan type (session 11)
+
+def test_plan_scope_paragraphs_found(provisions):
+    assert sorted(K.plan_scopes(provisions)) == sorted(K.PLAN_SCOPE_IDS)
+
+
+def test_twin_comments_name_their_plan_type(by_id):
+    """Home-equity and card comments that are word for word the same must say which plan they cover."""
+    for a, b in [("1026.7(a)(1)-cmt", "1026.7(b)(1)-cmt"), ("1026.6(a)(4)-cmt", "1026.6(b)(5)(ii)-cmt"),
+                 ("1026.9(c)(1)(i)-cmt", "1026.9(c)(2)(i)-cmt")]:
+        assert "Rules affecting home-equity plans" in by_id[a]["embed_text"]
+        assert "Rules affecting open-end (not home-secured) plans" in by_id[b]["embed_text"]
+        assert "not home-secured" not in by_id[a]["embed_text"]
+
+
+def test_applies_to_count_and_place(chunks):
+    with_line = [c for c in chunks if "\nApplies to: § " in c["embed_text"]]
+    assert Counter(c["kind"] for c in with_line) == {"commentary": 77, "rule": 7}
+    for c in with_line:
+        head = c["embed_text"].split("\n\n", 1)[0].split("\n")
+        assert head[head.index(next(l for l in head if l.startswith("Status: "))) + 1].startswith("Applies to: ")
+
+
+def test_applies_to_not_repeated_when_already_shown(by_id):
+    assert "Applies to" not in by_id["1026.7(a)"]["embed_text"]          # holds the paragraph itself
+    assert "Applies to" not in by_id["1026.7(b)(2)"]["embed_text"]       # Lead-in already quotes 7(b)
+    assert "Applies to: § 1026.7(b)" in by_id["1026.7(b)(12)#2"]["embed_text"]   # Lead-in quotes 7(b)(12) only
+    assert not any("Applies to" in c["embed_text"] for c in by_id.values() if c["section"] not in
+                   ("1026.6", "1026.7", "1026.9"))
+
+
+def test_plan_scope_set_change_is_an_error(provisions):
+    extra = prov("1026.16(d)", "(d) Rules affecting home-equity plans. Test.", section="1026.16")
+    with pytest.raises(ValueError, match="plan-type paragraphs changed"):
+        K.plan_scopes(provisions + [extra])
+
+
 # ------------------------------------------------------------------ the committed file
 
 def test_committed_chunks_match_a_fresh_build(chunks):
