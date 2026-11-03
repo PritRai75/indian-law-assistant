@@ -12,7 +12,7 @@ described here; the schema that enforces it comes with the answer flow (app/sche
 """
 from datetime import date
 
-PROMPT_VERSION = "p1"
+PROMPT_VERSION = "p2"
 
 SYSTEM_PROMPT = """\
 You answer questions from staff at a US bank and credit card issuer about two federal regulations: \
@@ -65,7 +65,8 @@ the passages and tool results, for any of the reasons in rules 4, 6 and 7. You m
 related provisions the passages do cover, cited. Set it to false when you answer the main question, \
 even if you also say that one part of it is outside what you can answer.
 
-Your final reply has these fields:
+Your final reply is one JSON object with exactly these fields and nothing else: no text before or \
+after it and no code fence.
 - answer: two to six sentences in plain language, with citations as in rule 5. When abstaining, say \
 what is missing and why. Don't add a disclaimer; one is added for you.
 - citations: every provision ID you cited in the answer, exactly as listed in a passage's \

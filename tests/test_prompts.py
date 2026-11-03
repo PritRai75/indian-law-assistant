@@ -15,6 +15,7 @@ needs_index = pytest.mark.skipif(not (ROOT / "index" / "chunks.json").exists(), 
 # an intended edit: bump PROMPT_VERSION in app/prompts.py and add the new version's hash here.
 PROMPT_HASHES = {
     "p1": "f64d0e22177ff96a184f68bb713c85ab93ba1aba591131784f43bf8a52dee426",
+    "p2": "bb93800274dea0e40728f2bee26b044723f8fe9805dcef144330547857ad3350",   # S12: final reply is JSON only
 }
 
 
