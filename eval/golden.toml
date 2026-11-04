@@ -747,7 +747,7 @@ abstain_category = "sign_off"
 
 [[question]]
 id = "q029"
-stage = "draft"
+stage = "labelled"
 persona = "frontline"
 type = "decline"
 trap = "excluded part"
@@ -756,10 +756,20 @@ A customer contacts us about a personal installment loan issued by our bank. Her
 shows an interest rate different from the rate she says our representative quoted when she applied. \
 Which consumer-protection requirements apply to her complaint?
 """
+gold_ids = []
+reference_answer = """
+Personal installment loans are closed-end credit transactions governed by Subpart C of Regulation Z. Because Subpart C and closed-end credit disclosure rules are excluded from the provided regulation corpus, this question falls outside the scope of the covered material.
+"""
+key_facts = [
+  "personal installment loans are closed-end credit governed by Subpart C of Regulation Z",
+  "Subpart C and closed-end credit rules are excluded from the provided regulation corpus"
+]
+should_abstain = true
+abstain_category = "excluded_part"
 
 [[question]]
 id = "q030"
-stage = "draft"
+stage = "labelled"
 persona = "compliance"
 type = "decline"
 trap = "other law"
@@ -769,3 +779,13 @@ currently serving on active duty in the US military. The customer opened the cre
 incurred the outstanding balance before beginning active-duty service on 1 September 2026. What \
 restrictions apply to the interest rate we can charge?
 """
+gold_ids = ["1026.55(b)(6)"]
+reference_answer = """
+Interest rate restrictions and caps for active-duty military servicemembers on pre-service debt are governed by separate federal statutes (such as the Servicemembers Civil Relief Act) rather than Regulation Z or Regulation E. While Regulation Z (12 CFR § 1026.55(b)(6)) addresses how card issuers handle rate adjustments when statutory servicemember protections end, the substantive interest rate limits for active-duty personnel are not established by the provided regulation corpus.
+"""
+key_facts = [
+  "interest rate caps and protections for active-duty military servicemembers are governed by separate federal laws outside Regulation Z and Regulation E",
+  "the provided regulatory corpus does not set substantive interest rate limits for active-duty servicemembers"
+]
+should_abstain = true
+abstain_category = "other_law"
