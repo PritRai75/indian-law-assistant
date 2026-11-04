@@ -398,7 +398,7 @@ should_abstain = false
 
 [[question]]
 id = "q014"
-stage = "draft"
+stage = "labelled"
 persona = "compliance"
 type = "deadline"
 question = """
@@ -407,10 +407,31 @@ $120 purchase at a shop in Mexico on 20 October 2026. The transaction appeared t
 and she first notified our bank by telephone on 28 October 2026. What investigation and resolution \
 deadlines apply?
 """
+regulation = "E"
+today = 2026-10-28
+gold_ids = ["1005.11(c)(1)", "1005.11(c)(3)(ii)"]
+reference_answer = """
+Under Regulation E, because the transaction was a foreign point-of-sale debit card transaction, extended investigation deadlines apply after receiving oral notice on 28 October 2026. The financial institution must investigate and determine whether an error occurred, or provisionally credit the account, within 10 business days (by Thursday, 12 November 2026). The complete investigation must be finished within 90 calendar days (by Tuesday, 26 January 2027).
+"""
+key_facts = [
+  "investigate or provisionally credit within 10 business days (12 November 2026)",
+  "complete investigation within 90 calendar days (26 January 2027)"
+]
+should_abstain = false
+
+[question.expected_tool_call]
+name = "dispute_timeline"
+args = { regulation = "E", event = "error", notice_date = "2026-10-28", transfer_kind = "foreign" }
+
+[question.expected_result]
+deadlines = [
+  { what = "10-business-day provisional credit or investigation determination", date = 2026-11-12, rule = "1005.11(c)(1)" },
+  { what = "90-calendar-day complete investigation", date = 2027-01-26, rule = "1005.11(c)(3)(ii)" }
+]
 
 [[question]]
 id = "q015"
-stage = "draft"
+stage = "labelled"
 persona = "frontline"
 type = "fees_terms"
 question = """
@@ -418,10 +439,21 @@ A new customer received a credit card with a $500 credit limit and was charged a
 $75 program fee and a $25 card-replacement fee during the first month. She wants to know whether the \
 bank is allowed to charge these fees.
 """
+regulation = "Z"
+gold_ids = ["1026.52(a)(1)", "1026.52(a)(2)(ii)"]
+reference_answer = """
+Under Regulation Z (12 CFR § 1026.52(a)(1)), total non-exempt fees required for a credit card during the first year after account opening cannot exceed 25% of the initial credit limit ($125 for a $500 limit). The $95 annual fee and $75 program fee total $170, which exceeds the $125 maximum, so the bank cannot charge the full amount of these required fees and must credit or waive the excess. Optional fees, such as the $25 card-replacement fee, are exempt under § 1026.52(a)(2)(ii) from counting toward the 25% cap.
+"""
+key_facts = [
+  "fees required in the first year cannot exceed 25% of the initial credit limit ($125 for a $500 limit)",
+  "the required annual and program fees total $170, exceeding the 25% cap",
+  "optional fees like a card-replacement fee are exempt from the 25% first-year limit"
+]
+should_abstain = false
 
 [[question]]
 id = "q016"
-stage = "draft"
+stage = "labelled"
 persona = "compliance"
 type = "fees_terms"
 question = """
@@ -430,6 +462,17 @@ specified credit limit. A compliance review has found that some customers enroll
 promotion were charged over-the-limit fees without having agreed to allow transactions above their \
 credit limits. Under what conditions may the bank charge these fees?
 """
+regulation = "Z"
+gold_ids = ["1026.56(b)(1)"]
+reference_answer = """
+Under Regulation Z (12 CFR § 1026.56(b)(1)), a card issuer may assess an over-the-limit fee only if it provides notice of the consumer's right to opt in, gives a reasonable opportunity to consent, obtains the consumer's affirmative consent (opt-in), provides written confirmation of consent, and provides notice of the right to revoke consent. Without obtaining affirmative opt-in consent, the bank may complete over-the-limit transactions but cannot impose any over-the-limit fee.
+"""
+key_facts = [
+  "the bank can charge over-the-limit fees only if the consumer affirmatively consents (opts in) after notice",
+  "the bank must provide written confirmation of consent and notice of the right to revoke consent",
+  "without affirmative consent, over-the-limit transactions may be completed but no fee may be charged"
+]
+should_abstain = false
 
 [[question]]
 id = "q017"
