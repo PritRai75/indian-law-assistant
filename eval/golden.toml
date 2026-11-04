@@ -1166,26 +1166,33 @@ abstain_category = "excluded_part"
 [[question]]
 id = "q046"
 stage = "labelled"
-persona = "compliance"
+persona = "frontline"
 type = "unauthorized"
-trap = "debit card once lost"
+trap = "PIN kept with the card"
 question = """
-A customer lost her debit card in September 2026 but did not report it. A statement sent on 30 \
-September 2026 showed a $100 unauthorized debit from 15 September. Additional unauthorized debits of \
-$200 on 10 November and $150 on 5 December appeared on later statements. She reported the loss on \
-10 December 2026. What is her total liability under Regulation E?
+A customer says her debit card was stolen from her car on Monday, 23 November 2026. She had written \
+her PIN on a sticky note attached to the card, noticed the theft that evening, and called our bank \
+on Friday, 27 November 2026. Thieves withdrew $600 from ATMs on 24 and 25 November. What liability \
+rules apply to these withdrawals?
 """
 regulation = "E"
-today = 2026-12-10
-gold_ids = ["1005.6(b)(3)", "1005.6(b)-2"]
+today = 2026-11-27
+gold_ids = ["1005.6(b)(2)", "1005.6(b)-2"]
 reference_answer = """
-The customer's total liability is $150. For the $100 debit on 15 September (before the close of 60 days from statement transmittal), liability is capped at $50 under § 1005.6(b)(2). The $200 debit on 10 November also occurred within the 60-day window (which ended on 29 November), so her liability for it is $0. However, for the $150 debit on 5 December (after the 60-day window), she faces unlimited liability under § 1005.6(b)(3), making her liable for the full $150.
+Under Regulation E (12 CFR § 1005.6(b)(2)), consumer liability for unauthorized electronic fund transfers is governed strictly by statutory caps. Writing a PIN on a note attached to the debit card constitutes negligence under state law, but consumer negligence cannot be used to impose greater liability than permitted under Regulation E (Comment 1005.6(b)-2). Because Thanksgiving Day (Thursday, 26 November) is a federal holiday, Friday, 27 November was the third business day after learning of the theft. Because notice was provided after two business days, the customer's maximum liability is capped at $500.
 """
 key_facts = [
-  "Liability for unauthorized transfers occurring within 60 days of statement transmittal is capped under § 1005.6(b)(2).",
-  "The consumer faces unlimited liability for unauthorized transfers occurring after the 60-day period following statement transmittal (§ 1005.6(b)(3))."
+  "Consumer negligence, such as writing a PIN on a note kept with a debit card, cannot increase liability beyond Regulation E statutory limits (Comment 1005.6(b)-2).",
+  "Because notice was given on the third business day following the loss, the customer's maximum liability under Regulation E is capped at $500 (§ 1005.6(b)(2))."
 ]
 should_abstain = false
+
+[question.expected_tool_call]
+name = "dispute_timeline"
+args = { regulation = "E", event = "unauthorized", learned_of_loss = "2026-11-23", notice_date = "2026-11-27" }
+
+[question.expected_result]
+liability_tiers = ["max_500"]
 
 [[question]]
 id = "q047"
