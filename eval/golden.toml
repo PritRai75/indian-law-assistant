@@ -476,7 +476,7 @@ should_abstain = false
 
 [[question]]
 id = "q017"
-stage = "draft"
+stage = "labelled"
 persona = "compliance"
 type = "payments_disclosures"
 question = """
@@ -484,10 +484,20 @@ Our credit-card system receives a $500 payment from a customer whose minimum pay
 The account has a 0% balance-transfer balance and a purchase balance carrying a 24% APR. How must \
 the system allocate the amount paid above the minimum between these two balances?
 """
+regulation = "Z"
+gold_ids = ["1026.53(a)"]
+reference_answer = """
+Under Regulation Z (12 CFR § 1026.53(a)), any amount paid by a consumer in excess of the required minimum periodic payment must be allocated first to the balance with the highest annual percentage rate. For a $500 payment with a $100 minimum payment, the excess payment is $400. Because the purchase balance carries a 24% APR and the balance-transfer balance carries a 0% APR, the system must allocate the entire $400 excess payment to the 24% purchase balance.
+"""
+key_facts = [
+  "payments in excess of the minimum payment must be allocated first to the balance with the highest APR",
+  "the entire $400 excess payment must be allocated to the 24% purchase balance"
+]
+should_abstain = false
 
 [[question]]
 id = "q018"
-stage = "draft"
+stage = "labelled"
 persona = "compliance"
 type = "payments_disclosures"
 question = """
@@ -496,10 +506,21 @@ October 2026. The affected statements were scheduled to be sent on 20 October 20
 on 29 October 2026. Some customers have payment due dates of 10 November 2026. Are these payment due \
 dates compliant with the applicable statement-delivery requirements?
 """
+regulation = "Z"
+gold_ids = ["1026.5(b)(2)(ii)(A)(1)", "1026.5(b)(2)(ii)(A)(2)"]
+reference_answer = """
+No, the payment due dates are not compliant. Under Regulation Z (12 CFR § 1026.5(b)(2)(ii)(A)(1)), a card issuer must adopt reasonable procedures designed to ensure that periodic statements are mailed or delivered at least 21 days prior to the payment due date. Because statements mailed on 29 October 2026 with a due date of 10 November 2026 provided only 12 days' notice, the card issuer failed to meet the 21-day requirement and cannot treat payments received within 21 days of mailing (by 19 November 2026) as late for any purpose.
+"""
+key_facts = [
+  "credit card statements must be mailed or delivered at least 21 days prior to the payment due date",
+  "a 10 November due date for statements mailed on 29 October provides only 12 days notice and is non-compliant",
+  "payments received within 21 days of mailing (by 19 November 2026) cannot be treated as late for any purpose"
+]
+should_abstain = false
 
 [[question]]
 id = "q019"
-stage = "draft"
+stage = "labelled"
 persona = "frontline"
 type = "reg_e_account"
 question = """
@@ -507,10 +528,21 @@ A checking-account customer wants us to stop her insurance company's automatic m
 from her account. The next payment is scheduled for 12 November 2026, and she is calling us today, 4 \
 November 2026. What notice period applies to her stop-payment request?
 """
+regulation = "E"
+today = 2026-11-04
+gold_ids = ["1005.10(c)(1)", "1005.10(c)(2)"]
+reference_answer = """
+Under Regulation E (12 CFR § 1005.10(c)(1)), a consumer may stop payment of a preauthorized electronic fund transfer by notifying the financial institution orally or in writing at least three business days before the scheduled transfer date. Because the customer is calling on 4 November for a payment scheduled on 12 November, her notice satisfies the three-business-day requirement. The financial institution may require the customer to provide written confirmation of an oral stop-payment order within 14 days (§ 1005.10(c)(2)).
+"""
+key_facts = [
+  "the stop-payment notice must be given orally or in writing at least 3 business days before the scheduled transfer date",
+  "the financial institution may require written confirmation within 14 days of oral notification"
+]
+should_abstain = false
 
 [[question]]
 id = "q020"
-stage = "draft"
+stage = "labelled"
 persona = "frontline"
 type = "reg_e_account"
 question = """
@@ -518,6 +550,17 @@ A customer received a debit card in the mail for her savings account and says sh
 agreed to receive one. She has not activated the card and still has it in her possession. What \
 restrictions apply to sending her a debit card she didn't ask for?
 """
+regulation = "E"
+gold_ids = ["1005.5(b)"]
+reference_answer = """
+Under Regulation E (12 CFR § 1005.5(b)), a financial institution may distribute an unrequested debit card on an unsolicited basis only if four conditions are met: the card is not validated when sent; it is accompanied by a clear explanation that it is unvalidated and how to dispose of it; it includes the required initial disclosures (§ 1005.7); and it is validated only in response to the consumer's oral or written request after verifying identity.
+"""
+key_facts = [
+  "an unsolicited debit card must be sent unvalidated",
+  "it must include disclosures and instructions on how to dispose of the card if not desired",
+  "it may be validated only upon the consumer's request after verifying identity"
+]
+should_abstain = false
 
 [[question]]
 id = "q021"
