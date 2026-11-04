@@ -564,7 +564,7 @@ should_abstain = false
 
 [[question]]
 id = "q021"
-stage = "draft"
+stage = "labelled"
 persona = "compliance"
 type = "reg_e_account"
 question = """
@@ -573,10 +573,21 @@ affiliated locations. The proposed terms include a monthly maintenance fee begin
 after purchase and an expiration date three years after purchase. Are these proposed terms \
 permitted?
 """
+regulation = "E"
+gold_ids = ["1005.20(d)(1)", "1005.20(e)(2)(i)"]
+reference_answer = """
+Neither of the proposed terms is permitted under Regulation E (12 CFR § 1005.20). First, under § 1005.20(d)(1), a monthly maintenance or inactivity fee cannot be charged unless there has been no activity on the card for at least one year (12 months), so charging a fee after six months is prohibited. Second, under § 1005.20(e)(2)(i), card funds cannot expire sooner than five years from the date of issuance or last load, making a three-year expiration date non-compliant.
+"""
+key_facts = [
+  "neither proposed term is permitted under Regulation E",
+  "monthly maintenance or inactivity fees cannot be imposed until after at least 1 year (12 months) of inactivity",
+  "card expiration dates cannot be earlier than 5 years from the date of issuance or fund loading"
+]
+should_abstain = false
 
 [[question]]
 id = "q022"
-stage = "draft"
+stage = "labelled"
 persona = "compliance"
 type = "cross_reg"
 trap = "prepaid plus credit"
@@ -586,10 +597,21 @@ prepaid balance through a linked credit feature. The credit feature would cover 
 balance, and customers would repay the amount later. How is this product classified, and what \
 requirements apply to the linked credit feature?
 """
+regulation = "Z"
+gold_ids = ["1026.61(a)(2)(i)", "1026.61(b)", "1026.61(c)(1)"]
+reference_answer = """
+The prepaid card is classified as a hybrid prepaid-credit card accessing a covered separate credit feature under Regulation Z (12 CFR § 1026.61(a)(2)(i)). Under § 1026.61(b), the credit feature cannot be structured as a negative balance on the asset account; it must be structured as a separate credit account or credit subaccount. Additionally, under § 1026.61(c)(1), the bank must wait at least 30 days after the prepaid account is registered before soliciting, offering, or opening the covered separate credit feature.
+"""
+key_facts = [
+  "the card is classified as a hybrid prepaid-credit card accessing a covered separate credit feature",
+  "the credit feature cannot be a negative asset balance and must be structured as a separate credit account or subaccount",
+  "the bank must wait at least 30 days after prepaid account registration before opening or soliciting the credit feature"
+]
+should_abstain = false
 
 [[question]]
 id = "q023"
-stage = "draft"
+stage = "labelled"
 persona = "frontline"
 type = "cross_reg"
 trap = "debit and credit in one call"
@@ -599,10 +621,22 @@ card and bank-issued credit card, was stolen on Saturday, 31 October 2026. Both 
 without her permission on 31 October and 1 November 2026, and she discovered the theft on 31 \
 October. What liability rules apply to the unauthorized transactions on each card?
 """
+regulation = "both"
+today = 2026-11-03
+gold_ids = ["1005.6(b)(1)", "1026.12(b)(1)(ii)"]
+reference_answer = """
+For the debit card, because the customer notified the bank on 3 November 2026—within two business days of discovering the theft on 31 October—her liability under Regulation E (12 CFR § 1005.6(b)(1)) is capped at the lesser of $50 or the amount of unauthorized transfers prior to notice. For the credit card, under Regulation Z (12 CFR § 1026.12(b)(1)(ii)), her maximum liability for unauthorized use is $50. Unlike Regulation E, Regulation Z does not impose a 2-business-day notice deadline to maintain the $50 liability cap.
+"""
+key_facts = [
+  "debit card liability under Regulation E is capped at $50 because notice was provided within two business days",
+  "credit card liability under Regulation Z is capped at $50 for unauthorized use",
+  "Regulation Z does not require notice within two business days to maintain the $50 liability cap"
+]
+should_abstain = false
 
 [[question]]
 id = "q024"
-stage = "draft"
+stage = "labelled"
 persona = "frontline"
 type = "decline"
 trap = "state law"
@@ -612,10 +646,20 @@ interest rate our bank can charge on her existing credit-card account. The accou
 she lived in Texas, and our bank is the issuer. How should we respond to her question about the \
 applicable interest-rate limit?
 """
+gold_ids = []
+reference_answer = """
+State-law interest rate limits, usury caps, and choice-of-law rules for credit card accounts are not governed by Regulation Z or Regulation E. Because federal lending regulations set disclosure rules but do not govern state usury caps or determine which state's interest rate limits apply when a customer moves, this question falls outside the scope of the provided corpus.
+"""
+key_facts = [
+  "state-law interest rate limits and usury caps are not governed by Regulation Z or Regulation E",
+  "the covered regulations do not set state choice-of-law rules for credit card interest rates"
+]
+should_abstain = true
+abstain_category = "state_law"
 
 [[question]]
 id = "q025"
-stage = "draft"
+stage = "labelled"
 persona = "frontline"
 type = "decline"
 trap = "issuer's own terms"
@@ -624,6 +668,16 @@ A credit-card customer contacts us because she expects to make her payment late 
 She is worried that the bank will immediately cancel or remove all the reward points she has \
 accumulated. What should we tell her about the effect of a late payment on her reward points?
 """
+gold_ids = []
+reference_answer = """
+Rewards program rules, including the forfeiture or cancellation of accumulated reward points due to a late payment, are governed by the card issuer's individual cardholder agreement and rewards program terms, rather than Regulation Z or Regulation E. Because specific rewards program terms and point forfeiture rules are set by the issuer's private contract, they are not covered by the provided regulation corpus.
+"""
+key_facts = [
+  "rewards program rules and point forfeiture for late payments are governed by the issuer's account agreement and terms",
+  "the provided regulations do not contain rewards program or point cancellation rules"
+]
+should_abstain = true
+abstain_category = "issuer_terms"
 
 [[question]]
 id = "q026"
