@@ -352,26 +352,25 @@ $480 charge appears on her statement sent on 15 October 2026, and her written co
 bank by mail on 2 November 2026. What deadlines apply to handling this billing complaint?
 """
 regulation = "Z"
-today = 2026-11-02
 gold_ids = ["1026.13(c)(1)", "1026.13(c)(2)"]
 reference_answer = """
-Under Regulation Z, after receiving a written billing error notice on 2 November 2026, the creditor must send a written acknowledgment to the consumer within 30 calendar days (by 2 December 2026). The creditor must complete its investigation and resolve the billing dispute within two complete billing cycles, but in no event later than 90 calendar days after receiving the notice (by 31 January 2027).
+Under Regulation Z (12 CFR § 1026.13(c)), because the customer submitted written notice within 60 days of statement transmittal, the creditor must send a written acknowledgment within 30 days of receipt (by Wednesday, 2 December 2026). The creditor must resolve the dispute within two complete billing cycles (and no later than 90 days) after receiving the notice.
 """
 key_facts = [
-  "written acknowledgment must be sent within 30 days of receiving notice (2 December 2026)",
-  "investigation and resolution must be completed within two complete billing cycles or 90 days (31 January 2027)"
+  "send written acknowledgment within 30 days of receiving the billing error notice",
+  "complete resolution procedures within two complete billing cycles (and no later than 90 days)"
 ]
 should_abstain = false
 
 [question.expected_tool_call]
 name = "dispute_timeline"
-args = { regulation = "Z", event = "error", statement_sent = "2026-10-15", notice_date = "2026-11-02" }
+args = { regulation = "Z", event = "error", notice_date = "2026-11-02", statement_sent = "2026-10-15" }
 
 [question.expected_result]
 notice_timely = true
 deadlines = [
   { what = "30-day written acknowledgment", date = 2026-12-02, rule = "1026.13(c)(1)" },
-  { what = "two complete billing cycles or 90-day complete resolution", date = 2027-01-31, rule = "1026.13(c)(2)" }
+  { what = "2-billing-cycle / 90-day complete resolution", date = 2027-01-31, rule = "1026.13(c)(2)" }
 ]
 
 [[question]]
@@ -408,7 +407,6 @@ and she first notified our bank by telephone on 28 October 2026. What investigat
 deadlines apply?
 """
 regulation = "E"
-today = 2026-10-28
 gold_ids = ["1005.11(c)(1)", "1005.11(c)(3)(ii)"]
 reference_answer = """
 Under Regulation E, because the transaction was a foreign point-of-sale debit card transaction, extended investigation deadlines apply after receiving oral notice on 28 October 2026. The financial institution must investigate and determine whether an error occurred, or provisionally credit the account, within 10 business days (by Thursday, 12 November 2026). The complete investigation must be finished within 90 calendar days (by Tuesday, 26 January 2027).
@@ -589,8 +587,7 @@ should_abstain = false
 id = "q022"
 stage = "labelled"
 persona = "compliance"
-type = "cross_reg"
-trap = "prepaid plus credit"
+type = "fees_terms"
 question = """
 Our bank is developing a prepaid card that would allow customers to spend more than their available \
 prepaid balance through a linked credit feature. The credit feature would cover the negative \
@@ -633,6 +630,13 @@ key_facts = [
   "Regulation Z does not require notice within two business days to maintain the $50 liability cap"
 ]
 should_abstain = false
+
+[question.expected_tool_call]
+name = "dispute_timeline"
+args = { regulation = "E", event = "unauthorized", notice_date = "2026-11-03", learned_of_loss = "2026-10-31" }
+
+[question.expected_result]
+liability_tiers = ["max_50"]
 
 [[question]]
 id = "q024"
@@ -705,23 +709,22 @@ abstain_category = "not_in_force"
 id = "q027"
 stage = "labelled"
 persona = "compliance"
-type = "decline"
-trap = "rule not in force"
+type = "reg_e_account"
 question = """
 Our bank is redesigning the overdraft-fee structure for its checking accounts. The product manager \
 wants to implement the federal overdraft rule announced in December 2024 and asks which fee limits \
 must be built into the new system. What federal overdraft-fee requirements are currently in force?
 """
+regulation = "E"
 gold_ids = ["1005.17(b)(1)"]
 reference_answer = """
-The CFPB's December 2024 overdraft lending rule (89 FR 106768) was overturned by Congress under Public Law 119-10 and never took effect. Under current Regulation E rules in force (12 CFR § 1005.17(b)(1)), financial institutions must obtain affirmative opt-in consent before charging overdraft fees on ATM and one-time debit card transactions, but federal regulation does not impose specific numeric fee caps.
+The CFPB's December 2024 overdraft lending rule (89 FR 106768) was overturned by Congress under Public Law 119-10 and never took effect. Under current Regulation E rules in force (12 CFR § 1005.17(b)(1)), financial institutions must obtain affirmative opt-in consent before assessing overdraft fees on ATM and one-time debit card transactions, but federal regulation does not impose specific numeric fee caps.
 """
 key_facts = [
   "the December 2024 federal overdraft lending rule was overturned by Congress and never took effect",
   "current in-force federal rules require affirmative opt-in consent before charging overdraft fees on ATM and one-time debit card transactions under 12 CFR § 1005.17(b)(1)"
 ]
-should_abstain = true
-abstain_category = "not_in_force"
+should_abstain = false
 
 [[question]]
 id = "q028"
@@ -781,7 +784,7 @@ restrictions apply to the interest rate we can charge?
 """
 gold_ids = ["1026.55(b)(6)"]
 reference_answer = """
-Interest rate restrictions and caps for active-duty military servicemembers on pre-service debt are governed by separate federal statutes (such as the Servicemembers Civil Relief Act) rather than Regulation Z or Regulation E. While Regulation Z (12 CFR § 1026.55(b)(6)) addresses how card issuers handle rate adjustments when statutory servicemember protections end, the substantive interest rate limits for active-duty personnel are not established by the provided regulation corpus.
+Interest rate restrictions and caps for active-duty military servicemembers on pre-service debt are governed by separate federal statutes rather than Regulation Z or Regulation E. While Regulation Z (12 CFR § 1026.55(b)(6)) addresses how card issuers handle rate adjustments when statutory servicemember protections end, the substantive interest rate limits for active-duty personnel are not established by the provided regulation corpus.
 """
 key_facts = [
   "interest rate caps and protections for active-duty military servicemembers are governed by separate federal laws outside Regulation Z and Regulation E",
