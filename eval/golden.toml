@@ -929,7 +929,7 @@ should_abstain = false
 
 [[question]]
 id = "q036"
-stage = "draft"
+stage = "labelled"
 persona = "compliance"
 type = "cross_reg"
 trap = "credit card used at an ATM"
@@ -938,10 +938,28 @@ A customer's credit card and its PIN were stolen on Saturday, 7 November 2026. T
 to obtain two $400 cash advances at ATMs, and the customer reported the theft to our bank on Sunday, \
 8 November 2026. What liability rules apply to these unauthorized cash advances?
 """
+regulation = "Z"
+today = 2026-11-08
+gold_ids = ["1026.12(b)(1)", "1005.12(a)(1)"]
+reference_answer = """
+Because the cash advances were drawn directly from a credit card line of credit rather than a deposit or checking account, Regulation Z (12 CFR Part 1026) governs liability rather than Regulation E. Under Regulation Z (§ 1026.12(b)(1)), the customer's maximum liability for the unauthorized credit card use is capped at $50. Regulation E does not apply to transactions that draw solely on a credit feature without accessing an asset account (§ 1005.12(a)(1)).
+"""
+key_facts = [
+  "Regulation Z governs liability for unauthorized credit card cash advances because the transaction did not access a deposit account (§ 1005.12(a)(1)).",
+  "Under Regulation Z (§ 1026.12(b)(1)), the cardholder's maximum liability for the unauthorized transactions is $50."
+]
+should_abstain = false
+
+[question.expected_tool_call]
+name = "dispute_timeline"
+args = { regulation = "Z", event = "unauthorized", notice_date = "2026-11-08" }
+
+[question.expected_result]
+liability_tiers = ["max_50"]
 
 [[question]]
 id = "q037"
-stage = "draft"
+stage = "labelled"
 persona = "compliance"
 type = "cross_reg"
 trap = "near a rule not in force"
@@ -950,10 +968,20 @@ Our bank plans to add an overdraft line of credit to existing debit-card account
 customers have never applied for or agreed to this credit feature. Can the bank add the overdraft \
 credit feature without obtaining their consent?
 """
+regulation = "both"
+gold_ids = ["1026.12(a)(1)", "1005.12(a)(2)(i)"]
+reference_answer = """
+No, the bank cannot add an overdraft line of credit to existing debit-card accounts without obtaining the customers' explicit request or consent. Under Regulation Z (12 CFR § 1026.12(a)(1)), no credit card may be issued except in response to an oral or written request or application, and adding a credit feature to an existing non-credit card constitutes credit card issuance. Regulation E (§ 1005.12(a)(2)(i)) reinforces that adding a credit feature to an accepted access device is governed by Regulation Z's prohibition on unsolicited issuance.
+"""
+key_facts = [
+  "Adding a credit feature to an existing debit card constitutes credit card issuance under Regulation Z (§ 1026.12(a)(1)).",
+  "The bank cannot add an overdraft line of credit without obtaining the customer's oral or written request or application (§ 1026.12(a)(1))."
+]
+should_abstain = false
 
 [[question]]
 id = "q038"
-stage = "draft"
+stage = "labelled"
 persona = "frontline"
 type = "fees_terms"
 question = """
@@ -961,10 +989,20 @@ A credit-card customer made a payment 20 days late in September 2026. She has no
 saying that the bank plans to increase the APR on her existing purchase balance to the penalty rate. \
 Can the bank apply the penalty APR to her existing balance?
 """
+regulation = "Z"
+gold_ids = ["1026.55(a)", "1026.55(b)(4)"]
+reference_answer = """
+No, the bank cannot apply the penalty APR to the customer's existing balance. Under Regulation Z (12 CFR § 1026.55(a)), card issuers are generally prohibited from increasing the APR on an existing credit card balance. While § 1026.55(b)(4) allows a penalty APR to be applied to existing balances if a required minimum payment is more than 60 days late, a payment that is only 20 days late does not meet this threshold. Any rate increase based on a 20-day late payment can only apply prospectively to new transactions following 45 days advance notice (§ 1026.55(b)(3)).
+"""
+key_facts = [
+  "Regulation Z generally prohibits card issuers from increasing the APR on existing balances (§ 1026.55(a)).",
+  "Applying a penalty APR to an existing balance requires the payment to be more than 60 days late (§ 1026.55(b)(4))."
+]
+should_abstain = false
 
 [[question]]
 id = "q039"
-stage = "draft"
+stage = "labelled"
 persona = "frontline"
 type = "reg_e_account"
 trap = "pair with q040"
@@ -973,10 +1011,20 @@ A customer was charged a $34 overdraft fee when a coffee-shop purchase made with
 her checking account below zero. She says she never agreed to overdraft coverage. Can the bank \
 charge her an overdraft fee for this debit-card transaction?
 """
+regulation = "E"
+gold_ids = ["1005.17(b)(1)"]
+reference_answer = """
+No, the bank cannot charge an overdraft fee for this debit-card transaction. Under Regulation E (12 CFR § 1005.17(b)(1)), a financial institution is prohibited from assessing an overdraft fee on a consumer's account for paying an ATM or one-time debit card transaction unless the consumer has explicitly opted in and provided affirmative consent for overdraft coverage. Because the customer never opted in to overdraft coverage for one-time debit card transactions, the $34 fee is impermissible.
+"""
+key_facts = [
+  "Regulation E prohibits assessing an overdraft fee on one-time debit card transactions unless the consumer has affirmatively opted in (§ 1005.17(b)(1)).",
+  "Because the customer never agreed to overdraft coverage for one-time debit card transactions, the bank cannot charge her an overdraft fee."
+]
+should_abstain = false
 
 [[question]]
 id = "q040"
-stage = "draft"
+stage = "labelled"
 persona = "frontline"
 type = "decline"
 trap = "rule not in force (pair with q039)"
@@ -985,6 +1033,17 @@ A customer says she read that a federal rule issued in late 2024 limits overdraf
 banks to $5. She wants us to reduce the $34 overdraft fee recently charged to her checking account. \
 Does that federal rule require us to reduce the fee?
 """
+regulation = "E"
+gold_ids = ["1005.17(b)(1)"]
+reference_answer = """
+No, that federal rule does not require reducing the fee because it is not law in force. The 2024 overdraft lending rule was overturned by Congress under the Congressional Review Act (Pub. L. 119-10) and never took effect. Under Regulation E (12 CFR § 1005.17(b)(1)), overdraft fees remain governed by standard opt-in rules, and no federal $5 fee limit applies under current law.
+"""
+key_facts = [
+  "The 2024 federal overdraft rule was overturned by Congress and is not law in force.",
+  "Current Regulation E provisions do not establish a $5 cap on overdraft fees (§ 1005.17(b)(1))."
+]
+should_abstain = true
+abstain_category = "not_in_force"
 
 [[question]]
 id = "q041"
