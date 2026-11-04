@@ -10,6 +10,11 @@ from dataclasses import asdict, dataclass, replace
 
 from app.prompts import PROMPT_VERSION
 
+# The citation guard's rule (app.answer.guard). Bump it with any change to how the guard reads or
+# removes citations, since that changes answers. "c1": one ID per string (sessions 12-14);
+# "c2": every citation read with app.citations (packed IDs, ranges, comment sub-points; session 15).
+GUARD_VERSION = "c2"
+
 
 @dataclass(frozen=True)
 class Config:
@@ -40,6 +45,8 @@ DEFAULT = Config()
 
 
 def config_hash(config, as_of):
-    """First 12 hex digits of a hash over the settings, PROMPT_VERSION and the corpus "as of" date."""
-    blob = json.dumps({**asdict(config), "prompt_version": PROMPT_VERSION, "as_of": as_of}, sort_keys=True)
+    """First 12 hex digits of a hash over the settings, PROMPT_VERSION, GUARD_VERSION and the corpus
+    "as of" date."""
+    blob = json.dumps({**asdict(config), "prompt_version": PROMPT_VERSION, "guard_version": GUARD_VERSION,
+                       "as_of": as_of}, sort_keys=True)
     return hashlib.sha256(blob.encode("utf-8")).hexdigest()[:12]

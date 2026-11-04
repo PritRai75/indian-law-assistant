@@ -14,9 +14,11 @@ Steps:
 3. Its final reply must be the four-field JSON object (app.schema.ModelAnswer). If it isn't, the
    model gets one repair try; if that fails too, the response is an abstention.
 4. Citation guard: every ID the model cited, in the citations field or inline as [§ ...] or
-   [comment ...], must be a provision in a retrieved chunk or appear in a tool result. Others are
-   removed (inline ones become "[citation removed]") and flagged. An answer left with no valid
-   citation becomes an abstention. The eval scores the raw citations, from before the guard.
+   [comment ...], must be a provision in a retrieved chunk or appear in a tool result. Each citation
+   is read with app.citations, so a packed string, a range or a comment sub-point counts as the IDs
+   it names. Others are removed (inline ones become "[citation removed]") and flagged. An answer
+   left with no valid citation becomes an abstention. The eval scores the raw citations, from
+   before the guard, read the same way.
 """
 import argparse
 import json
@@ -26,6 +28,7 @@ from collections import Counter
 from datetime import date
 from functools import lru_cache
 
+from app import citations as cit
 from app import retrieve as rt
 from app.config import DEFAULT, config_hash
 from app.prompts import PROMPT_VERSION, SYSTEM_PROMPT, build_user_message
@@ -86,12 +89,6 @@ def parse_reply(text):
         raise ValueError(f"field {'.'.join(map(str, first['loc'])) or '?'}: {first['msg']}") from None
 
 
-def normalize_id(cited):
-    """'§ 1005.6(b)(1)' -> '1005.6(b)(1)', 'comment 1005.6(b)-1' -> '1005.6(b)-1', lower case for matching."""
-    c = re.sub(r"^(?:12\s*cfr\s*)?(?:§+|comments?)?\s*", "", cited.strip(), flags=re.IGNORECASE)
-    return re.sub(r"\s", "", c).lower()
-
-
 def allowed_ids(results, tool_calls):
     """Lower-case ID -> spelling, for every provision in a retrieved chunk or mentioned in a tool result."""
     allowed = {p.lower(): p for r in results for p in r["chunk"]["provision_ids"]}
@@ -101,19 +98,40 @@ def allowed_ids(results, tool_calls):
     return allowed
 
 
-def guard(model_answer, allowed):
-    """Apply the citation guard. Returns (answer text, valid IDs, raw IDs, invalid IDs)."""
+@lru_cache(maxsize=1)
+def index_spelling():
+    """Lower-case provision ID -> the index's spelling, for every provision in the index."""
+    return {p.lower(): p for c in rt.load()[0] for p in c["provision_ids"]}
+
+
+def guard(model_answer, allowed, provisions=None):
+    """Apply the citation guard (GUARD_VERSION c2). Returns (answer text, valid IDs, raw strings, invalid).
+
+    Each citation string, in the citations field or inline, is read with app.citations, so one string
+    may name several IDs ("1026.13(c)(1), § 1026.13(c)(2)", a range, a comment sub-point). An ID is
+    valid if `allowed` holds it (a retrieved chunk or a tool result). Invalid: IDs read but not allowed,
+    and whatever the reader couldn't turn into an index ID (too broad, not found, no part, unreadable).
+    An inline marker whose every ID is valid stays as written; one with some valid IDs is rewritten to
+    those only, one per marker part ("[§ A; comment B]"); one with none becomes "[citation removed]"."""
+    provisions = provisions or index_spelling()
     raw = [c.strip() for c in model_answer.citations]
     raw += [m.group(2) for m in INLINE.finditer(model_answer.answer)]
     raw = list(dict.fromkeys(c for c in raw if c))                     # dedupe, keep order
     valid, invalid = [], []
     for c in raw:
-        key = normalize_id(c)
-        (valid if key in allowed else invalid).append(allowed.get(key, c))
+        reading = cit.read_citation(c, provisions)
+        for i in reading.ids:
+            (valid if i.lower() in allowed else invalid).append(allowed.get(i.lower(), i))
+        invalid += reading.problems
     valid, invalid = list(dict.fromkeys(valid)), list(dict.fromkeys(invalid))
-    text = INLINE.sub(lambda m: m.group(0) if normalize_id(m.group(2)) in allowed else "[citation removed]",
-                      model_answer.answer)
-    return text, valid, raw, invalid
+
+    def inline(m):
+        reading = cit.read_citation(m.group(2), provisions)
+        ok = [allowed[i.lower()] for i in reading.ids if i.lower() in allowed]
+        if ok and len(ok) == len(reading.ids) and not reading.problems:
+            return m.group(0)
+        return "[" + "; ".join(cit.marker(i) for i in ok) + "]" if ok else "[citation removed]"
+    return INLINE.sub(inline, model_answer.answer), valid, raw, invalid
 
 
 def converse_request(config):

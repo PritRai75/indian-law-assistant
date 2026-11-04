@@ -181,11 +181,13 @@ def test_model_abstention_without_citations_stays_as_it_is():
     assert resp.abstained and resp.abstain_reason == "card network rules" and resp.flags == []
 
 
-def test_normalize_id():
-    assert an.normalize_id("§ 1005.6(b)(1)") == "1005.6(b)(1)"
-    assert an.normalize_id("comment 1005.6(b)-1") == "1005.6(b)-1"
-    assert an.normalize_id("12 CFR 1026.52(b)(1)(ii)(A)") == "1026.52(b)(1)(ii)(a)"
-    assert an.normalize_id(" §§1026.13 (c)(2) ") == "1026.13(c)(2)"
+def test_the_guard_reads_every_spelling_of_one_id():          # was test_normalize_id (guard c1)
+    from app.citations import read_citation
+    prov = an.index_spelling()
+    assert read_citation("§ 1005.6(b)(1)", prov).ids == ["1005.6(b)(1)"]
+    assert read_citation("comment 1005.6(b)-1", prov).ids == ["1005.6(b)-1"]
+    assert read_citation("12 CFR 1026.52(b)(1)(ii)(A)", prov).ids == ["1026.52(b)(1)(ii)(A)"]
+    assert read_citation(" §§1026.13 (c)(2) ", prov).ids == ["1026.13(c)(2)"]
 
 
 # ---------------------------------------------------------------- input
@@ -195,3 +197,38 @@ def test_empty_or_long_question_is_refused():
         an.answer("   ", TODAY, client=FakeClient())
     with pytest.raises(ValueError):
         an.answer("x" * 2001, TODAY, client=FakeClient())
+
+
+# ---------------------------------------------------------------- guard c2: every citation form (session 15)
+
+def test_packed_range_and_subpoint_citations_are_kept():
+    final = reply("Cap is $50 [§ 1005.6(b)(1), § 1005.6(b)(2)], tiers in [§ 1005.6(b)(1)-(3)], "
+                  "example in [comment 1005.6(b)(1)-3.ii].",
+                  ["1005.6(b)(1); § 1005.6(b)(2)"])
+    resp, _ = run(text(final))
+    assert "[citation removed]" not in resp.answer and resp.answer == final["answer"]
+    assert resp.citations == ["1005.6(b)(1)", "1005.6(b)(2)", "1005.6(b)(3)", "1005.6(b)(1)-3"]
+    assert resp.invalid_citations == [] and resp.flags == [] and not resp.abstained
+    assert resp.raw_citations == ["1005.6(b)(1); § 1005.6(b)(2)", "1005.6(b)(1), § 1005.6(b)(2)",
+                                  "1005.6(b)(1)-(3)", "1005.6(b)(1)-3.ii"]        # raw strings, as written
+
+
+def test_marker_with_some_valid_ids_keeps_only_those():
+    final = reply("Cap is $50 [§ 1005.6(b)(1), § 1005.11(c)(1)] and [comment 1005.6(b)-1; § 1026.99(z)].",
+                  ["1005.6(b)(1)"])
+    resp, _ = run(text(final))
+    assert resp.answer == "Cap is $50 [§ 1005.6(b)(1)] and [comment 1005.6(b)-1]."
+    assert resp.invalid_citations == ["1005.11(c)(1)", "1026.99(z)"]           # real but not retrieved; no such ID
+    assert resp.flags == ["invalid_citations"] and not resp.abstained
+
+
+def test_whole_section_citation_is_too_broad_to_verify():
+    resp, _ = run(text(reply("Cap is $50 [§ 1005.6].", ["1005.6"])))
+    assert resp.invalid_citations == ["1005.6"] and resp.answer == an.NO_CITATION and resp.abstained
+
+
+def test_guard_version_is_in_the_config_hash(monkeypatch):
+    from app import config as cfg
+    before = cfg.config_hash(DEFAULT, "2026-10-23")
+    monkeypatch.setattr(cfg, "GUARD_VERSION", "c-test")
+    assert cfg.config_hash(DEFAULT, "2026-10-23") != before

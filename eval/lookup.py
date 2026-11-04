@@ -3,7 +3,8 @@
 Prints the corpus text behind a provision ID, so gold_ids, reference answers and key facts can be
 written from the exact text the assistant answers from, with each provision's status.
 
-    python -m eval.lookup "1005.6(b)"                 the paragraph, the paragraphs under it, and the comments on any of them
+    python -m eval.lookup "1005.6(b)"                 the paragraph, the paragraphs under it, and the comments on any of them,
+                                                      then, as one line each, the comments filed on paragraphs above it
     python -m eval.lookup 1005.6                      a whole section
     python -m eval.lookup "comment 13(c)(2)-1" "Reg E 11(c)"   several at once, in any form a question can use
     python -m eval.lookup --outline 1026.13           one line per provision: ID, status, opening words
@@ -113,6 +114,43 @@ def resolve(text: str) -> tuple[list[str], list[str]]:
     return found, not_found
 
 
+def above(ref: str) -> list[str]:
+    """The paragraphs above a rule ID, nearest first, ending with its section:
+    "1005.12(a)(1)(iv)(A)" -> ["1005.12(a)(1)(iv)", "1005.12(a)(1)", "1005.12(a)", "1005.12"]."""
+    if "-" in ref.split(".", 1)[1]:
+        return []                                        # a comment has no paragraphs above it
+    out, cur = [], ref
+    while (m := re.fullmatch(r"(.+)\([^()]+\)", cur)):
+        cur = m.group(1)
+        out.append(cur)
+    return out
+
+
+def comments_above(ref: str) -> list[tuple[str, list[dict]]]:
+    """Comments filed on a paragraph above `ref` (or on its section), which the gold-ID family of `ref`
+    doesn't cover: [(that paragraph, its comments)], nearest paragraph first (session 15)."""
+    by_target: dict[str, list[dict]] = {}
+    for pid, p in provisions().items():
+        if p["kind"] == "commentary":
+            by_target.setdefault(pid.rsplit("-", 1)[0].lower(), []).append(p)
+    return [(a, by_target[a.lower()]) for a in above(ref) if a.lower() in by_target]
+
+
+def show_above(ref: str) -> list[str]:
+    groups = comments_above(ref)
+    if not groups:
+        return []
+    n = sum(len(cs) for _, cs in groups)
+    lines = ["", f"-- {n} comment(s) filed on paragraphs above {ref}. Its gold-ID family doesn't cover them: "
+                 "if one is what answers, list it in gold_ids."]
+    for target, cs in groups:
+        lines.append(f"  on § {target}:")
+        for p in cs:
+            flag = "" if p["status"] == "in_force" else f"[{p['status'].upper()}] "
+            lines.append(f"    {label(p):<30}{flag}{opening(p['text'], 70)}")
+    return lines
+
+
 def show(ref: str, outline: bool = False) -> str:
     all_ = provisions()
     items = covered(ref)
@@ -131,6 +169,7 @@ def show(ref: str, outline: bool = False) -> str:
             lines.append(f"  {label(p):<28}{flag.strip() + ' ' if flag else ''}{opening(p['text'], 70)}")
         else:
             lines += ["", f"{label(p)}  ({status_text(p)})", wrap(p["text"])]
+    lines += show_above(ref)
     return "\n".join(lines)
 
 

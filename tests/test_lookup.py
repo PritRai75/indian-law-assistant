@@ -105,3 +105,28 @@ def test_sections_for_one_regulation(capsys):
     assert L.main(["--sections", "--reg", "Z"]) == 0
     out = capsys.readouterr().out
     assert "1005." not in out and "§ 1026.13 " in out
+
+
+# ---------------------------------------------------------------- comments filed above (session 15)
+
+def test_above_lists_the_paragraphs_up_to_the_section():
+    assert L.above("1005.12(a)(1)(iv)(A)") == ["1005.12(a)(1)(iv)", "1005.12(a)(1)", "1005.12(a)", "1005.12"]
+    assert L.above("1005.6") == [] and L.above("1005.6(b)-1") == []
+
+
+def test_comments_filed_on_a_parent_are_listed():
+    groups = dict((t, [L.label(p) for p in cs]) for t, cs in L.comments_above("1005.12(a)(1)(iv)(A)"))
+    assert groups == {"1005.12(a)": [f"comment 1005.12(a)-{n}" for n in range(1, 6)]}
+    out = L.show("1005.12(a)(1)(iv)(A)")
+    assert "0 comment(s)" in out and "5 comment(s) filed on paragraphs above" in out
+
+
+def test_section_level_comments_come_last_and_the_family_is_not_repeated():
+    out = L.show("1026.13(d)(1)", outline=True)
+    above = out.split("filed on paragraphs above", 1)[1]
+    assert above.index("on § 1026.13(d):") < above.index("on § 1026.13:")
+    assert "comment 1026.13-1" in above and "comment 1026.13(d)(1)-1" not in above   # that one is in the family
+
+
+def test_nothing_above_prints_nothing_extra():
+    assert "filed on paragraphs above" not in L.show("1005.6(b)-1")

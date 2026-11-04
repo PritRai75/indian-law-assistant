@@ -23,9 +23,14 @@ How each metric is graded (choices marked * are Claude's, session 14, open to Pr
 - Retrieval, answerable questions only: the rank of the first retrieved chunk holding a provision in
   a gold family; hit@1/3/5; MRR over the k chunks the model was given (* a gold chunk below rank k
   scores 0); gold recall = gold IDs with any family member retrieved / gold IDs.
-- Citations come from the model's raw citations, before the citation guard. Precision = cited IDs
-  in a gold family / cited IDs, over answerable questions the assistant answered*. Invented = IDs the
-  guard removed (in no retrieved chunk or tool result); not_in_index counts IDs that don't exist at all.
+- Citations come from the model's raw citation strings, before the citation guard, each read with
+  app.citations (g3, session 15): a packed string, a range or a comment sub-point counts as the IDs it
+  names. Precision = cited IDs in a gold family / everything cited, over answerable questions the
+  assistant answered*; "everything cited" also counts, once each, the strings the reader couldn't
+  turn into an index ID (too broad, not in the index, no part, unreadable), since none of them points
+  to a provision. Invented = IDs that exist in the index but are in no retrieved chunk and no tool
+  result, worked out here rather than taken from the guard. guard_rejected records what the guard
+  removed at run time, which depends on the guard version the run used.
 - Abstention: the response's `abstained` against `should_abstain`; precision and recall are on
   "should abstain"; declines are also counted by category. An abstention caused by the guard or a
   failure (no_valid_citation, output_invalid, tool_limit) is recorded as its cause.
@@ -66,12 +71,14 @@ from dataclasses import asdict, dataclass
 from datetime import date, datetime, timezone
 from pathlib import Path
 
-from app.answer import normalize_id      # the citation guard's own rule; boto3 is only imported for AWS calls
+from app import citations as cit      # the citation guard's own reader; boto3 is only imported for AWS calls
+from app.answer import PROVISION       # how the guard finds IDs in a tool result
 from eval import golden as G
 
 REPO = Path(__file__).resolve().parents[1]
 DB_FILE = REPO / "runs.db"
-GRADER_VERSION = "g2"                 # bump when a grading rule changes, so old and new numbers aren't mixed
+GRADER_VERSION = "g3"                 # bump when a grading rule changes, so old and new numbers aren't mixed
+# g1 first harness; g2 tier amounts in the text for Reg E only (S14); g3 citations read with app.citations (S15)
 EVAL_TODAY = date(2026, 11, 3)        # "today" for questions that don't state their own
 GUARD_CAUSES = ("no_valid_citation", "output_invalid", "tool_limit")
 
@@ -221,11 +228,21 @@ def grade(item: G.GoldenItem, resp: dict, ix: IndexView) -> dict:
               "gold_total": len(gold),
               "gold_found": sum(any(G.in_family(g, p) for p in in_retrieved) for g in gold)})
 
-    # citations (raw, before the guard)
-    raw = list(dict.fromkeys(normalize_id(c) for c in resp["raw_citations"] if c.strip()))
-    known = [ix.spelling[c] for c in raw if c in ix.spelling]
-    m.update({"cited": len(raw), "cited_gold": sum(any(G.in_family(g, p) for g in gold) for p in known),
-              "cited_not_in_index": len(raw) - len(known), "invented": len(resp["invalid_citations"])})
+    # citations (raw strings, before the guard, read with the guard's reader)
+    known, readings = cit.read_all([c for c in resp["raw_citations"] if c.strip()], ix.spelling)
+    kinds = {k: list(dict.fromkeys(x for rd in readings for x in getattr(rd, k)))
+             for k in ("too_broad", "not_found", "no_part")}
+    unreadable = list(dict.fromkeys(rd.written for rd in readings if rd.unreadable))
+    from_tools = {p.lower() for call in resp["tool_calls"] for p in PROVISION.findall(json.dumps(call["result"]))}
+    supported = {p.lower() for p in in_retrieved} | from_tools
+    m.update({"cited": len(known) + sum(map(len, kinds.values())) + len(unreadable),
+              "cited_gold": sum(any(G.in_family(g, p) for g in gold) for p in known),
+              "invented": sum(p.lower() not in supported for p in known),
+              "invented_ids": [p for p in known if p.lower() not in supported],
+              "cited_not_in_index": len(kinds["not_found"]), "cited_too_broad": len(kinds["too_broad"]),
+              "cited_no_part": len(kinds["no_part"]), "cited_unreadable": len(unreadable),
+              "unread_citations": kinds["too_broad"] + kinds["not_found"] + kinds["no_part"] + unreadable,
+              "guard_rejected": len(resp["invalid_citations"])})
 
     # regulation and status
     other = {"E": "1026.", "Z": "1005."}.get(item.regulation or "")
@@ -264,6 +281,10 @@ def tally(ms: list[dict]) -> dict:
         "citation_precision": (sum(m["cited_gold"] for m in answered), sum(m["cited"] for m in answered)),
         "invented": sum(m["invented"] for m in ms),
         "cited_not_in_index": sum(m["cited_not_in_index"] for m in ms),
+        "cited_too_broad": sum(m.get("cited_too_broad", 0) for m in ms),
+        "cited_no_part": sum(m.get("cited_no_part", 0) for m in ms),
+        "cited_unreadable": sum(m.get("cited_unreadable", 0) for m in ms),
+        "guard_rejected": sum(m.get("guard_rejected", 0) for m in ms),
         "abstain_precision": (sum(m["should_abstain"] for m in did), len(did)),
         "abstain_recall": (sum(m["abstained"] for m in should), len(should)),
         "over_abstention": sum(m["abstain_outcome"] == "over_abstention" for m in ms),
@@ -304,7 +325,10 @@ def report(s: dict) -> str:
                   f"  MRR {o['mrr']}   gold IDs retrieved {share(*o['gold_recall'])}"]
     lines += ["", "Citations (raw, before the guard)",
               f"  precision {share(*o['citation_precision'])} of cited IDs in a gold family (answered questions)",
-              f"  invented (not retrieved) {o['invented']}, not in the index at all {o['cited_not_in_index']}",
+              f"  invented (real IDs, not retrieved or in a tool result) {o['invented']}",
+              f"  not read as an index ID: not in the index {o['cited_not_in_index']}, too broad (a whole "
+              f"section) {o['cited_too_broad']}, no part {o['cited_no_part']}, unreadable {o['cited_unreadable']}",
+              f"  removed by the guard at run time {o['guard_rejected']}",
               "", "Abstention",
               f"  precision {share(*o['abstain_precision'])}   recall {share(*o['abstain_recall'])}",
               f"  over-abstentions {o['over_abstention']}   missed abstentions {o['missed_abstention']}"]
@@ -459,9 +483,22 @@ def run(items, config, *, db, split=None, ids=None, client=None, embed=None, tod
     return run_id, summary
 
 
-def regrade(db, run_id: str, ix: IndexView | None = None) -> tuple[dict, list[str], str]:
-    """Grade a logged run again from its stored items and answers. Returns (summary, the questions whose
-    metrics differ from the logged ones, the grader version the run was logged with)."""
+def metric_changes(old: dict, new: dict) -> list[str]:
+    """How one question's metrics changed: "key: old -> new" for changed values, then any added or
+    dropped keys by name (a newer grader version adds fields)."""
+    lines = [f"{k}: {old[k]!r} -> {new[k]!r}" for k in new if k in old and old[k] != new[k]]
+    added, dropped = [k for k in new if k not in old], [k for k in old if k not in new]
+    if added:
+        lines.append("new fields: " + ", ".join(added))
+    if dropped:
+        lines.append("dropped fields: " + ", ".join(dropped))
+    return lines
+
+
+def regrade(db, run_id: str, ix: IndexView | None = None) -> tuple[dict, list[tuple[str, list[str]]], str]:
+    """Grade a logged run again from its stored items and answers. Returns (summary, [(question, its
+    metric changes)] for the questions whose metrics differ from the logged ones, the grader version
+    the run was logged with)."""
     ix = ix or index_view()
     head = db.execute("SELECT grader_version FROM runs WHERE run_id = ?", (run_id,)).fetchone()
     if head is None:
@@ -474,8 +511,9 @@ def regrade(db, run_id: str, ix: IndexView | None = None) -> tuple[dict, list[st
             rows.append((item, None, error))
             continue
         metrics = grade(item, json.loads(resp_json), ix)
-        if json.loads(json.dumps(metrics)) != json.loads(metrics_json):
-            changed.append(qid)
+        new, old = json.loads(json.dumps(metrics)), json.loads(metrics_json)
+        if new != old:
+            changed.append((qid, metric_changes(old, new)))
         rows.append((item, metrics, None))
     return summarise(rows), changed, head[0]
 
@@ -520,8 +558,13 @@ def main(argv=None) -> int:
     if args.regrade:
         summary, changed, version = regrade(db, args.regrade)
         print(report(summary))
-        same = "the same as" if not changed else f"different from (in {', '.join(changed)})"
+        same = "the same as" if not changed else f"different from (in {', '.join(q for q, _ in changed)})"
         note = "" if version == GRADER_VERSION else f" The run was graded with {version}, this is {GRADER_VERSION}."
+        if changed:
+            print("\nWhat changed, by question:")
+            for qid, lines in changed:
+                print(f"  {qid}")
+                print("\n".join(f"    {line}" for line in lines))
         print(f"\nRe-graded {args.regrade}: metrics are {same} the logged ones.{note}")
         return 0 if not changed else 1
     if args.split == "test" and not args.ids and not args.final:

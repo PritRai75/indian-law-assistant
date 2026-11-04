@@ -65,7 +65,7 @@ class Response(BaseModel):
     disclaimer: str = DISCLAIMER
     # for the eval and the logs
     raw_answer: str | None            # the model's answer text before the guard (None if there was none)
-    raw_citations: list[str]          # every ID the model cited (field and inline), before the guard
+    raw_citations: list[str]          # every citation string the model wrote (field and inline), before the guard
     invalid_citations: list[str]
     flags: list[str]
     prompt_version: str

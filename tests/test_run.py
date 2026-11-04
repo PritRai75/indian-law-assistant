@@ -117,13 +117,41 @@ def test_retrieval_rank_hits_and_gold_recall():
 
 def test_citations_count_the_gold_family_from_the_raw_list():
     item = items_from(ANSWERABLE)[0]
-    raw = ["§ 1005.17(b)(1)(i)",          # under the gold ID: in the family
-           "comment 1005.17(b)-1",       # a comment on the parent: not in the family
-           "1026.52(b)",                 # the other regulation
+    raw = ["§ 1005.17(b)(1)(i)",          # under the gold ID: in the family, in a retrieved chunk
+           "comment 1005.17(b)-1",       # a comment on the parent: not in the family, not retrieved
+           "1026.52(b)",                 # the other regulation, not retrieved
            "1005.99(z)"]                 # doesn't exist
     m = R.grade(item, resp(raw_citations=raw, invalid_citations=["1026.52(b)", "1005.99(z)"]), IX)
     assert (m["cited"], m["cited_gold"], m["cited_not_in_index"], m["invented"]) == (4, 1, 1, 2)
+    assert m["invented_ids"] == ["1005.17(b)-1", "1026.52(b)"]          # real IDs only; 1005.99(z) isn't one
+    assert m["unread_citations"] == ["1005.99(z)"] and m["guard_rejected"] == 2
     assert m["wrong_reg"] and m["wrong_reg_ids"] == ["1026.52(b)"]
+
+
+def test_g3_reads_packed_ranges_subpoints_and_sorts_the_rest():
+    item = items_from(ANSWERABLE)[0]
+    raw = ["1005.17(b)(1), § 1005.17(b)(1)(i)",   # packed: two IDs, both in the gold family
+           "1005.11(c)(2)(iii)-(iv)",             # range: two IDs, retrieved (OTHER_CHUNK), not gold
+           "1005.17(b)-1.ii",                     # a comment's sub-point: the comment, not retrieved
+           "1005.11",                             # a whole section: too broad
+           "comment 12(b)-1",                     # no part, exists in both
+           "see the network rules"]               # no reference at all
+    m = R.grade(item, resp(raw_citations=raw, invalid_citations=raw), IX)
+    assert m["cited"] == 5 + 3 and m["cited_gold"] == 2
+    assert (m["cited_too_broad"], m["cited_no_part"], m["cited_unreadable"], m["cited_not_in_index"]) == (1, 1, 1, 0)
+    assert m["invented_ids"] == ["1005.17(b)-1"] and m["guard_rejected"] == 6
+    assert m["unread_citations"] == ["1005.11", "comment 12(b)-1", "see the network rules"]
+
+
+def test_an_id_from_a_tool_result_is_not_invented():
+    item = items_from(ANSWERABLE)[0]
+    call = {"name": "dispute_timeline", "args": ARGS, "result": TOOL_RESULT}
+    cited = next(p for p in R.PROVISION.findall(json.dumps(TOOL_RESULT))
+                 if not any(p.lower() == q.lower() for c in (GOLD_CHUNK, OTHER_CHUNK) for q in IX.chunk_provisions[c]))
+    m = R.grade(item, resp(raw_citations=[cited], tool_calls=[call]), IX)
+    assert m["invented"] == 0
+    m = R.grade(item, resp(raw_citations=[cited]), IX)
+    assert m["invented"] == 1
 
 
 def test_status_error_when_an_answer_cites_a_provision_not_in_force():
@@ -296,6 +324,16 @@ def test_run_logs_every_answer_and_regrades_the_same(tmp_path):
     again, changed, version = R.regrade(db, run_id)
     assert changed == [] and version == R.GRADER_VERSION and json.loads(json.dumps(again)) == json.loads(json.dumps(summary))
     assert run_id in R.list_runs(db)
+
+    # a run logged by an older grader: the re-grade says what changed, question by question
+    old = json.loads(db.execute("SELECT metrics_json FROM results WHERE qid = 'q901'").fetchone()[0])
+    old["invented"], old["gone_field"] = 3, 1
+    del old["cited_too_broad"]
+    db.execute("UPDATE results SET metrics_json = ? WHERE qid = 'q901'", (json.dumps(old),))
+    db.execute("UPDATE runs SET grader_version = 'g0'")
+    _, changed, version = R.regrade(db, run_id)
+    assert version == "g0" and changed == [("q901", ["invented: 3 -> 0", "new fields: cited_too_broad",
+                                                      "dropped fields: gone_field"])]
 
 
 @needs_index
