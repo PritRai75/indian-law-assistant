@@ -1166,33 +1166,26 @@ abstain_category = "excluded_part"
 [[question]]
 id = "q046"
 stage = "labelled"
-persona = "frontline"
+persona = "compliance"
 type = "unauthorized"
-trap = "PIN kept with the card"
+trap = "debit card once lost"
 question = """
-A customer says her debit card was stolen from her car on Monday, 23 November 2026. She had written \
-her PIN on a sticky note attached to the card, noticed the theft that evening, and called our bank \
-on Friday, 27 November 2026. Thieves withdrew $600 from ATMs on 24 and 25 November. What liability \
-rules apply to these withdrawals?
+A customer lost her debit card in September 2026 but did not report it. A statement sent on 30 \
+September 2026 showed a $100 unauthorized debit from 15 September. Additional unauthorized debits of \
+$200 on 10 November and $150 on 5 December appeared on later statements. She reported the loss on \
+10 December 2026. What is her total liability under Regulation E?
 """
 regulation = "E"
-today = 2026-11-27
-gold_ids = ["1005.6(b)(2)"]
+today = 2026-12-10
+gold_ids = ["1005.6(b)(3)", "1005.6(b)-2"]
 reference_answer = """
-Under Regulation E (12 CFR § 1005.6(b)(2)), consumer liability for unauthorized electronic fund transfers is governed strictly by statutory caps. Writing a PIN on a note attached to the debit card constitutes negligence under state law, but consumer negligence cannot be used to impose greater liability than permitted under Regulation E (Comment 1005.6(b)-2). Because Thanksgiving Day (Thursday, 26 November) is a federal holiday, Friday, 27 November was the third business day after learning of the theft. Because notice was provided after two business days, the customer's maximum liability is capped at $500.
+The customer's total liability is $150. For the $100 debit on 15 September (before the close of 60 days from statement transmittal), liability is capped at $50 under § 1005.6(b)(2). The $200 debit on 10 November also occurred within the 60-day window (which ended on 29 November), so her liability for it is $0. However, for the $150 debit on 5 December (after the 60-day window), she faces unlimited liability under § 1005.6(b)(3), making her liable for the full $150.
 """
 key_facts = [
-  "Consumer negligence, such as writing a PIN on a note kept with a debit card, cannot increase liability beyond Regulation E statutory limits (Comment 1005.6(b)-2).",
-  "Because notice was given on the third business day following the loss, the customer's maximum liability under Regulation E is capped at $500 (§ 1005.6(b)(2))."
+  "Liability for unauthorized transfers occurring within 60 days of statement transmittal is capped under § 1005.6(b)(2).",
+  "The consumer faces unlimited liability for unauthorized transfers occurring after the 60-day period following statement transmittal (§ 1005.6(b)(3))."
 ]
 should_abstain = false
-
-[question.expected_tool_call]
-name = "dispute_timeline"
-args = { regulation = "E", event = "unauthorized", learned_of_loss = "2026-11-23", notice_date = "2026-11-27" }
-
-[question.expected_result]
-liability_tiers = ["max_500"]
 
 [[question]]
 id = "q047"
@@ -1294,7 +1287,7 @@ requirements apply to refunding this credit balance?
 """
 regulation = "Z"
 today = 2026-11-02
-gold_ids = ["1026.11(a)(2)", "1026.11(a)(3)"]
+gold_ids = ["1026.11(a)(2)", "1026.11(a)(3)", "1026.11(a)-1"]
 reference_answer = """
 Under Regulation Z (12 CFR § 1026.11(a)(2)), the bank is required to refund a credit balance within seven business days after receiving a written request from the consumer. Because the customer made her request by phone rather than in writing, the bank is not legally required to refund the balance within seven business days, although it may voluntarily choose to do so upon oral request (Comment 1026.11(a)-1(iii)). If the credit balance remains in the account for more than six months, the bank must make a good-faith effort to refund it (§ 1026.11(a)(3)).
 """
@@ -1331,7 +1324,7 @@ should_abstain = false
 id = "q052"
 stage = "labelled"
 persona = "frontline"
-type = "cross_reg"
+type = "reg_e_account"
 trap = "holiday, and both accounts at the same bank"
 question = """
 A customer wants to stop the automatic monthly ACH payment from her checking account to her \
@@ -1347,8 +1340,7 @@ Under Regulation E (12 CFR § 1005.10(c)(1)), a consumer may stop payment of a p
 """
 key_facts = [
   "Preauthorized automatic debits from a checking account are governed by Regulation E (§ 1005.10(c)(1)), even when paying a credit card account at the same bank.",
-  "To stop payment on a preauthorized transfer, the consumer must notify the bank at least three business days before the scheduled transfer date (§ 1005.10(c)(1)).",
-  "Because Wednesday, 11 November is Veterans Day (a federal holiday), calling on Tuesday, 10 November provides the required three business days of notice before Sunday, 15 November."
+  "To stop payment on a preauthorized transfer, the consumer must notify the bank at least three business days before the scheduled transfer date (§ 1005.10(c)(1))."
 ]
 should_abstain = false
 
@@ -1356,7 +1348,7 @@ should_abstain = false
 id = "q053"
 stage = "labelled"
 persona = "compliance"
-type = "cross_reg"
+type = "dispute"
 trap = "credit card money landing in checking"
 question = """
 A credit-card customer requested a $5,000 balance transfer into her checking account at our bank. \
@@ -1464,24 +1456,23 @@ abstain_category = "network_rules"
 [[question]]
 id = "q058"
 stage = "labelled"
-persona = "frontline"
+persona = "compliance"
 type = "decline"
-trap = "excluded subpart (remittance transfers)"
+trap = "sign-off"
 question = """
-A customer used her checking account to send $800 to her sister in Colombia via our bank's wire \
-service on 2 November 2026. Ten minutes later, she called us to cancel the wire transfer. What \
-cancellation rules apply to this transaction?
+Our marketing team has prepared a new credit-card promotional mailer and wants the compliance team \
+to approve its wording before it is printed next week. Can we provide the requested approval?
 """
 gold_ids = []
 reference_answer = """
-This question cannot be answered from the provided corpus because international wire transfers to individuals abroad are classified as remittance transfers governed by Subpart B of Regulation E (12 CFR §§ 1005.30–1005.36). Subpart B is an excluded subpart and is not included in the provided corpus.
+This request cannot be answered because providing regulatory sign-off or compliance approval on promotional mailers is an internal management function rather than a question answered by Regulation E or Regulation Z. The assistant can explain applicable credit card disclosure rules under Regulation Z, but cannot review or grant formal compliance sign-off for specific marketing materials.
 """
 key_facts = [
-  "Cancellation rules for international consumer wire transfers (remittance transfers) are governed by Subpart B of Regulation E (12 CFR §§ 1005.30–1005.36).",
-  "Subpart B of Regulation E is an excluded subpart and is not included in the provided corpus."
+  "Providing formal compliance approval or sign-off on marketing materials is an internal management function not covered by Regulation E or Regulation Z.",
+  "The assistant cannot review or grant regulatory sign-off for promotional mailers."
 ]
 should_abstain = true
-abstain_category = "excluded_part"
+abstain_category = "sign_off"
 
 [[question]]
 id = "q059"
@@ -1495,7 +1486,7 @@ account and cashed it. What protections apply to this forged check?
 """
 gold_ids = ["1005.3(c)(1)"]
 reference_answer = """
-This question cannot be answered from the provided corpus because protections for forged paper checks are governed by state law (such as the Uniform Commercial Code) rather than Regulation E or Regulation Z. Regulation E (12 CFR § 1005.3(c)(1)) explicitly excludes transfers originated by check, draft, or similar paper instrument from its coverage.
+This question cannot be answered from the provided corpus because protections for forged paper checks are governed by state law rather than Regulation E or Regulation Z. Regulation E (12 CFR § 1005.3(c)(1)) explicitly excludes transfers originated by check, draft, or similar paper instrument from its coverage.
 """
 key_facts = [
   "Transfers originated by paper check are explicitly excluded from Regulation E coverage (§ 1005.3(c)(1)).",
