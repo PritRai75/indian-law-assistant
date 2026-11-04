@@ -1196,7 +1196,7 @@ liability_tiers = ["max_500"]
 
 [[question]]
 id = "q047"
-stage = "draft"
+stage = "labelled"
 persona = "compliance"
 type = "deadline"
 trap = "late notice"
@@ -1205,10 +1205,29 @@ A customer first notified our bank on Monday, 14 December 2026, about an $85 ACH
 membership she had cancelled. The debit appeared on her checking-account statement sent on 30 \
 September 2026. What effect does the timing of her report have on her liability for the transaction?
 """
+regulation = "E"
+today = 2026-12-14
+gold_ids = ["1005.6(b)(3)", "1005.11(b)(1)"]
+reference_answer = """
+Because the $85 ACH debit occurred before the close of the 60-day period following statement transmittal, reporting it after 60 days does not make the customer liable for this $85 transaction itself; her liability for this transfer remains $0 under Regulation E (12 CFR § 1005.6(b)(3)). However, because notice was provided more than 60 days after the statement was sent (on 30 September 2026), the customer is liable for any subsequent unauthorized transfers occurring after the 60-day window, and the bank is not obligated to follow formal error resolution procedures under § 1005.11(b)(1).
+"""
+key_facts = [
+  "The customer is not liable for the $85 debit that appeared on the statement, as reporting after 60 days only imposes liability for subsequent unauthorized transfers (§ 1005.6(b)(3)).",
+  "Notice received more than 60 days after statement transmittal relieves the bank of the obligation to comply with formal Regulation E error resolution timelines (§ 1005.11(b)(1))."
+]
+should_abstain = false
+
+[question.expected_tool_call]
+name = "dispute_timeline"
+args = { regulation = "E", event = "unauthorized", statement_sent = "2026-09-30", notice_date = "2026-12-14" }
+
+[question.expected_result]
+notice_timely = false
+liability_tiers = ["later_transfers_unprotected"]
 
 [[question]]
 id = "q048"
-stage = "draft"
+stage = "labelled"
 persona = "frontline"
 type = "deadline"
 trap = "year-end holidays"
@@ -1217,10 +1236,31 @@ A customer called us on Tuesday, 22 December 2026, to report that a $310 purchas
 store was charged twice to her debit card. Her checking account has been open since 2021. By what \
 date must we complete our investigation?
 """
+regulation = "E"
+today = 2026-12-22
+gold_ids = ["1005.11(a)(1)(ii)", "1005.11(c)(1)", "1005.11(c)(3)(ii)(B)"]
+reference_answer = """
+Under Regulation E (12 CFR § 1005.11(c)(1)), the bank must investigate and determine whether an error occurred within 10 business days of receiving notice, which is Thursday, 7 January 2027 (accounting for Christmas Day on 25 December and New Year's Day on 1 January). If the bank cannot complete its investigation within 10 business days, it may provisionally credit the $310 to the customer's account by 7 January 2027 and extend the investigation up to 90 calendar days from notice (until Monday, 22 March 2027) because the error involves a point-of-sale debit card transaction under § 1005.11(c)(3)(ii)(B).
+"""
+key_facts = [
+  "The bank must complete its initial investigation or issue provisional credit within 10 business days, which is Thursday, 7 January 2027 (§ 1005.11(c)(1)).",
+  "With provisional credit, the investigation for a point-of-sale debit card transaction may be extended up to 90 calendar days, until Monday, 22 March 2027 (§ 1005.11(c)(3)(ii)(B))."
+]
+should_abstain = false
+
+[question.expected_tool_call]
+name = "dispute_timeline"
+args = { regulation = "E", event = "error", notice_date = "2026-12-22", transfer_kind = "pos_debit" }
+
+[question.expected_result]
+deadlines = [
+  { what = "investigate or provisionally credit", date = 2027-01-07, rule = "1005.11(c)(1)" },
+  { what = "investigate with provisional credit", date = 2027-03-22, rule = "1005.11(c)(3)(ii)" }
+]
 
 [[question]]
 id = "q049"
-stage = "draft"
+stage = "labelled"
 persona = "compliance"
 type = "dispute"
 trap = "sent to the wrong address"
@@ -1230,10 +1270,20 @@ than the separate address printed on her statement for billing disputes. The let
 12 days after the statement was sent. Does the bank have to treat this letter as a valid \
 billing-error notice?
 """
+regulation = "Z"
+gold_ids = ["1026.13(b)(1)"]
+reference_answer = """
+No, the bank is not required to treat the letter as a valid billing-error notice. Under Regulation Z (12 CFR § 1026.13(b)(1)), a written billing-error notice must be received by the creditor at the address disclosed specifically for billing inquiries under § 1026.7(b)(9). Receiving a dispute at the payment address does not satisfy the notice requirements of Regulation Z unless it is re-routed and received at the designated billing-error address within 60 days of statement transmittal.
+"""
+key_facts = [
+  "Under Regulation Z (§ 1026.13(b)(1)), a billing-error notice must be received at the address disclosed specifically for billing inquiries.",
+  "Because the dispute was sent to the payment address rather than the designated billing-error address, the bank is not required to treat it as a valid notice."
+]
+should_abstain = false
 
 [[question]]
 id = "q050"
-stage = "draft"
+stage = "labelled"
 persona = "frontline"
 type = "payments_disclosures"
 trap = "request made by phone"
@@ -1242,6 +1292,18 @@ A former credit-card customer returned a $260 jacket after paying off her accoun
 credit balance. She called our bank on 2 November 2026 and asked us to send her the money. What \
 requirements apply to refunding this credit balance?
 """
+regulation = "Z"
+today = 2026-11-02
+gold_ids = ["1026.11(a)(2)", "1026.11(a)(3)"]
+reference_answer = """
+Under Regulation Z (12 CFR § 1026.11(a)(2)), the bank is required to refund a credit balance within seven business days after receiving a written request from the consumer. Because the customer made her request by phone rather than in writing, the bank is not legally required to refund the balance within seven business days, although it may voluntarily choose to do so upon oral request (Comment 1026.11(a)-1(iii)). If the credit balance remains in the account for more than six months, the bank must make a good-faith effort to refund it (§ 1026.11(a)(3)).
+"""
+key_facts = [
+  "The mandatory requirement to refund a credit balance within seven business days applies upon receipt of a written request (§ 1026.11(a)(2)).",
+  "An oral request by phone does not trigger the mandatory seven-business-day refund deadline, though the bank may voluntarily refund upon oral request (Comment 1026.11(a)-1(iii)).",
+  "If the credit balance remains in the account for more than six months, the bank must make a good-faith effort to refund it (§ 1026.11(a)(3))."
+]
+should_abstain = false
 
 [[question]]
 id = "q051"
