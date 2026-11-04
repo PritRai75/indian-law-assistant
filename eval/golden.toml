@@ -1307,18 +1307,29 @@ should_abstain = false
 
 [[question]]
 id = "q051"
-stage = "draft"
+stage = "labelled"
 persona = "compliance"
 type = "payments_disclosures"
+trap = "interest on paid portion of grace balance"
 question = """
 Our credit-card team proposes charging interest on the portion of a customer's previous statement \
 balance that she paid by the due date, whenever she does not pay the entire balance. Is this \
 interest calculation permitted?
 """
+regulation = "Z"
+gold_ids = ["1026.54(a)(1)(ii)"]
+reference_answer = """
+No, this interest calculation is not permitted. Under Regulation Z (12 CFR § 1026.54(a)(1)(ii)), when a credit card balance is eligible for a grace period and the consumer pays a portion (but not all) of that balance by the payment due date, the card issuer is strictly prohibited from assessing finance charges on the portion of the balance that was paid prior to the expiration of the grace period.
+"""
+key_facts = [
+  "Regulation Z (§ 1026.54(a)(1)(ii)) prohibits charging finance charges on the portion of a grace balance that was paid before the grace period expired.",
+  "When a consumer pays less than the full statement balance, interest may only be charged on the remaining unpaid balance."
+]
+should_abstain = false
 
 [[question]]
 id = "q052"
-stage = "draft"
+stage = "labelled"
 persona = "frontline"
 type = "cross_reg"
 trap = "holiday, and both accounts at the same bank"
@@ -1328,10 +1339,22 @@ credit-card account with the same bank. The next payment is scheduled for Sunday
 and she is calling us on Tuesday, 10 November 2026. What notice period applies to her stop-payment \
 request?
 """
+regulation = "E"
+today = 2026-11-10
+gold_ids = ["1005.10(c)(1)"]
+reference_answer = """
+Under Regulation E (12 CFR § 1005.10(c)(1)), a consumer may stop payment of a preauthorized electronic fund transfer by notifying the financial institution orally or in writing at least three business days before the scheduled transfer date. Even though the payment is for a credit card account at the same bank, Regulation E governs because the recurring debit originates from a checking account. Because Wednesday, 11 November is Veterans Day (a federal holiday), calling on Tuesday, 10 November provides the required three business days of advance notice before Sunday, 15 November, making her request timely.
+"""
+key_facts = [
+  "Preauthorized automatic debits from a checking account are governed by Regulation E (§ 1005.10(c)(1)), even when paying a credit card account at the same bank.",
+  "To stop payment on a preauthorized transfer, the consumer must notify the bank at least three business days before the scheduled transfer date (§ 1005.10(c)(1)).",
+  "Because Wednesday, 11 November is Veterans Day (a federal holiday), calling on Tuesday, 10 November provides the required three business days of notice before Sunday, 15 November."
+]
+should_abstain = false
 
 [[question]]
 id = "q053"
-stage = "draft"
+stage = "labelled"
 persona = "compliance"
 type = "cross_reg"
 trap = "credit card money landing in checking"
@@ -1340,28 +1363,60 @@ A credit-card customer requested a $5,000 balance transfer into her checking acc
 Only $3,000 appeared in checking, although her credit-card account was charged the full $5,000. Does \
 this situation qualify as a credit-card billing error?
 """
+regulation = "Z"
+gold_ids = ["1026.13(a)(3)"]
+reference_answer = """
+Yes, this situation qualifies as a credit-card billing error under Regulation Z. Under 12 CFR § 1026.13(a)(3), a billing error includes any reflection on a periodic statement of an extension of credit for property, services, or funds that were not delivered to the consumer or the consumer's designee as agreed. Because $5,000 was charged to the credit card account but only $3,000 was delivered to the checking account, the discrepancy constitutes a billing error on the credit card statement.
+"""
+key_facts = [
+  "Under Regulation Z (§ 1026.13(a)(3)), an extension of credit reflected on a periodic statement that was not delivered to the consumer or her designee as agreed constitutes a billing error.",
+  "Because the credit card was charged $5,000 but only $3,000 was deposited into checking, the customer can dispute the transaction as a billing error under Regulation Z."
+]
+should_abstain = false
 
 [[question]]
 id = "q054"
-stage = "draft"
+stage = "labelled"
 persona = "compliance"
 type = "fees_terms"
+trap = "4-month introductory APR period"
 question = """
 Our credit-card team is preparing an offer with a 0% introductory APR on purchases for the first \
 four months, followed by a 22.99% APR. What restrictions apply to the introductory APR period?
 """
+regulation = "Z"
+gold_ids = ["1026.55(b)(1)"]
+reference_answer = """
+This proposed offer is not permitted under Regulation Z. Under 12 CFR § 1026.55(b)(1), a temporary or introductory annual percentage rate must remain in effect for a specified period of at least six months before the card issuer can increase the rate. An introductory APR period lasting only four months violates § 1026.55(b)(1).
+"""
+key_facts = [
+  "Under Regulation Z (§ 1026.55(b)(1)), temporary or introductory APRs must apply for a period of at least six months before the issuer can increase the rate.",
+  "An introductory APR offer lasting only four months is prohibited under § 1026.55(b)(1)."
+]
+should_abstain = false
 
 [[question]]
 id = "q055"
-stage = "draft"
+stage = "labelled"
 persona = "frontline"
 type = "reg_e_account"
+trap = "varying transfer notice"
 question = """
 A customer's utility company makes a monthly automatic ACH debit from her checking account. The \
 usual amount is about $90, but the company plans to debit $410 in December 2026. The customer says \
 nobody warned her about the increase. How much advance notice must the utility company provide \
 before making the debit?
 """
+regulation = "E"
+gold_ids = ["1005.10(d)(1)"]
+reference_answer = """
+Under Regulation E (12 CFR § 1005.10(d)(1)), when a preauthorized electronic fund transfer varies in amount from the previous transfer or the preauthorized amount, the designated payee or the financial institution must send written notice of the transfer amount and date at least 10 days before the scheduled transfer date. Alternatively, the consumer may choose to receive notice only when the transfer falls outside an agreed-upon range or amount (§ 1005.10(d)(2)).
+"""
+key_facts = [
+  "Under Regulation E (§ 1005.10(d)(1)), written notice of a varying preauthorized transfer must be sent at least 10 days before the scheduled transfer date.",
+  "The consumer may elect to receive notice only when a transfer falls outside an agreed-upon range or amount (§ 1005.10(d)(2))."
+]
+should_abstain = false
 
 [[question]]
 id = "q056"
