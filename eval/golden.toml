@@ -851,6 +851,15 @@ key_facts = [
 ]
 should_abstain = false
 
+[question.expected_tool_call]
+name = "dispute_timeline"
+args = { regulation = "Z", event = "error", notice_date = "2026-11-09", cycle_closing_dates = ["2026-11-25", "2026-12-25", "2027-01-25"] }
+
+[question.expected_result]
+deadlines = [
+  { what = "resolve within two complete billing cycles", date = 2027-01-25, rule = "1026.13(c)(2)" }
+]
+
 [[question]]
 id = "q033"
 stage = "labelled"
@@ -938,7 +947,7 @@ A customer's credit card and its PIN were stolen on Saturday, 7 November 2026. T
 to obtain two $400 cash advances at ATMs, and the customer reported the theft to our bank on Sunday, \
 8 November 2026. What liability rules apply to these unauthorized cash advances?
 """
-regulation = "Z"
+regulation = "both"
 today = 2026-11-08
 gold_ids = ["1026.12(b)(1)", "1005.12(a)(1)"]
 reference_answer = """
@@ -1033,7 +1042,6 @@ A customer says she read that a federal rule issued in late 2024 limits overdraf
 banks to $5. She wants us to reduce the $34 overdraft fee recently charged to her checking account. \
 Does that federal rule require us to reduce the fee?
 """
-regulation = "E"
 gold_ids = ["1005.17(b)(1)"]
 reference_answer = """
 No, that federal rule does not require reducing the fee because it is not law in force. The 2024 overdraft lending rule was overturned by Congress under the Congressional Review Act (Pub. L. 119-10) and never took effect. Under Regulation E (12 CFR § 1005.17(b)(1)), overdraft fees remain governed by standard opt-in rules, and no federal $5 fee limit applies under current law.
@@ -1056,7 +1064,6 @@ Our dispute team is reviewing a cardholder's dispute involving a $1,100 airline 
 was cancelled more than four months ago, and the cardholder has only now contacted the bank. Can we \
 still submit a chargeback to Visa under its network rules?
 """
-regulation = "Z"
 gold_ids = ["1026.13(a)(3)", "1026.13(b)(1)"]
 reference_answer = """
 This question cannot be answered from the provided corpus because private card network operating rules, such as Visa's chargeback rules and timeframes, are not covered under Regulation Z or Regulation E. Regulation Z (§ 1026.13) governs federal credit card billing error rights and procedures, but does not dictate private network chargeback limits or submission windows.
@@ -1079,7 +1086,6 @@ A credit-card customer wants to switch from her current card, which has a $95 an
 bank's no-annual-fee card. She wants to keep the same account number and all her accumulated reward \
 points. Can we guarantee that both will remain unchanged when she switches cards?
 """
-regulation = "Z"
 gold_ids = ["1026.12(a)(2)"]
 reference_answer = """
 This question cannot be answered from the provided corpus because account product switching rules, account number retention, and reward point transfer policies are governed by the card issuer's own program terms, not by Regulation Z or Regulation E. Regulation Z (§ 1026.12(a)(2)) governs credit card issuance and substitution, but does not dictate individual bank policies on retaining account numbers or transferring reward points upon a product change.
@@ -1101,7 +1107,6 @@ question = """
 A customer purchased a store gift card issued by our bank four years ago. The card still has an \
 unused balance of $35. Must the bank transfer that remaining balance to the state?
 """
-regulation = "E"
 gold_ids = ["1005.20(e)(1)"]
 reference_answer = """
 This question cannot be answered from the provided corpus because state unclaimed property and escheatment laws are not covered under Regulation E or Regulation Z. Regulation E (12 CFR § 1005.20(e)(1)) sets federal restrictions on gift card expiration dates and fee disclosures, but state law determines when and whether unused gift card balances must be transferred to the state as unclaimed property.
@@ -1124,13 +1129,12 @@ A collection agency hired by our bank is contacting a customer about her charged
 balance. The agency has called her at 7 a.m. and contacted her at her workplace. Which federal \
 consumer-protection requirements govern these collection practices?
 """
-regulation = "Z"
 gold_ids = ["1026.13(d)(1)"]
 reference_answer = """
-This question cannot be answered from the provided corpus because general debt collection practices, caller time restrictions, and workplace communication rules (such as those under the Fair Debt Collection Practices Act) are not covered under Regulation Z or Regulation E. Regulation Z (§ 1026.13(d)(1)) restricts collection actions specifically for disputed amounts during a billing error resolution, but does not govern general debt collection practices for charged-off balances.
+This question cannot be answered from the provided corpus because general debt collection practices, caller time restrictions, and workplace communication rules are not covered under Regulation Z or Regulation E. Regulation Z (§ 1026.13(d)(1)) restricts collection actions specifically for disputed amounts during a billing error resolution, but does not govern general debt collection practices for charged-off balances.
 """
 key_facts = [
-  "Federal debt collection requirements governing contact timing and workplace communications (such as under the Fair Debt Collection Practices Act) are not covered under Regulation Z, Regulation E, or the provided corpus.",
+  "Federal debt collection requirements governing contact timing and workplace communications are not covered under Regulation Z, Regulation E, or the provided corpus.",
   "Regulation Z (§ 1026.13(d)(1)) addresses collection restrictions during billing error disputes, not general debt collection practices for charged-off balances."
 ]
 should_abstain = true
@@ -1146,7 +1150,6 @@ question = """
 A home-equity line customer says our bank froze her credit line after the appraised value of her \
 home dropped. Is the bank allowed to suspend further advances for this reason?
 """
-regulation = "Z"
 gold_ids = ["1026.9(c)(1)(iii)"]
 reference_answer = """
 This question cannot be answered from the provided corpus because the substantive rules governing home-equity line of credit (HELOC) freezes and advance suspensions under 12 CFR § 1026.40 (Subpart E) are not included in the corpus. While Regulation Z (§ 1026.9(c)(1)(iii)) specifies disclosure notice requirements when a credit line is restricted, the substantive rules permitting or restricting credit freezes based on property value declines fall under Subpart E.
@@ -1162,7 +1165,7 @@ abstain_category = "excluded_part"
 
 [[question]]
 id = "q046"
-stage = "draft"
+stage = "labelled"
 persona = "frontline"
 type = "unauthorized"
 trap = "PIN kept with the card"
@@ -1172,6 +1175,24 @@ her PIN on a sticky note attached to the card, noticed the theft that evening, a
 on Friday, 27 November 2026. Thieves withdrew $600 from ATMs on 24 and 25 November. What liability \
 rules apply to these withdrawals?
 """
+regulation = "E"
+today = 2026-11-27
+gold_ids = ["1005.6(b)(2)"]
+reference_answer = """
+Under Regulation E (12 CFR § 1005.6(b)(2)), consumer liability for unauthorized electronic fund transfers is governed strictly by statutory caps. Writing a PIN on a note attached to the debit card constitutes negligence under state law, but consumer negligence cannot be used to impose greater liability than permitted under Regulation E (Comment 1005.6(b)-2). Because Thanksgiving Day (Thursday, 26 November) is a federal holiday, Friday, 27 November was the third business day after learning of the theft. Because notice was provided after two business days, the customer's maximum liability is capped at $500.
+"""
+key_facts = [
+  "Consumer negligence, such as writing a PIN on a note kept with a debit card, cannot increase liability beyond Regulation E statutory limits (Comment 1005.6(b)-2).",
+  "Because notice was given on the third business day following the loss, the customer's maximum liability under Regulation E is capped at $500 (§ 1005.6(b)(2))."
+]
+should_abstain = false
+
+[question.expected_tool_call]
+name = "dispute_timeline"
+args = { regulation = "E", event = "unauthorized", learned_of_loss = "2026-11-23", notice_date = "2026-11-27" }
+
+[question.expected_result]
+liability_tiers = ["max_500"]
 
 [[question]]
 id = "q047"
