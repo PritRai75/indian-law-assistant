@@ -385,7 +385,7 @@ working seven days after purchase, and the store has refused to repair it, repla
 refund. Can the customer withhold payment through a credit-card billing dispute?
 """
 regulation = "Z"
-gold_ids = ["1026.12(c)(1)", "1026.12(c)(3)(i)", "1026.13(a)(3)"]
+gold_ids = ["1026.12(c)(1)", "1026.12(c)(3)(i)", "1026.12(c)", "1026.13(a)(3)"]
 reference_answer = """
 A quality dispute regarding accepted merchandise is not a billing error under Regulation Z (§ 1026.13(a)(3)), so the customer cannot withhold payment through a billing error dispute. However, under 12 CFR § 1026.12(c), the customer may withhold payment by asserting claims and defenses against the card issuer for a merchant dispute, provided she made a good-faith effort to resolve the issue with the store and the transaction amount exceeds $50.
 """
@@ -1407,7 +1407,7 @@ nobody warned her about the increase. How much advance notice must the utility c
 before making the debit?
 """
 regulation = "E"
-gold_ids = ["1005.10(d)(1)"]
+gold_ids = ["1005.10(d)(1)", "1005.10(d)(2)"]
 reference_answer = """
 Under Regulation E (12 CFR § 1005.10(d)(1)), when a preauthorized electronic fund transfer varies in amount from the previous transfer or the preauthorized amount, the designated payee or the financial institution must send written notice of the transfer amount and date at least 10 days before the scheduled transfer date. Alternatively, the consumer may choose to receive notice only when the transfer falls outside an agreed-upon range or amount (§ 1005.10(d)(2)).
 """
