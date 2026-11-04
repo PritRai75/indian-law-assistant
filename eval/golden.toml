@@ -797,7 +797,7 @@ abstain_category = "other_law"
 
 [[question]]
 id = "q031"
-stage = "draft"
+stage = "labelled"
 persona = "frontline"
 type = "deadline"
 trap = "holiday inside the count"
@@ -806,10 +806,31 @@ A customer called us on Friday, 6 November 2026, to report that a bank ATM in Oh
 dispense $200 but deducted the amount from her checking account. Her account has been open for \
 several years. By what date must we complete our investigation?
 """
+regulation = "E"
+today = 2026-11-06
+gold_ids = ["1005.11(c)(1)", "1005.11(c)(2)"]
+reference_answer = """
+Under Regulation E (§ 1005.11(c)(1)), the bank must complete its investigation and determine whether an error occurred within 10 business days of receiving notice, which is Monday, 23 November 2026 (accounting for the Veterans Day holiday on 11 November). If the bank cannot complete the investigation within 10 business days, it may extend the investigation up to 45 calendar days from notice, until Monday, 21 December 2026, provided it provisionally credits the $200 to the customer's account by 23 November 2026 under § 1005.11(c)(2).
+"""
+key_facts = [
+  "The 10-business-day investigation and provisional crediting deadline is Monday, 23 November 2026.",
+  "The extended 45-calendar-day investigation deadline is Monday, 21 December 2026."
+]
+should_abstain = false
+
+[question.expected_tool_call]
+name = "dispute_timeline"
+args = { regulation = "E", event = "error", notice_date = "2026-11-06", transfer_kind = "standard" }
+
+[question.expected_result]
+deadlines = [
+  { what = "investigation or provisional credit", date = 2026-11-23, rule = "1005.11(c)(1)" },
+  { what = "extended investigation with provisional credit", date = 2026-12-21, rule = "1005.11(c)(2)" }
+]
 
 [[question]]
 id = "q032"
-stage = "draft"
+stage = "labelled"
 persona = "compliance"
 type = "deadline"
 trap = "billing cycles"
@@ -818,33 +839,75 @@ A cardholder's written letter disputing a $650 charge reached our bank on 9 Nove
 credit-card billing cycles close on the 25th of each month. By which billing cycle must we resolve \
 the dispute?
 """
+regulation = "Z"
+today = 2026-11-09
+gold_ids = ["1026.13(c)(2)"]
+reference_answer = """
+Under Regulation Z (12 CFR § 1026.13(c)(2)), the creditor must resolve a billing error within two complete billing cycles after receiving notice, but in no event later than 90 days. Because the notice was received on 9 November 2026 during the cycle ending 25 November 2026, the bank has the remainder of that cycle plus the next two full billing cycles (ending 25 December 2026 and 25 January 2027). Therefore, the dispute must be resolved by the billing cycle closing on 25 January 2027.
+"""
+key_facts = [
+  "The bank must resolve the billing error within two complete billing cycles after receiving notice under Regulation Z (§ 1026.13(c)(2)).",
+  "The dispute must be resolved by the billing cycle closing on 25 January 2027."
+]
+should_abstain = false
 
 [[question]]
 id = "q033"
-stage = "draft"
+stage = "labelled"
 persona = "frontline"
 type = "dispute"
 trap = "\"what is this?\" vs \"this is wrong\""
 question = """
-A customer sees a $73.40 charge described as \"SQ *BLUEHARBOR\" on her credit-card statement. She \
+A customer sees a $73.40 charge described as "SQ *BLUEHARBOR" on her credit-card statement. She \
 does not recognize the merchant and has written to us asking what the charge is, but she has not \
 said that the charge is incorrect. Does this inquiry qualify as a billing-error notice?
 """
+regulation = "Z"
+gold_ids = ["1026.13(a)(6)", "1026.13(b)"]
+reference_answer = """
+Yes, the written inquiry qualifies as a billing-error notice under Regulation Z. Under 12 CFR § 1026.13(a)(6), a billing error includes a reflection on a periodic statement of an extension of credit for which the consumer requests additional clarification. Provided the written request is received within 60 days of statement transmittal and enables the creditor to identify the account, asking for clarification regarding an unrecognized charge constitutes a valid billing-error notice under § 1026.13(b).
+"""
+key_facts = [
+  "A request for additional clarification regarding a transaction on a periodic statement constitutes a billing error under Regulation Z (§ 1026.13(a)(6)).",
+  "The customer's written inquiry qualifies as a valid billing-error notice if received within 60 days of statement transmittal with required account details (§ 1026.13(b))."
+]
+should_abstain = false
 
 [[question]]
 id = "q034"
-stage = "draft"
+stage = "labelled"
 persona = "compliance"
-type = "dispute"
+type = "deadline"
 question = """
 An operations analyst finds that a customer's $1,240 payroll deposit, sent by ACH on Friday, 30 \
 October 2026, never appeared in her checking account. The customer first notified the bank by \
 telephone on Monday, 2 November 2026. What investigation and resolution deadlines apply?
 """
+regulation = "E"
+today = 2026-11-02
+gold_ids = ["1005.11(a)(1)(ii)", "1005.11(c)(1)", "1005.11(c)(2)"]
+reference_answer = """
+A missing ACH payroll deposit is an electronic fund transfer error under Regulation E (12 CFR § 1005.11(a)(1)(ii)). Under § 1005.11(c)(1), the bank must investigate promptly and determine whether an error occurred within 10 business days of receiving notice, which is Tuesday, 17 November 2026 (accounting for the Veterans Day holiday on 11 November). If the bank cannot complete its investigation within 10 business days, it may extend the investigation up to 45 calendar days from notice, until Thursday, 17 December 2026, provided it provisionally credits the $1,240 to the customer's account by 17 November 2026 under § 1005.11(c)(2).
+"""
+key_facts = [
+  "The 10-business-day investigation and provisional crediting deadline is Tuesday, 17 November 2026.",
+  "The extended 45-calendar-day investigation deadline is Thursday, 17 December 2026."
+]
+should_abstain = false
+
+[question.expected_tool_call]
+name = "dispute_timeline"
+args = { regulation = "E", event = "error", notice_date = "2026-11-02", transfer_kind = "standard" }
+
+[question.expected_result]
+deadlines = [
+  { what = "investigation or provisional credit", date = 2026-11-17, rule = "1005.11(c)(1)" },
+  { what = "extended investigation with provisional credit", date = 2026-12-17, rule = "1005.11(c)(2)" }
+]
 
 [[question]]
 id = "q035"
-stage = "draft"
+stage = "labelled"
 persona = "frontline"
 type = "payments_disclosures"
 trap = "same bank, two accounts"
@@ -853,6 +916,16 @@ Our bank transferred $300 from a customer's savings account to cover her overdue
 with the same bank. The customer says she never agreed to the transfer. Can the bank use funds from \
 her deposit account to pay the overdue credit-card balance without her authorization?
 """
+regulation = "Z"
+gold_ids = ["1026.12(d)(1)", "1026.12(d)(3)(i)"]
+reference_answer = """
+No, the bank cannot transfer funds from a customer's deposit account to pay an overdue credit-card balance without her authorization. Under Regulation Z (12 CFR § 1026.12(d)(1)), card issuers are generally prohibited from offsetting a cardholder's credit card indebtedness against funds held on deposit with the issuer. Periodic deductions from a deposit account are only permitted under § 1026.12(d)(3)(i) if the cardholder has provided express written authorization for an automatic payment plan or if the bank holds a valid, consensual security interest under § 1026.12(d)(2).
+"""
+key_facts = [
+  "Regulation Z prohibits a card issuer from offsetting a cardholder's credit card debt against funds held on deposit with the issuer (§ 1026.12(d)(1)).",
+  "The bank cannot deduct funds from a deposit account to pay credit card debt without written customer authorization or another valid statutory exception (§ 1026.12(d)(3)(i))."
+]
+should_abstain = false
 
 [[question]]
 id = "q036"
