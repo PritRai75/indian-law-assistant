@@ -681,7 +681,7 @@ abstain_category = "issuer_terms"
 
 [[question]]
 id = "q026"
-stage = "draft"
+stage = "labelled"
 persona = "frontline"
 type = "decline"
 trap = "rule not in force (tempting)"
@@ -690,10 +690,20 @@ A credit-card customer was charged a late-payment fee in October 2026. She says 
 article about a federal rule issued in 2024 that reduced credit-card late fees and wants us to \
 refund the amount charged. Does that rule require us to refund her late fee?
 """
+gold_ids = ["1026.52(b)(1)(ii)"]
+reference_answer = """
+The 2024 CFPB credit card penalty fee rule (89 FR 19128) that proposed reducing credit card late fee caps was vacated by a federal court in April 2025 and is not law in force. Because the 2024 rule was vacated and never took effect, it does not require the card issuer to reduce late fees or refund the late payment fee charged to the customer.
+"""
+key_facts = [
+  "the 2024 credit card penalty fee rule was vacated by a federal court in April 2025 and is not in force",
+  "the vacated 2024 rule does not require the card issuer to refund the late payment fee"
+]
+should_abstain = true
+abstain_category = "not_in_force"
 
 [[question]]
 id = "q027"
-stage = "draft"
+stage = "labelled"
 persona = "compliance"
 type = "decline"
 trap = "rule not in force"
@@ -702,10 +712,20 @@ Our bank is redesigning the overdraft-fee structure for its checking accounts. T
 wants to implement the federal overdraft rule announced in December 2024 and asks which fee limits \
 must be built into the new system. What federal overdraft-fee requirements are currently in force?
 """
+gold_ids = ["1005.17(b)(1)"]
+reference_answer = """
+The CFPB's December 2024 overdraft lending rule (89 FR 106768) was overturned by Congress under Public Law 119-10 and never took effect. Under current Regulation E rules in force (12 CFR § 1005.17(b)(1)), financial institutions must obtain affirmative opt-in consent before charging overdraft fees on ATM and one-time debit card transactions, but federal regulation does not impose specific numeric fee caps.
+"""
+key_facts = [
+  "the December 2024 federal overdraft lending rule was overturned by Congress and never took effect",
+  "current in-force federal rules require affirmative opt-in consent before charging overdraft fees on ATM and one-time debit card transactions under 12 CFR § 1005.17(b)(1)"
+]
+should_abstain = true
+abstain_category = "not_in_force"
 
 [[question]]
 id = "q028"
-stage = "draft"
+stage = "labelled"
 persona = "compliance"
 type = "decline"
 trap = "sign-off"
@@ -714,6 +734,16 @@ Our product manager has sent us a draft account-opening disclosure for a new che
 scheduled to launch on 9 November 2026. The product manager wants the compliance team to clear the \
 document for use before launch. Can we provide the requested regulatory sign-off?
 """
+gold_ids = ["1005.7(a)"]
+reference_answer = """
+While Regulation E (12 CFR § 1005.7(a)) specifies requirements for checking account initial disclosures, evaluating custom draft documents or granting formal regulatory compliance sign-off falls outside the scope of the provided regulation corpus. Answering specific regulatory questions is supported, but individual document review and regulatory clearance cannot be provided.
+"""
+key_facts = [
+  "providing formal regulatory compliance sign-off or clearing custom draft disclosures is outside the scope of the provided corpus",
+  "12 CFR § 1005.7(a) governs checking account initial disclosure timing but does not provide document clearance"
+]
+should_abstain = true
+abstain_category = "sign_off"
 
 [[question]]
 id = "q029"
