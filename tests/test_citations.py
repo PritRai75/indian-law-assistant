@@ -38,6 +38,23 @@ def test_comment_subpoints_are_the_comment(prov):
     assert ids("comment 1005.6(b)(1)-3.ii", prov) == ["1005.6(b)(1)-3"]
 
 
+def test_bracketed_subpoints_are_the_comment_not_the_rule(prov):           # guard c3, grader g4
+    assert ids("1026.55(b)-2(ii) and (iii)", prov) == ["1026.55(b)-2"]       # q005, run 1: was read as 1026.55(b)
+    assert ids("comment 1005.6(b)(1)-3(ii)", prov) == ["1005.6(b)(1)-3"]
+    assert ids("1026.12-1(i)", prov) == ["1026.12-1"]                        # section-level comment: was too broad
+    assert ids("comment 55(b)-2(ii)", prov) == ["1026.55(b)-2"]              # short form: only Reg Z has it
+    assert C.dot_subpoints("1026.55(b)-2(ii)(A)") == "1026.55(b)-2.ii.A"
+    assert C.dot_subpoints("1005.6(b)(1)-(3)") == "1005.6(b)(1)-(3)"         # a range is left alone
+
+
+def test_every_index_id_still_reads_as_itself(prov):
+    for p in prov.values():
+        is_comment = "-" in p.split(".", 1)[1]
+        assert ids(p, prov) == [p] and C.dot_subpoints(p) == p
+        if is_comment:
+            assert ids(p + "(ii)(A)", prov) == [p]
+
+
 def test_ranges(prov):
     assert ids("1005.11(c)(2)(iii)-(iv)", prov) == ["1005.11(c)(2)(iii)", "1005.11(c)(2)(iv)"]
     assert ids("1005.6(b)(1)-(3)", prov) == ["1005.6(b)(1)", "1005.6(b)(2)", "1005.6(b)(3)"]

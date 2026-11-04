@@ -5,6 +5,7 @@ the same way (session 15). The first real run showed the model writing forms a o
 can't read:
     packed      "1026.13(c)(1), § 1026.13(c)(2)"     -> 1026.13(c)(1), 1026.13(c)(2)
     sub-point   "1005.12(a)-5.iv.B"                  -> 1005.12(a)-5   (sub-points are part of comment 5)
+    ... bracketed "1026.55(b)-2(ii) and (iii)"         -> 1026.55(b)-2   (session 15, guard c3 / grader g4)
     range       "1005.11(c)(2)(iii)-(iv)"            -> 1005.11(c)(2)(iii), 1005.11(c)(2)(iv)
     in a phrase "see 1026.9(c)(2)(i) and the notice"  -> 1026.9(c)(2)(i)
 
@@ -29,6 +30,17 @@ RANGE = re.compile(r"\b(10(?:05|26)\.\d{1,2}(?:\(\s?[0-9A-Za-z]{1,5}\s?\))*)\(\s
                    r"\s?(?:[-‐-―]|\bthrough\b|\bto\b)\s?\(\s?([0-9A-Za-z]{1,5})\s?\)(?!\s?\()")
 # the end is one label: "(c)(1) through (c)(2)" is not a range of single labels, and only (c)(1) is read
 MAX_RANGE = 12            # a longer range is read as its two ends only
+# "1026.55(b)-2(ii)": a comment number, then its sub-points in brackets. The search's reader only knows
+# the dotted form ("-2.ii") and, seeing "2(", would read the rule paragraph 1026.55(b) instead. Comment
+# 2's sub-points are part of comment 2, so the brackets are rewritten as dots before reading. A dash
+# followed by "(" is a range ("(1)-(3)") and is left alone.
+SUBPOINT = re.compile(r"(\d(?:\(\s?[0-9A-Za-z]{1,5}\s?\))*\s?[-‐-―]\s?\d{1,2})((?:\(\s?[0-9A-Za-z]{1,5}\s?\))+)")
+
+
+def dot_subpoints(text):
+    """"1026.55(b)-2(ii)(A)" -> "1026.55(b)-2.ii.A"; text without such a comment is returned unchanged."""
+    return SUBPOINT.sub(lambda m: m.group(1) + "".join("." + re.sub(r"[\s()]", "", lab)
+                                                       for lab in re.findall(r"\([^()]*\)", m.group(2))), text)
 
 
 @dataclass
@@ -77,7 +89,7 @@ def expand_ranges(text, lower_ids):
 def read_citation(written, provisions):
     """Read one citation string. `provisions` maps lower-case ID -> the index's spelling."""
     r = Reading(written=written)
-    text = expand_ranges(written, provisions)
+    text = expand_ranges(dot_subpoints(written), provisions)
     refs = rt.read_refs(text)
     if not refs:
         r.unreadable = True

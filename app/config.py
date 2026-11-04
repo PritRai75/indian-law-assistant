@@ -12,8 +12,9 @@ from app.prompts import PROMPT_VERSION
 
 # The citation guard's rule (app.answer.guard). Bump it with any change to how the guard reads or
 # removes citations, since that changes answers. "c1": one ID per string (sessions 12-14);
-# "c2": every citation read with app.citations (packed IDs, ranges, comment sub-points; session 15).
-GUARD_VERSION = "c2"
+# "c2": every citation read with app.citations (packed IDs, ranges, comment sub-points; session 15);
+# "c3": also comment sub-points written in brackets, "1026.55(b)-2(ii)" (session 15).
+GUARD_VERSION = "c3"
 
 
 @dataclass(frozen=True)

@@ -77,8 +77,9 @@ from eval import golden as G
 
 REPO = Path(__file__).resolve().parents[1]
 DB_FILE = REPO / "runs.db"
-GRADER_VERSION = "g3"                 # bump when a grading rule changes, so old and new numbers aren't mixed
-# g1 first harness; g2 tier amounts in the text for Reg E only (S14); g3 citations read with app.citations (S15)
+GRADER_VERSION = "g4"                 # bump when a grading rule changes, so old and new numbers aren't mixed
+# g1 first harness; g2 tier amounts in the text for Reg E only (S14); g3 citations read with app.citations (S15);
+# g4 bracketed comment sub-points, "-2(ii)", read as the comment (S15)
 EVAL_TODAY = date(2026, 11, 3)        # "today" for questions that don't state their own
 GUARD_CAUSES = ("no_valid_citation", "output_invalid", "tool_limit")
 

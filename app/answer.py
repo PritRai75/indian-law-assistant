@@ -105,7 +105,7 @@ def index_spelling():
 
 
 def guard(model_answer, allowed, provisions=None):
-    """Apply the citation guard (GUARD_VERSION c2). Returns (answer text, valid IDs, raw strings, invalid).
+    """Apply the citation guard (GUARD_VERSION c3). Returns (answer text, valid IDs, raw strings, invalid).
 
     Each citation string, in the citations field or inline, is read with app.citations, so one string
     may name several IDs ("1026.13(c)(1), § 1026.13(c)(2)", a range, a comment sub-point). An ID is

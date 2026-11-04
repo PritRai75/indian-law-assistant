@@ -222,6 +222,12 @@ def test_marker_with_some_valid_ids_keeps_only_those():
     assert resp.flags == ["invalid_citations"] and not resp.abstained
 
 
+def test_bracketed_subpoint_citation_is_kept():                     # guard c3
+    final = reply("Example in [comment 1005.6(b)(1)-3(ii)].", ["comment 1005.6(b)(1)-3(ii)"])
+    resp, _ = run(text(final))
+    assert resp.answer == final["answer"] and resp.citations == ["1005.6(b)(1)-3"] and resp.flags == []
+
+
 def test_whole_section_citation_is_too_broad_to_verify():
     resp, _ = run(text(reply("Cap is $50 [§ 1005.6].", ["1005.6"])))
     assert resp.invalid_citations == ["1005.6"] and resp.answer == an.NO_CITATION and resp.abstained
