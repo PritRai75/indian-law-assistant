@@ -321,7 +321,7 @@ abstain_category = "excluded_part"
 
 [[question]]
 id = "q011"
-stage = "draft"
+stage = "labelled"
 persona = "frontline"
 type = "unauthorized"
 trap = "card once lent"
@@ -330,10 +330,20 @@ A customer says her roommate took her credit card from her purse and used it wit
 previously lent him the card once to buy groceries but did not authorize these later purchases. Does \
 having lent him the card before affect how we treat the new transactions?
 """
+regulation = "Z"
+gold_ids = ["1026.12(b)(1)(i)", "1026.12(b)(1)(ii)-3"]
+reference_answer = """
+Under Regulation Z, unauthorized use is defined as the use of a credit card by a person who lacks actual, implied, or apparent authority and from which the cardholder receives no benefit. If a cardholder furnishes a card to a person who exceeds the granted authority, the cardholder is liable unless the issuer was notified that authority was revoked. However, whether previously lending a card creates implied or apparent authority for later purchases when the card is taken without permission is determined under state law.
+"""
+key_facts = [
+  "unauthorized use is defined as use without actual, implied, or apparent authority from which the cardholder receives no benefit",
+  "whether prior lending creates implied or apparent authority for subsequent use is determined under state law"
+]
+should_abstain = false
 
 [[question]]
 id = "q012"
-stage = "draft"
+stage = "labelled"
 persona = "frontline"
 type = "dispute"
 question = """
@@ -341,10 +351,32 @@ A customer says a hotel charged her credit card $480 even though the agreed room
 $480 charge appears on her statement sent on 15 October 2026, and her written complaint reached our \
 bank by mail on 2 November 2026. What deadlines apply to handling this billing complaint?
 """
+regulation = "Z"
+today = 2026-11-02
+gold_ids = ["1026.13(c)(1)", "1026.13(c)(2)"]
+reference_answer = """
+Under Regulation Z, after receiving a written billing error notice on 2 November 2026, the creditor must send a written acknowledgment to the consumer within 30 calendar days (by 2 December 2026). The creditor must complete its investigation and resolve the billing dispute within two complete billing cycles, but in no event later than 90 calendar days after receiving the notice (by 31 January 2027).
+"""
+key_facts = [
+  "written acknowledgment must be sent within 30 days of receiving notice (2 December 2026)",
+  "investigation and resolution must be completed within two complete billing cycles or 90 days (31 January 2027)"
+]
+should_abstain = false
+
+[question.expected_tool_call]
+name = "dispute_timeline"
+args = { regulation = "Z", event = "error", statement_sent = "2026-10-15", notice_date = "2026-11-02" }
+
+[question.expected_result]
+notice_timely = true
+deadlines = [
+  { what = "30-day written acknowledgment", date = 2026-12-02, rule = "1026.13(c)(1)" },
+  { what = "two complete billing cycles or 90-day complete resolution", date = 2027-01-31, rule = "1026.13(c)(2)" }
+]
 
 [[question]]
 id = "q013"
-stage = "draft"
+stage = "labelled"
 persona = "compliance"
 type = "dispute"
 trap = "dispute vs claim against the merchant"
@@ -353,6 +385,16 @@ A customer used our bank-issued credit card to purchase a laptop for $900. The l
 working seven days after purchase, and the store has refused to repair it, replace it or issue a \
 refund. Can the customer withhold payment through a credit-card billing dispute?
 """
+regulation = "Z"
+gold_ids = ["1026.12(c)(1)", "1026.12(c)(3)(i)", "1026.13(a)(3)"]
+reference_answer = """
+A quality dispute regarding accepted merchandise is not a billing error under Regulation Z (§ 1026.13(a)(3)), so the customer cannot withhold payment through a billing error dispute. However, under 12 CFR § 1026.12(c), the customer may withhold payment by asserting claims and defenses against the card issuer for a merchant dispute, provided she made a good-faith effort to resolve the issue with the store and the transaction amount exceeds $50.
+"""
+key_facts = [
+  "quality disputes on accepted merchandise are not billing errors under Regulation Z",
+  "the customer may withhold payment by asserting claims and defenses against the card issuer under 12 CFR § 1026.12(c)"
+]
+should_abstain = false
 
 [[question]]
 id = "q014"
