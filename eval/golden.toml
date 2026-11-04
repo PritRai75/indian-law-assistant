@@ -1047,7 +1047,7 @@ abstain_category = "not_in_force"
 
 [[question]]
 id = "q041"
-stage = "draft"
+stage = "labelled"
 persona = "compliance"
 type = "decline"
 trap = "card network rules"
@@ -1056,10 +1056,21 @@ Our dispute team is reviewing a cardholder's dispute involving a $1,100 airline 
 was cancelled more than four months ago, and the cardholder has only now contacted the bank. Can we \
 still submit a chargeback to Visa under its network rules?
 """
+regulation = "Z"
+gold_ids = ["1026.13(a)(3)", "1026.13(b)(1)"]
+reference_answer = """
+This question cannot be answered from the provided corpus because private card network operating rules, such as Visa's chargeback rules and timeframes, are not covered under Regulation Z or Regulation E. Regulation Z (§ 1026.13) governs federal credit card billing error rights and procedures, but does not dictate private network chargeback limits or submission windows.
+"""
+key_facts = [
+  "Private card network operating rules and chargeback timeframes (such as Visa rules) are not covered under Regulation Z, Regulation E, or the provided corpus.",
+  "Regulation Z (§ 1026.13) governs federal billing error rights, not private card network chargeback procedures."
+]
+should_abstain = true
+abstain_category = "network_rules"
 
 [[question]]
 id = "q042"
-stage = "draft"
+stage = "labelled"
 persona = "frontline"
 type = "decline"
 trap = "issuer's own terms"
@@ -1068,10 +1079,21 @@ A credit-card customer wants to switch from her current card, which has a $95 an
 bank's no-annual-fee card. She wants to keep the same account number and all her accumulated reward \
 points. Can we guarantee that both will remain unchanged when she switches cards?
 """
+regulation = "Z"
+gold_ids = ["1026.12(a)(2)"]
+reference_answer = """
+This question cannot be answered from the provided corpus because account product switching rules, account number retention, and reward point transfer policies are governed by the card issuer's own program terms, not by Regulation Z or Regulation E. Regulation Z (§ 1026.12(a)(2)) governs credit card issuance and substitution, but does not dictate individual bank policies on retaining account numbers or transferring reward points upon a product change.
+"""
+key_facts = [
+  "Card issuer product switching rules, account number retention policies, and reward point transfers are governed by the bank's internal program terms rather than Regulation Z or Regulation E.",
+  "Regulation Z (§ 1026.12(a)(2)) regulates credit card issuance and substitution, but does not dictate private issuer reward terms or account number retention rules."
+]
+should_abstain = true
+abstain_category = "issuer_terms"
 
 [[question]]
 id = "q043"
-stage = "draft"
+stage = "labelled"
 persona = "compliance"
 type = "decline"
 trap = "state law, next to gift-card rules"
@@ -1079,10 +1101,21 @@ question = """
 A customer purchased a store gift card issued by our bank four years ago. The card still has an \
 unused balance of $35. Must the bank transfer that remaining balance to the state?
 """
+regulation = "E"
+gold_ids = ["1005.20(e)(1)"]
+reference_answer = """
+This question cannot be answered from the provided corpus because state unclaimed property and escheatment laws are not covered under Regulation E or Regulation Z. Regulation E (12 CFR § 1005.20(e)(1)) sets federal restrictions on gift card expiration dates and fee disclosures, but state law determines when and whether unused gift card balances must be transferred to the state as unclaimed property.
+"""
+key_facts = [
+  "State unclaimed property and escheatment laws governing unused gift card balances are not covered under Regulation E, Regulation Z, or the provided corpus.",
+  "Regulation E (§ 1005.20(e)(1)) governs federal gift card expiration dates and fee limits, not state escheatment obligations."
+]
+should_abstain = true
+abstain_category = "state_law"
 
 [[question]]
 id = "q044"
-stage = "draft"
+stage = "labelled"
 persona = "compliance"
 type = "decline"
 trap = "other regulation"
@@ -1091,10 +1124,21 @@ A collection agency hired by our bank is contacting a customer about her charged
 balance. The agency has called her at 7 a.m. and contacted her at her workplace. Which federal \
 consumer-protection requirements govern these collection practices?
 """
+regulation = "Z"
+gold_ids = ["1026.13(d)(1)"]
+reference_answer = """
+This question cannot be answered from the provided corpus because general debt collection practices, caller time restrictions, and workplace communication rules (such as those under the Fair Debt Collection Practices Act) are not covered under Regulation Z or Regulation E. Regulation Z (§ 1026.13(d)(1)) restricts collection actions specifically for disputed amounts during a billing error resolution, but does not govern general debt collection practices for charged-off balances.
+"""
+key_facts = [
+  "Federal debt collection requirements governing contact timing and workplace communications (such as under the Fair Debt Collection Practices Act) are not covered under Regulation Z, Regulation E, or the provided corpus.",
+  "Regulation Z (§ 1026.13(d)(1)) addresses collection restrictions during billing error disputes, not general debt collection practices for charged-off balances."
+]
+should_abstain = true
+abstain_category = "other_law"
 
 [[question]]
 id = "q045"
-stage = "draft"
+stage = "labelled"
 persona = "frontline"
 type = "decline"
 trap = "excluded part, next to included home-equity rules"
@@ -1102,6 +1146,17 @@ question = """
 A home-equity line customer says our bank froze her credit line after the appraised value of her \
 home dropped. Is the bank allowed to suspend further advances for this reason?
 """
+regulation = "Z"
+gold_ids = ["1026.9(c)(1)(iii)"]
+reference_answer = """
+This question cannot be answered from the provided corpus because the substantive rules governing home-equity line of credit (HELOC) freezes and advance suspensions under 12 CFR § 1026.40 (Subpart E) are not included in the corpus. While Regulation Z (§ 1026.9(c)(1)(iii)) specifies disclosure notice requirements when a credit line is restricted, the substantive rules permitting or restricting credit freezes based on property value declines fall under Subpart E.
+"""
+key_facts = [
+  "Substantive rules governing HELOC credit line freezes and suspensions under 12 CFR § 1026.40 (Subpart E) are not included in the provided corpus.",
+  "Regulation Z (§ 1026.9(c)(1)(iii)) specifies change-in-terms notice requirements for credit restrictions, but does not contain the substantive HELOC freeze rules."
+]
+should_abstain = true
+abstain_category = "excluded_part"
 
 # ============================================================ batch 4 (session 17, 4 Nov 2026)
 
