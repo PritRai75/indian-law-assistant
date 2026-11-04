@@ -12,6 +12,10 @@ Two stages:
 tests/test_golden.py fails while the real file has any. `python -m eval.golden` prints the counts
 and the problems.
 
+`python -m eval.golden --skeleton q011 q012` (or `q011-q020`) starts pass 2 (session 16): each draft
+becomes stage "labelled" with empty pass-2 fields (SKELETON) that fail the checks until filled in.
+Only the stage line and the added lines change; the file must read back as exactly that.
+
 Gold IDs match as a family (Prit's choice, session 14): a gold ID covers itself, the paragraphs
 under it and the comments on any of them, the same rule as the search's named sets and
 `python -m eval.lookup`. `in_family()` is that rule; eval/run.py scores retrieval and citations
@@ -337,6 +341,108 @@ def rule_matches(label_rule: str, tool_rule: str) -> bool:
     return label_rule in rules
 
 
+# ------------------------------------------------------------------ skeleton for pass 2
+
+# The lines `--skeleton` adds to a draft. The three plain fields hold empty values that the checks
+# reject (an empty reference answer, an empty key fact), and should_abstain is left as a comment, so
+# python -m eval.golden lists every skeleton item until it is really labelled: nothing passes by
+# being forgotten. gold_ids = [] is valid for a decline, which may list none.
+SKELETON = f'''\
+# --- pass 2: fill these in, then run python -m eval.golden (it lists what is still missing) ---
+# regulation = "E"          # "E", "Z" or "both"; leave out for most declines
+# today = 2026-11-03        # only if the question names its own "today"
+gold_ids = []
+reference_answer = """
+"""
+key_facts = [""]
+# should_abstain = false    # true for a decline, and then also abstain_category
+# abstain_category = ""     # {", ".join(ABSTAIN_CATEGORIES)}
+# uncertain = true          # only when unsure: leaves the question out of scoring
+# Tool call and result, only if the answer needs dispute_timeline: see the example at the top of the file.'''
+
+SKELETON_FIELDS = {"gold_ids": [], "reference_answer": "", "key_facts": [""]}
+_DRAFT_STAGE = re.compile(r'^\s*stage\s*=\s*"draft"\s*(#.*)?$')
+
+
+def expand_ids(args: list[str]) -> list[str]:
+    """"q011", and ranges "q011-q020" written out. Raises ValueError on anything else."""
+    out = []
+    for a in args:
+        m = re.fullmatch(r"q(\d{3})(?:-q(\d{3}))?", a.strip())
+        if not m:
+            raise ValueError(f"{a!r}: give question ids like q011, or a range like q011-q020")
+        lo, hi = int(m.group(1)), int(m.group(2) or m.group(1))
+        if hi < lo:
+            raise ValueError(f"{a!r}: the range runs backwards")
+        out += [f"q{n:03d}" for n in range(lo, hi + 1)]
+    return list(dict.fromkeys(out))
+
+
+def add_skeletons(text: str, ids: list[str]) -> str:
+    """The file's text with each listed draft turned into a labelled block with empty pass-2 fields.
+
+    Only two things change per block: `stage = "draft"` becomes "labelled", and SKELETON goes in after
+    the block's last field (before any comment lines that lead into the next block). Everything else,
+    line endings included, is kept byte for byte. All or nothing: any problem raises ValueError
+    listing them all, and nothing is changed. The result is re-read with tomllib and must equal the
+    old file plus exactly the skeleton fields, or the change is refused.
+    """
+    nl = "\r\n" if "\r\n" in text else "\n"
+    lines = text.replace("\r\n", "\n").split("\n")
+    old = tomllib.loads(text).get("question", [])
+    starts = [n for n, line in enumerate(lines) if line.strip() == "[[question]]"]
+    if len(starts) != len(old):
+        raise ValueError(f"found {len(starts)} [[question]] lines but {len(old)} blocks; "
+                         "is a [[question]] line inside a text field?")
+    where = {block.get("id"): k for k, block in enumerate(old)}
+    problems, edits = [], []
+    for qid in ids:
+        if qid not in where:
+            problems.append(f"{qid}: not in the file")
+            continue
+        k = where[qid]
+        if old[k].get("stage") != "draft":
+            problems.append(f"{qid}: stage is {old[k].get('stage')!r}; the skeleton is only for drafts")
+            continue
+        s, e = starts[k], (starts[k + 1] if k + 1 < len(starts) else len(lines))
+        stage = [n for n in range(s, e) if _DRAFT_STAGE.match(lines[n])]
+        if len(stage) != 1:
+            problems.append(f"{qid}: expected one line stage = \"draft\" in the block, found {len(stage)}")
+            continue
+        if any(lines[n].lstrip().startswith("[") for n in range(s + 1, e)):
+            problems.append(f"{qid}: a draft block should have no [question....] tables")
+            continue
+        last = e - 1
+        while last > s and (not lines[last].strip() or lines[last].lstrip().startswith("#")):
+            last -= 1
+        edits.append((qid, stage[0], last))
+    if problems:
+        raise ValueError("\n".join(problems))
+
+    for qid, stage_line, last in sorted(edits, key=lambda x: -x[2]):
+        lines[stage_line] = lines[stage_line].replace('"draft"', '"labelled"', 1)
+        lines[last + 1:last + 1] = SKELETON.split("\n")
+    new_text = nl.join(lines)
+
+    expected = [dict(block) for block in old]
+    for qid in ids:
+        expected[where[qid]].update(stage="labelled", **SKELETON_FIELDS)
+    if tomllib.loads(new_text).get("question", []) != expected:
+        raise ValueError("the edited file doesn't read back as expected; nothing was changed")
+    return new_text
+
+
+def skeleton(path: Path, ids: list[str]) -> list[str]:
+    """Apply add_skeletons to the file at `path` in place. Returns the ids changed."""
+    ids = expand_ids(ids)
+    text = path.read_bytes().decode("utf-8")
+    new_text = add_skeletons(text, ids)
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    tmp.write_bytes(new_text.encode("utf-8"))
+    tmp.replace(path)
+    return ids
+
+
 # ------------------------------------------------------------------ summary
 
 def summary(items: list[GoldenItem]) -> str:
@@ -345,10 +451,12 @@ def summary(items: list[GoldenItem]) -> str:
         lines.append(f"  by {field}: " + ", ".join(f"{k} {n}" for k, n in sorted(Counter(getattr(i, field) for i in items).items())))
     labelled = [i for i in items if i.stage == "labelled"]
     if labelled:
+        unfinished = [i for i in labelled if i.should_abstain is None]       # e.g. a skeleton not yet filled in
         declines = [i for i in labelled if i.should_abstain]
-        lines.append(f"  labelled: {len(labelled) - len(declines)} answerable, {len(declines)} declines, "
+        lines.append(f"  labelled: {len(labelled) - len(declines) - len(unfinished)} answerable, {len(declines)} declines, "
                      f"{sum(i.uncertain for i in labelled)} uncertain, "
-                     f"{sum(i.expected_tool_call is not None for i in labelled)} expecting the tool")
+                     f"{sum(i.expected_tool_call is not None for i in labelled)} expecting the tool"
+                     + (f", {len(unfinished)} unfinished (should_abstain not set)" if unfinished else ""))
         if declines:
             lines.append("  declines by category: " + ", ".join(
                 f"{k} {n}" for k, n in sorted(Counter(i.abstain_category for i in declines).items())))
@@ -356,7 +464,23 @@ def summary(items: list[GoldenItem]) -> str:
 
 
 def main(argv=None) -> int:
-    path = Path(argv[0]) if argv else GOLDEN_FILE
+    import argparse
+    ap = argparse.ArgumentParser(prog="python -m eval.golden",
+                                 description="Check the golden set; with --skeleton, start pass 2 on drafts.")
+    ap.add_argument("path", nargs="?", type=Path, default=GOLDEN_FILE, help="default: eval/golden.toml")
+    ap.add_argument("--skeleton", nargs="+", metavar="ID",
+                    help="turn these drafts (q011 q012, or q011-q020) into labelled blocks with empty "
+                         "pass-2 fields to fill in")
+    args = ap.parse_args(argv)
+    path = args.path
+    if args.skeleton:
+        try:
+            done = skeleton(path, args.skeleton)
+        except ValueError as e:
+            print(f"Nothing changed:\n{e}")
+            return 1
+        print(f"{len(done)} draft(s) now labelled, with empty pass-2 fields: {', '.join(done)}")
+        print("Fill them in. Until then the check below lists them as problems, and pytest fails.\n")
     items, problems = parse(read(path))
     problems += check(items)
     problems += [x for i in items for x in compare_with_tool(i)]

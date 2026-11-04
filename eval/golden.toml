@@ -8,7 +8,9 @@
 # Pass 1 (stage = "draft"): id, stage, persona, type, question, and optionally trap (a private note).
 # Pass 2 (stage = "labelled"), regulation open, in a separate sitting. Never reword a question to fit
 # a label: relabel instead (a question that needs network rules, state law, a statute and so on
-# becomes a decline). Fields:
+# becomes a decline). To start, python -m eval.golden --skeleton q011 q012 (or q011-q020) turns those
+# drafts into labelled blocks with empty fields to fill in; only do it for the ones you'll label in
+# that sitting, since the check fails until they're filled. Fields:
 #   regulation        "E", "Z" or "both" (leave out for most declines)
 #   gold_ids          provision IDs exactly as in the index: rule paragraphs like "1005.6(b)(1)",
 #                     comments like "1005.6(b)-1". The narrowest paragraph that fully answers.
@@ -314,3 +316,244 @@ key_facts = [
 ]
 should_abstain = true
 abstain_category = "excluded_part"
+
+# ============================================================ batch 2 (session 16, 4 Nov 2026)
+
+[[question]]
+id = "q011"
+stage = "draft"
+persona = "frontline"
+type = "unauthorized"
+trap = "card once lent"
+question = """
+A customer says her roommate took her credit card from her purse and used it without asking. She had \
+previously lent him the card once to buy groceries but did not authorize these later purchases. Does \
+having lent him the card before affect how we treat the new transactions?
+"""
+
+[[question]]
+id = "q012"
+stage = "draft"
+persona = "frontline"
+type = "dispute"
+question = """
+A customer says a hotel charged her credit card $480 even though the agreed room rate was $280. The \
+$480 charge appears on her statement sent on 15 October 2026, and her written complaint reached our \
+bank by mail on 2 November 2026. What deadlines apply to handling this billing complaint?
+"""
+
+[[question]]
+id = "q013"
+stage = "draft"
+persona = "compliance"
+type = "dispute"
+trap = "dispute vs claim against the merchant"
+question = """
+A customer used our bank-issued credit card to purchase a laptop for $900. The laptop stopped \
+working seven days after purchase, and the store has refused to repair it, replace it or issue a \
+refund. Can the customer withhold payment through a credit-card billing dispute?
+"""
+
+[[question]]
+id = "q014"
+stage = "draft"
+persona = "compliance"
+type = "deadline"
+question = """
+A customer opened a checking account with us on 1 October 2026 and used her debit card to make a \
+$120 purchase at a shop in Mexico on 20 October 2026. The transaction appeared twice on her account, \
+and she first notified our bank by telephone on 28 October 2026. What investigation and resolution \
+deadlines apply?
+"""
+
+[[question]]
+id = "q015"
+stage = "draft"
+persona = "frontline"
+type = "fees_terms"
+question = """
+A new customer received a credit card with a $500 credit limit and was charged a $95 annual fee, a \
+$75 program fee and a $25 card-replacement fee during the first month. She wants to know whether the \
+bank is allowed to charge these fees.
+"""
+
+[[question]]
+id = "q016"
+stage = "draft"
+persona = "compliance"
+type = "fees_terms"
+question = """
+Our bank offered a branch promotion last spring under which customers received a credit card with a \
+specified credit limit. A compliance review has found that some customers enrolled through this \
+promotion were charged over-the-limit fees without having agreed to allow transactions above their \
+credit limits. Under what conditions may the bank charge these fees?
+"""
+
+[[question]]
+id = "q017"
+stage = "draft"
+persona = "compliance"
+type = "payments_disclosures"
+question = """
+Our credit-card system receives a $500 payment from a customer whose minimum payment due is $100. \
+The account has a 0% balance-transfer balance and a purchase balance carrying a 24% APR. How must \
+the system allocate the amount paid above the minimum between these two balances?
+"""
+
+[[question]]
+id = "q018"
+stage = "draft"
+persona = "compliance"
+type = "payments_disclosures"
+question = """
+A printing vendor outage delayed the mailing of statements for one of our credit-card products in \
+October 2026. The affected statements were scheduled to be sent on 20 October 2026 but were mailed \
+on 29 October 2026. Some customers have payment due dates of 10 November 2026. Are these payment due \
+dates compliant with the applicable statement-delivery requirements?
+"""
+
+[[question]]
+id = "q019"
+stage = "draft"
+persona = "frontline"
+type = "reg_e_account"
+question = """
+A checking-account customer wants us to stop her insurance company's automatic monthly ACH debit \
+from her account. The next payment is scheduled for 12 November 2026, and she is calling us today, 4 \
+November 2026. What notice period applies to her stop-payment request?
+"""
+
+[[question]]
+id = "q020"
+stage = "draft"
+persona = "frontline"
+type = "reg_e_account"
+question = """
+A customer received a debit card in the mail for her savings account and says she never requested or \
+agreed to receive one. She has not activated the card and still has it in her possession. What \
+restrictions apply to sending her a debit card she didn't ask for?
+"""
+
+[[question]]
+id = "q021"
+stage = "draft"
+persona = "compliance"
+type = "reg_e_account"
+question = """
+Our bank is developing a store-branded gift card that can only be used at the issuing store and its \
+affiliated locations. The proposed terms include a monthly maintenance fee beginning six months \
+after purchase and an expiration date three years after purchase. Are these proposed terms \
+permitted?
+"""
+
+[[question]]
+id = "q022"
+stage = "draft"
+persona = "compliance"
+type = "cross_reg"
+trap = "prepaid plus credit"
+question = """
+Our bank is developing a prepaid card that would allow customers to spend more than their available \
+prepaid balance through a linked credit feature. The credit feature would cover the negative \
+balance, and customers would repay the amount later. How is this product classified, and what \
+requirements apply to the linked credit feature?
+"""
+
+[[question]]
+id = "q023"
+stage = "draft"
+persona = "frontline"
+type = "cross_reg"
+trap = "debit and credit in one call"
+question = """
+A customer calls us on 3 November 2026 to report that her wallet, containing both her bank debit \
+card and bank-issued credit card, was stolen on Saturday, 31 October 2026. Both cards were used \
+without her permission on 31 October and 1 November 2026, and she discovered the theft on 31 \
+October. What liability rules apply to the unauthorized transactions on each card?
+"""
+
+[[question]]
+id = "q024"
+stage = "draft"
+persona = "frontline"
+type = "decline"
+trap = "state law"
+question = """
+A customer recently moved from Texas to New York and asks whether New York law now limits the \
+interest rate our bank can charge on her existing credit-card account. The account was opened while \
+she lived in Texas, and our bank is the issuer. How should we respond to her question about the \
+applicable interest-rate limit?
+"""
+
+[[question]]
+id = "q025"
+stage = "draft"
+persona = "frontline"
+type = "decline"
+trap = "issuer's own terms"
+question = """
+A credit-card customer contacts us because she expects to make her payment late in November 2026. \
+She is worried that the bank will immediately cancel or remove all the reward points she has \
+accumulated. What should we tell her about the effect of a late payment on her reward points?
+"""
+
+[[question]]
+id = "q026"
+stage = "draft"
+persona = "frontline"
+type = "decline"
+trap = "rule not in force (tempting)"
+question = """
+A credit-card customer was charged a late-payment fee in October 2026. She says she read a news \
+article about a federal rule issued in 2024 that reduced credit-card late fees and wants us to \
+refund the amount charged. Does that rule require us to refund her late fee?
+"""
+
+[[question]]
+id = "q027"
+stage = "draft"
+persona = "compliance"
+type = "decline"
+trap = "rule not in force"
+question = """
+Our bank is redesigning the overdraft-fee structure for its checking accounts. The product manager \
+wants to implement the federal overdraft rule announced in December 2024 and asks which fee limits \
+must be built into the new system. What federal overdraft-fee requirements are currently in force?
+"""
+
+[[question]]
+id = "q028"
+stage = "draft"
+persona = "compliance"
+type = "decline"
+trap = "sign-off"
+question = """
+Our product manager has sent us a draft account-opening disclosure for a new checking account \
+scheduled to launch on 9 November 2026. The product manager wants the compliance team to clear the \
+document for use before launch. Can we provide the requested regulatory sign-off?
+"""
+
+[[question]]
+id = "q029"
+stage = "draft"
+persona = "frontline"
+type = "decline"
+trap = "excluded part"
+question = """
+A customer contacts us about a personal installment loan issued by our bank. Her payment schedule \
+shows an interest rate different from the rate she says our representative quoted when she applied. \
+Which consumer-protection requirements apply to her complaint?
+"""
+
+[[question]]
+id = "q030"
+stage = "draft"
+persona = "compliance"
+type = "decline"
+trap = "other law"
+question = """
+Our bank is about to charge its standard credit-card interest rate of 24% to a customer who is \
+currently serving on active duty in the US military. The customer opened the credit-card account and \
+incurred the outstanding balance before beginning active-duty service on 1 September 2026. What \
+restrictions apply to the interest rate we can charge?
+"""
