@@ -792,3 +792,360 @@ key_facts = [
 ]
 should_abstain = true
 abstain_category = "other_law"
+
+# ============================================================ batch 3 (session 17, 4 Nov 2026)
+
+[[question]]
+id = "q031"
+stage = "draft"
+persona = "frontline"
+type = "deadline"
+trap = "holiday inside the count"
+question = """
+A customer called us on Friday, 6 November 2026, to report that a bank ATM in Ohio failed to \
+dispense $200 but deducted the amount from her checking account. Her account has been open for \
+several years. By what date must we complete our investigation?
+"""
+
+[[question]]
+id = "q032"
+stage = "draft"
+persona = "compliance"
+type = "deadline"
+trap = "billing cycles"
+question = """
+A cardholder's written letter disputing a $650 charge reached our bank on 9 November 2026. Her \
+credit-card billing cycles close on the 25th of each month. By which billing cycle must we resolve \
+the dispute?
+"""
+
+[[question]]
+id = "q033"
+stage = "draft"
+persona = "frontline"
+type = "dispute"
+trap = "\"what is this?\" vs \"this is wrong\""
+question = """
+A customer sees a $73.40 charge described as \"SQ *BLUEHARBOR\" on her credit-card statement. She \
+does not recognize the merchant and has written to us asking what the charge is, but she has not \
+said that the charge is incorrect. Does this inquiry qualify as a billing-error notice?
+"""
+
+[[question]]
+id = "q034"
+stage = "draft"
+persona = "compliance"
+type = "dispute"
+question = """
+An operations analyst finds that a customer's $1,240 payroll deposit, sent by ACH on Friday, 30 \
+October 2026, never appeared in her checking account. The customer first notified the bank by \
+telephone on Monday, 2 November 2026. What investigation and resolution deadlines apply?
+"""
+
+[[question]]
+id = "q035"
+stage = "draft"
+persona = "frontline"
+type = "payments_disclosures"
+trap = "same bank, two accounts"
+question = """
+Our bank transferred $300 from a customer's savings account to cover her overdue credit-card balance \
+with the same bank. The customer says she never agreed to the transfer. Can the bank use funds from \
+her deposit account to pay the overdue credit-card balance without her authorization?
+"""
+
+[[question]]
+id = "q036"
+stage = "draft"
+persona = "compliance"
+type = "cross_reg"
+trap = "credit card used at an ATM"
+question = """
+A customer's credit card and its PIN were stolen on Saturday, 7 November 2026. The thief used them \
+to obtain two $400 cash advances at ATMs, and the customer reported the theft to our bank on Sunday, \
+8 November 2026. What liability rules apply to these unauthorized cash advances?
+"""
+
+[[question]]
+id = "q037"
+stage = "draft"
+persona = "compliance"
+type = "cross_reg"
+trap = "near a rule not in force"
+question = """
+Our bank plans to add an overdraft line of credit to existing debit-card accounts. The affected \
+customers have never applied for or agreed to this credit feature. Can the bank add the overdraft \
+credit feature without obtaining their consent?
+"""
+
+[[question]]
+id = "q038"
+stage = "draft"
+persona = "frontline"
+type = "fees_terms"
+question = """
+A credit-card customer made a payment 20 days late in September 2026. She has now received a notice \
+saying that the bank plans to increase the APR on her existing purchase balance to the penalty rate. \
+Can the bank apply the penalty APR to her existing balance?
+"""
+
+[[question]]
+id = "q039"
+stage = "draft"
+persona = "frontline"
+type = "reg_e_account"
+trap = "pair with q040"
+question = """
+A customer was charged a $34 overdraft fee when a coffee-shop purchase made with her debit card took \
+her checking account below zero. She says she never agreed to overdraft coverage. Can the bank \
+charge her an overdraft fee for this debit-card transaction?
+"""
+
+[[question]]
+id = "q040"
+stage = "draft"
+persona = "frontline"
+type = "decline"
+trap = "rule not in force (pair with q039)"
+question = """
+A customer says she read that a federal rule issued in late 2024 limits overdraft fees at large \
+banks to $5. She wants us to reduce the $34 overdraft fee recently charged to her checking account. \
+Does that federal rule require us to reduce the fee?
+"""
+
+[[question]]
+id = "q041"
+stage = "draft"
+persona = "compliance"
+type = "decline"
+trap = "card network rules"
+question = """
+Our dispute team is reviewing a cardholder's dispute involving a $1,100 airline ticket. The flight \
+was cancelled more than four months ago, and the cardholder has only now contacted the bank. Can we \
+still submit a chargeback to Visa under its network rules?
+"""
+
+[[question]]
+id = "q042"
+stage = "draft"
+persona = "frontline"
+type = "decline"
+trap = "issuer's own terms"
+question = """
+A credit-card customer wants to switch from her current card, which has a $95 annual fee, to our \
+bank's no-annual-fee card. She wants to keep the same account number and all her accumulated reward \
+points. Can we guarantee that both will remain unchanged when she switches cards?
+"""
+
+[[question]]
+id = "q043"
+stage = "draft"
+persona = "compliance"
+type = "decline"
+trap = "state law, next to gift-card rules"
+question = """
+A customer purchased a store gift card issued by our bank four years ago. The card still has an \
+unused balance of $35. Must the bank transfer that remaining balance to the state?
+"""
+
+[[question]]
+id = "q044"
+stage = "draft"
+persona = "compliance"
+type = "decline"
+trap = "other regulation"
+question = """
+A collection agency hired by our bank is contacting a customer about her charged-off credit-card \
+balance. The agency has called her at 7 a.m. and contacted her at her workplace. Which federal \
+consumer-protection requirements govern these collection practices?
+"""
+
+[[question]]
+id = "q045"
+stage = "draft"
+persona = "frontline"
+type = "decline"
+trap = "excluded part, next to included home-equity rules"
+question = """
+A home-equity line customer says our bank froze her credit line after the appraised value of her \
+home dropped. Is the bank allowed to suspend further advances for this reason?
+"""
+
+# ============================================================ batch 4 (session 17, 4 Nov 2026)
+
+[[question]]
+id = "q046"
+stage = "draft"
+persona = "frontline"
+type = "unauthorized"
+trap = "PIN kept with the card"
+question = """
+A customer says her debit card was stolen from her car on Monday, 23 November 2026. She had written \
+her PIN on a sticky note attached to the card, noticed the theft that evening, and called our bank \
+on Friday, 27 November 2026. Thieves withdrew $600 from ATMs on 24 and 25 November. What liability \
+rules apply to these withdrawals?
+"""
+
+[[question]]
+id = "q047"
+stage = "draft"
+persona = "compliance"
+type = "deadline"
+trap = "late notice"
+question = """
+A customer first notified our bank on Monday, 14 December 2026, about an $85 ACH debit from a gym \
+membership she had cancelled. The debit appeared on her checking-account statement sent on 30 \
+September 2026. What effect does the timing of her report have on her liability for the transaction?
+"""
+
+[[question]]
+id = "q048"
+stage = "draft"
+persona = "frontline"
+type = "deadline"
+trap = "year-end holidays"
+question = """
+A customer called us on Tuesday, 22 December 2026, to report that a $310 purchase at a US online \
+store was charged twice to her debit card. Her checking account has been open since 2021. By what \
+date must we complete our investigation?
+"""
+
+[[question]]
+id = "q049"
+stage = "draft"
+persona = "compliance"
+type = "dispute"
+trap = "sent to the wrong address"
+question = """
+A credit-card customer mailed a letter disputing a $240 charge to our bank's payment address rather \
+than the separate address printed on her statement for billing disputes. The letter reached the bank \
+12 days after the statement was sent. Does the bank have to treat this letter as a valid \
+billing-error notice?
+"""
+
+[[question]]
+id = "q050"
+stage = "draft"
+persona = "frontline"
+type = "payments_disclosures"
+trap = "request made by phone"
+question = """
+A former credit-card customer returned a $260 jacket after paying off her account, leaving a $260 \
+credit balance. She called our bank on 2 November 2026 and asked us to send her the money. What \
+requirements apply to refunding this credit balance?
+"""
+
+[[question]]
+id = "q051"
+stage = "draft"
+persona = "compliance"
+type = "payments_disclosures"
+question = """
+Our credit-card team proposes charging interest on the portion of a customer's previous statement \
+balance that she paid by the due date, whenever she does not pay the entire balance. Is this \
+interest calculation permitted?
+"""
+
+[[question]]
+id = "q052"
+stage = "draft"
+persona = "frontline"
+type = "cross_reg"
+trap = "holiday, and both accounts at the same bank"
+question = """
+A customer wants to stop the automatic monthly ACH payment from her checking account to her \
+credit-card account with the same bank. The next payment is scheduled for Sunday, 15 November 2026, \
+and she is calling us on Tuesday, 10 November 2026. What notice period applies to her stop-payment \
+request?
+"""
+
+[[question]]
+id = "q053"
+stage = "draft"
+persona = "compliance"
+type = "cross_reg"
+trap = "credit card money landing in checking"
+question = """
+A credit-card customer requested a $5,000 balance transfer into her checking account at our bank. \
+Only $3,000 appeared in checking, although her credit-card account was charged the full $5,000. Does \
+this situation qualify as a credit-card billing error?
+"""
+
+[[question]]
+id = "q054"
+stage = "draft"
+persona = "compliance"
+type = "fees_terms"
+question = """
+Our credit-card team is preparing an offer with a 0% introductory APR on purchases for the first \
+four months, followed by a 22.99% APR. What restrictions apply to the introductory APR period?
+"""
+
+[[question]]
+id = "q055"
+stage = "draft"
+persona = "frontline"
+type = "reg_e_account"
+question = """
+A customer's utility company makes a monthly automatic ACH debit from her checking account. The \
+usual amount is about $90, but the company plans to debit $410 in December 2026. The customer says \
+nobody warned her about the increase. How much advance notice must the utility company provide \
+before making the debit?
+"""
+
+[[question]]
+id = "q056"
+stage = "draft"
+persona = "compliance"
+type = "decline"
+trap = "rule not in force (tempting)"
+question = """
+Our card issuer's pricing team wants to reduce its credit-card late fee to $8 next year to comply \
+with a federal rule issued in 2024. Can we rely on that rule's $8 amount?
+"""
+
+[[question]]
+id = "q057"
+stage = "draft"
+persona = "frontline"
+type = "decline"
+trap = "card network rules"
+question = """
+A customer travelling abroad has lost her Mastercard and wants to know whether the card network will \
+arrange for an emergency replacement card to be delivered to her hotel. Can we guarantee that the \
+network will provide this service?
+"""
+
+[[question]]
+id = "q058"
+stage = "draft"
+persona = "compliance"
+type = "decline"
+trap = "sign-off"
+question = """
+Our marketing team has prepared a new credit-card promotional mailer and wants the compliance team \
+to approve its wording before it is printed next week. Can we provide the requested approval?
+"""
+
+[[question]]
+id = "q059"
+stage = "draft"
+persona = "frontline"
+type = "decline"
+trap = "paper check, next to Reg E coverage"
+question = """
+A checking-account customer reports that someone forged her signature on a $900 check drawn on her \
+account and cashed it. What protections apply to this forged check?
+"""
+
+[[question]]
+id = "q060"
+stage = "draft"
+persona = "compliance"
+type = "decline"
+trap = "excluded part"
+question = """
+A parent who co-signed a private student loan contacts our bank three days after signing the loan \
+agreement and wants to cancel it. The bank has not yet sent the loan proceeds. Does the parent have \
+a federal right to cancel the loan during this period?
+"""
