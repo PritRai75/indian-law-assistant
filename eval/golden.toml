@@ -1420,7 +1420,7 @@ should_abstain = false
 
 [[question]]
 id = "q056"
-stage = "draft"
+stage = "labelled"
 persona = "compliance"
 type = "decline"
 trap = "rule not in force (tempting)"
@@ -1428,10 +1428,20 @@ question = """
 Our card issuer's pricing team wants to reduce its credit-card late fee to $8 next year to comply \
 with a federal rule issued in 2024. Can we rely on that rule's $8 amount?
 """
+gold_ids = ["1026.52(b)(1)(ii)"]
+reference_answer = """
+No, the card issuer cannot rely on the $8 late fee amount. The 2024 credit card penalty fees rule that introduced the $8 safe harbor under Regulation Z (§ 1026.52(b)(1)(ii)) was vacated by a federal court in April 2025 and is not law in force.
+"""
+key_facts = [
+  "The 2024 credit card penalty fees rule setting an $8 late fee safe harbor was vacated by a federal court in April 2025 and is not law in force.",
+  "Card issuers cannot rely on the vacated $8 safe harbor provision under Regulation Z (§ 1026.52(b)(1)(ii))."
+]
+should_abstain = true
+abstain_category = "not_in_force"
 
 [[question]]
 id = "q057"
-stage = "draft"
+stage = "labelled"
 persona = "frontline"
 type = "decline"
 trap = "card network rules"
@@ -1440,21 +1450,42 @@ A customer travelling abroad has lost her Mastercard and wants to know whether t
 arrange for an emergency replacement card to be delivered to her hotel. Can we guarantee that the \
 network will provide this service?
 """
+gold_ids = []
+reference_answer = """
+This question cannot be answered from the provided corpus because emergency card replacement services are governed by private card network operating rules rather than Regulation E or Regulation Z. The provided corpus does not contain card network rules or guarantees regarding emergency replacement card delivery.
+"""
+key_facts = [
+  "Emergency card replacement services provided by card networks are governed by private card network operating rules, not Regulation E or Regulation Z.",
+  "Card network rules regarding emergency card delivery services are not included in the provided corpus."
+]
+should_abstain = true
+abstain_category = "network_rules"
 
 [[question]]
 id = "q058"
-stage = "draft"
-persona = "compliance"
+stage = "labelled"
+persona = "frontline"
 type = "decline"
-trap = "sign-off"
+trap = "excluded subpart (remittance transfers)"
 question = """
-Our marketing team has prepared a new credit-card promotional mailer and wants the compliance team \
-to approve its wording before it is printed next week. Can we provide the requested approval?
+A customer used her checking account to send $800 to her sister in Colombia via our bank's wire \
+service on 2 November 2026. Ten minutes later, she called us to cancel the wire transfer. What \
+cancellation rules apply to this transaction?
 """
+gold_ids = []
+reference_answer = """
+This question cannot be answered from the provided corpus because international wire transfers to individuals abroad are classified as remittance transfers governed by Subpart B of Regulation E (12 CFR §§ 1005.30–1005.36). Subpart B is an excluded subpart and is not included in the provided corpus.
+"""
+key_facts = [
+  "Cancellation rules for international consumer wire transfers (remittance transfers) are governed by Subpart B of Regulation E (12 CFR §§ 1005.30–1005.36).",
+  "Subpart B of Regulation E is an excluded subpart and is not included in the provided corpus."
+]
+should_abstain = true
+abstain_category = "excluded_part"
 
 [[question]]
 id = "q059"
-stage = "draft"
+stage = "labelled"
 persona = "frontline"
 type = "decline"
 trap = "paper check, next to Reg E coverage"
@@ -1462,10 +1493,20 @@ question = """
 A checking-account customer reports that someone forged her signature on a $900 check drawn on her \
 account and cashed it. What protections apply to this forged check?
 """
+gold_ids = ["1005.3(c)(1)"]
+reference_answer = """
+This question cannot be answered from the provided corpus because protections for forged paper checks are governed by state law (such as the Uniform Commercial Code) rather than Regulation E or Regulation Z. Regulation E (12 CFR § 1005.3(c)(1)) explicitly excludes transfers originated by check, draft, or similar paper instrument from its coverage.
+"""
+key_facts = [
+  "Transfers originated by paper check are explicitly excluded from Regulation E coverage (§ 1005.3(c)(1)).",
+  "Protections and liability rules for forged paper checks are governed by state law, not Regulation E or Regulation Z."
+]
+should_abstain = true
+abstain_category = "state_law"
 
 [[question]]
 id = "q060"
-stage = "draft"
+stage = "labelled"
 persona = "compliance"
 type = "decline"
 trap = "excluded part"
@@ -1474,3 +1515,13 @@ A parent who co-signed a private student loan contacts our bank three days after
 agreement and wants to cancel it. The bank has not yet sent the loan proceeds. Does the parent have \
 a federal right to cancel the loan during this period?
 """
+gold_ids = []
+reference_answer = """
+This question cannot be answered from the provided corpus because private education loan disclosures, cancellation rights, and co-borrower protections are governed by Subpart F of Regulation Z (12 CFR §§ 1026.46–1026.48). Subpart F is an excluded subpart and is not included in the provided corpus.
+"""
+key_facts = [
+  "Right to cancel rules for private education loans are governed by Subpart F of Regulation Z (12 CFR §§ 1026.46–1026.48).",
+  "Subpart F of Regulation Z is an excluded subpart and is not included in the provided corpus."
+]
+should_abstain = true
+abstain_category = "excluded_part"
