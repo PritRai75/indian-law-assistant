@@ -1,0 +1,551 @@
+{
+  "judge_version": "j1",
+  "judge_models": [
+    "global.anthropic.claude-sonnet-4-5-20250929-v1:0"
+  ],
+  "labels_sha256": "93b0e5dcef86ab7980688f306dd63aaae7483839cc8e3f206f8ff798ff189ab8",
+  "runs": {
+    "default": "r20261105T140818Z",
+    "weak": "r20261105T141055Z"
+  },
+  "not_compared": [],
+  "n": 40,
+  "questions": 23,
+  "faithfulness": {
+    "agree": 19,
+    "agreement": 0.475,
+    "wilson95": [
+      0.329354701126789,
+      0.6250263789330753
+    ],
+    "kappa": 0.13402061855670094,
+    "kappa95": {
+      "lo": -0.10400306532500025,
+      "hi": 0.35308507624150015,
+      "undefined": 0,
+      "reps": 2000
+    },
+    "confusion": {
+      "faithful": {
+        "faithful": 12,
+        "partially_faithful": 12,
+        "unfaithful": 3
+      },
+      "partially_faithful": {
+        "faithful": 4,
+        "partially_faithful": 5,
+        "unfaithful": 1
+      },
+      "unfaithful": {
+        "faithful": 0,
+        "partially_faithful": 1,
+        "unfaithful": 2
+      }
+    },
+    "judge_more_lenient": [
+      "c10",
+      "c11",
+      "c14",
+      "c16",
+      "c27"
+    ],
+    "judge_stricter": [
+      "c02",
+      "c06",
+      "c07",
+      "c18",
+      "c20",
+      "c21",
+      "c23",
+      "c25",
+      "c28",
+      "c29",
+      "c30",
+      "c31",
+      "c32",
+      "c34",
+      "c38",
+      "c40"
+    ],
+    "prit_faithful": 27,
+    "judge_faithful": 16
+  },
+  "faithful_or_not": {
+    "agree": 21,
+    "agreement": 0.525,
+    "wilson95": [
+      0.3749736210669248,
+      0.670645298873211
+    ],
+    "kappa": 0.11214953271028039,
+    "kappa95": {
+      "lo": -0.13798665183537256,
+      "hi": 0.36110944377751086,
+      "undefined": 0,
+      "reps": 2000
+    }
+  },
+  "key_facts": {
+    "n": 85,
+    "agree": 68,
+    "agreement": 0.8,
+    "agreement95": {
+      "lo": 0.6704485009671179,
+      "hi": 0.9102564102564102,
+      "undefined": 0,
+      "reps": 2000
+    },
+    "kappa": 0.5463108320251179,
+    "kappa95": {
+      "lo": 0.3255384513742072,
+      "hi": 0.7561388499298736,
+      "undefined": 0,
+      "reps": 2000
+    },
+    "confusion": {
+      "prit_true": {
+        "judge_true": 50,
+        "judge_false": 15
+      },
+      "prit_false": {
+        "judge_true": 2,
+        "judge_false": 18
+      }
+    },
+    "prit_covered": 65,
+    "judge_covered": 52
+  },
+  "slices": {
+    "run: default": {
+      "n": 20,
+      "agree": 9,
+      "kappa": -0.047619047619047554,
+      "kappa_binary": -0.09999999999999998,
+      "facts": 43,
+      "facts_agree": 36,
+      "facts_kappa": 0.5871056241426612
+    },
+    "run: weak": {
+      "n": 20,
+      "agree": 10,
+      "kappa": 0.24812030075187974,
+      "kappa_binary": 0.25925925925925924,
+      "facts": 42,
+      "facts_agree": 32,
+      "facts_kappa": 0.5116279069767441
+    },
+    "answerable": {
+      "n": 26,
+      "agree": 12,
+      "kappa": 0.17832957110609488,
+      "kappa_binary": 0.19170984455958548,
+      "facts": 57,
+      "facts_agree": 43,
+      "facts_kappa": 0.49621212121212127
+    },
+    "declines": {
+      "n": 14,
+      "agree": 7,
+      "kappa": 0.0,
+      "kappa_binary": 0.0,
+      "facts": 28,
+      "facts_agree": 25,
+      "facts_kappa": 0.6612903225806455
+    },
+    "frontline": {
+      "n": 19,
+      "agree": 10,
+      "kappa": 0.16176470588235295,
+      "kappa_binary": 0.21649484536082486,
+      "facts": 40,
+      "facts_agree": 32,
+      "facts_kappa": 0.5833333333333334
+    },
+    "compliance": {
+      "n": 21,
+      "agree": 9,
+      "kappa": 0.1,
+      "kappa_binary": 0.008583690987124403,
+      "facts": 45,
+      "facts_agree": 36,
+      "facts_kappa": 0.49056603773584934
+    }
+  },
+  "disagreements": [
+    {
+      "cid": "c02",
+      "qid": "q020",
+      "run": "default",
+      "run_id": "r20261105T140818Z",
+      "prit": "faithful",
+      "judge": "partially_faithful",
+      "facts": [],
+      "note": "Plain decline as \u00a7 1005.5(b) was not provided; all key facts false",
+      "rationale": "The answer correctly identifies that the passages don't address the question, but makes an unsupported claim about where the rule is found in Regulation E; none of the key facts about unsolicited debit card requirements are covered."
+    },
+    {
+      "cid": "c06",
+      "qid": "q006",
+      "run": "weak",
+      "run_id": "r20261105T141055Z",
+      "prit": "partially_faithful",
+      "judge": "unfaithful",
+      "facts": [
+        {
+          "n": 2,
+          "prit": true,
+          "judge": false
+        }
+      ],
+      "note": "Core \u00a7 1026.10(d)(2) reasoning supported; introduced 5 p.m. rule from memory without \u00a7 1026.10(b) passage. Key fact 1 false, key fact 2 true.",
+      "rationale": "The answer fails to state the key regulatory rule that creditors may set a 5 p.m. cut-off time for electronic payments, instead making unsupported claims about what 'could be permissible' and deferring to account agreements and state law."
+    },
+    {
+      "cid": "c07",
+      "qid": "q018",
+      "run": "default",
+      "run_id": "r20261105T140818Z",
+      "prit": "faithful",
+      "judge": "partially_faithful",
+      "facts": [],
+      "note": "Fully faithful; all 3 key facts present and accurate",
+      "rationale": "One claim about evaluating the reasonableness of procedures is not supported by the passages, but all claims directly answering the compliance question are supported."
+    },
+    {
+      "cid": "c08",
+      "qid": "q008",
+      "run": "default",
+      "run_id": "r20261105T140818Z",
+      "prit": "faithful",
+      "judge": "faithful",
+      "facts": [
+        {
+          "n": 2,
+          "prit": false,
+          "judge": true
+        }
+      ],
+      "note": "Fully faithful; all claims supported by provided \u00a7 1005.6(b) passage. Key fact 1 true, key fact 2 false.",
+      "rationale": "All claims are supported by passage 3, and the answer correctly identifies that card network policies are outside the scope of the regulations provided."
+    },
+    {
+      "cid": "c09",
+      "qid": "q016",
+      "run": "default",
+      "run_id": "r20261105T140818Z",
+      "prit": "faithful",
+      "judge": "faithful",
+      "facts": [
+        {
+          "n": 1,
+          "prit": false,
+          "judge": true
+        }
+      ],
+      "note": "Fully faithful based on provided passages. Key facts 1 and 2 miss specific notice/written confirmation requirements; key fact 3 is true.",
+      "rationale": "All claims are supported by the passages, but the answer does not mention the requirements for written confirmation of consent and notice of the right to revoke consent."
+    },
+    {
+      "cid": "c10",
+      "qid": "q044",
+      "run": "default",
+      "run_id": "r20261105T140818Z",
+      "prit": "partially_faithful",
+      "judge": "faithful",
+      "facts": [],
+      "note": "Mentions FDCPA from memory without passage support. Key fact 1 true, key fact 2 false.",
+      "rationale": "The answer makes no claims, only stating what is outside the regulations it can answer from, so it is faithful by default; it covers key fact 1 but does not mention billing error disputes or Regulation Z's collection restrictions during such disputes."
+    },
+    {
+      "cid": "c11",
+      "qid": "q024",
+      "run": "default",
+      "run_id": "r20261105T140818Z",
+      "prit": "partially_faithful",
+      "judge": "faithful",
+      "facts": [],
+      "note": "Core decline supported; cited National Bank Act from memory without passage support. Both key facts true.",
+      "rationale": "The answer makes no claims and correctly declines to answer because the question concerns state law and federal banking statutes outside Regulation Z's scope."
+    },
+    {
+      "cid": "c14",
+      "qid": "q010",
+      "run": "weak",
+      "run_id": "r20261105T141055Z",
+      "prit": "partially_faithful",
+      "judge": "faithful",
+      "facts": [],
+      "note": "Core decline supported; cited \u00a7 1005.34 / Subpart B from memory without passage support. Both key facts true.",
+      "rationale": "The answer correctly identifies that the passages do not cover remittance transfer cancellation rights and that these are governed by Subpart B of Regulation E, which is not provided."
+    },
+    {
+      "cid": "c16",
+      "qid": "q049",
+      "run": "default",
+      "run_id": "r20261105T140818Z",
+      "prit": "partially_faithful",
+      "judge": "faithful",
+      "facts": [],
+      "note": "Core answer supported by \u00a7 1026.13(b)(1); cited comment 1026.7(b)(9)-2 from memory without passage support. Both key facts true.",
+      "rationale": "All claims are supported by the passages, and both key facts are fully covered in the answer."
+    },
+    {
+      "cid": "c18",
+      "qid": "q003",
+      "run": "weak",
+      "run_id": "r20261105T141055Z",
+      "prit": "faithful",
+      "judge": "partially_faithful",
+      "facts": [],
+      "note": "Fully faithful; correctly declined payment withholding rule due to missing \u00a7 1026.13(d) passage. Key fact 1 true, key fact 2 false.",
+      "rationale": "The answer correctly identifies the billing error and dispute eligibility but lacks passage support for the 60-day deadline calculation and does not address payment obligations during review."
+    },
+    {
+      "cid": "c20",
+      "qid": "q052",
+      "run": "default",
+      "run_id": "r20261105T140818Z",
+      "prit": "faithful",
+      "judge": "partially_faithful",
+      "facts": [],
+      "note": "Fully faithful; supported by \u00a7 1005.10(c) passages and tool output. Both key facts present.",
+      "rationale": "The answer correctly states the three-business-day notice requirement but incorrectly calculates which days count and whether the Tuesday call is timely, making unsupported factual claims about specific dates."
+    },
+    {
+      "cid": "c21",
+      "qid": "q006",
+      "run": "default",
+      "run_id": "r20261105T140818Z",
+      "prit": "faithful",
+      "judge": "unfaithful",
+      "facts": [
+        {
+          "n": 2,
+          "prit": true,
+          "judge": false
+        }
+      ],
+      "note": "1026.10(b) cutoff rule omitted from passages; 1026.10(d) claims fully supported",
+      "rationale": "The answer fails to address the specific 5 p.m. cut-off time rule and incorrectly concludes that charging the late fee is permissible based solely on \u00a7 1026.10(d)(2), when the passages do not support whether a 5 p.m. cut-off is allowed or whether payments after that time may be treated as late."
+    },
+    {
+      "cid": "c23",
+      "qid": "q009",
+      "run": "weak",
+      "run_id": "r20261105T141055Z",
+      "prit": "faithful",
+      "judge": "partially_faithful",
+      "facts": [],
+      "note": "credit bureau timeline not in Reg Z; creditor's prompt notice duty correctly identified",
+      "rationale": "The answer correctly states that Regulation Z requires prompt notification to bureaus and that bureau timelines are outside the regulations, but makes an unsupported claim about the Fair Credit Reporting Act."
+    },
+    {
+      "cid": "c25",
+      "qid": "q001",
+      "run": "weak",
+      "run_id": "r20261105T141055Z",
+      "prit": "faithful",
+      "judge": "partially_faithful",
+      "facts": [],
+      "note": "debit card unauthorized transfers without lost/stolen card correctly analyzed with $0 liability",
+      "rationale": "The answer correctly states the main conclusion that liability is $0 and that notice was within 60 days, but includes unsupported specific date calculations."
+    },
+    {
+      "cid": "c26",
+      "qid": "q053",
+      "run": "weak",
+      "run_id": "r20261105T141055Z",
+      "prit": "unfaithful",
+      "judge": "unfaithful",
+      "facts": [
+        {
+          "n": 1,
+          "prit": true,
+          "judge": false
+        },
+        {
+          "n": 2,
+          "prit": true,
+          "judge": false
+        }
+      ],
+      "note": "stated unincluded statutory billing error category from memory rather than strictly relying on provided passage",
+      "rationale": "The answer's main claim that the situation likely qualifies as a billing error is not supported by the passages, which do not define billing errors or address this type of discrepancy."
+    },
+    {
+      "cid": "c27",
+      "qid": "q007",
+      "run": "weak",
+      "run_id": "r20261105T141055Z",
+      "prit": "unfaithful",
+      "judge": "partially_faithful",
+      "facts": [],
+      "note": "incorrectly claimed Reg Z governs overdraft credit line liability; Reg E governs per 1005.12(a)(1)(iv)(A)",
+      "rationale": "The answer incorrectly states that both Regulation E and Regulation Z apply to overdraft transactions, when passage 1 clearly states Regulation E's liability limitations apply (with only Reg Z's error resolution provisions also applying), and fails to clearly state that Regulation E determines liability."
+    },
+    {
+      "cid": "c28",
+      "qid": "q005",
+      "run": "weak",
+      "run_id": "r20261105T141055Z",
+      "prit": "faithful",
+      "judge": "partially_faithful",
+      "facts": [],
+      "note": "correctly declined formal document clearance / compliance sign-off as outside permitted scope",
+      "rationale": "The answer correctly states both key facts but makes an unsupported claim about the 45-day notice requirement being under \u00a7 1026.9(c)(2), which is not stated in any passage."
+    },
+    {
+      "cid": "c29",
+      "qid": "q028",
+      "run": "default",
+      "run_id": "r20261105T140818Z",
+      "prit": "faithful",
+      "judge": "partially_faithful",
+      "facts": [],
+      "note": "closed-end credit (installment loan) correctly identified as excluded part and declined",
+      "rationale": "The answer correctly declines and covers both key facts, but makes one unsupported recommendation about what the compliance team should do."
+    },
+    {
+      "cid": "c30",
+      "qid": "q009",
+      "run": "default",
+      "run_id": "r20261105T140818Z",
+      "prit": "faithful",
+      "judge": "partially_faithful",
+      "facts": [],
+      "note": "SCRA military interest rate cap correctly identified as outside law (other_law) and declined",
+      "rationale": "The answer correctly states both key facts but includes an unsupported claim about the Fair Credit Reporting Act governing bureau timelines, which is not stated in any passage."
+    },
+    {
+      "cid": "c31",
+      "qid": "q024",
+      "run": "weak",
+      "run_id": "r20261105T141055Z",
+      "prit": "faithful",
+      "judge": "partially_faithful",
+      "facts": [
+        {
+          "n": 1,
+          "prit": true,
+          "judge": false
+        },
+        {
+          "n": 2,
+          "prit": true,
+          "judge": false
+        }
+      ],
+      "note": "state usury laws and choice of law correctly identified as outside Reg Z and declined",
+      "rationale": "The answer correctly identifies that the passages don't address the question, but makes an unsupported claim about what the question 'turns entirely on' and doesn't explicitly state the key facts about what Regulation Z and E do not govern."
+    },
+    {
+      "cid": "c32",
+      "qid": "q053",
+      "run": "default",
+      "run_id": "r20261105T140818Z",
+      "prit": "faithful",
+      "judge": "unfaithful",
+      "facts": [
+        {
+          "n": 1,
+          "prit": true,
+          "judge": false
+        },
+        {
+          "n": 2,
+          "prit": true,
+          "judge": false
+        }
+      ],
+      "note": "2 complete billing cycles correctly calculated as ending 25 January 2027",
+      "rationale": "The answer makes unsupported claims about what constitutes a billing error and whether this situation qualifies, which directly address the main question, making it unfaithful."
+    },
+    {
+      "cid": "c34",
+      "qid": "q004",
+      "run": "default",
+      "run_id": "r20261105T140818Z",
+      "prit": "faithful",
+      "judge": "partially_faithful",
+      "facts": [],
+      "note": "Reg E ACH error resolution deadlines correctly calculated (10 b-days: Nov 17, 45 cal-days: Dec 17)",
+      "rationale": "One claim (ACH as EFT) is stated from memory without passage support, but all claims answering the main question about deadlines and dates are supported."
+    },
+    {
+      "cid": "c36",
+      "qid": "q007",
+      "run": "default",
+      "run_id": "r20261105T140818Z",
+      "prit": "faithful",
+      "judge": "faithful",
+      "facts": [
+        {
+          "n": 1,
+          "prit": true,
+          "judge": false
+        },
+        {
+          "n": 2,
+          "prit": true,
+          "judge": false
+        }
+      ],
+      "note": "Reg Z credit card $50 max liability cap correctly applied to ATM cash advances",
+      "rationale": "All claims are supported by passage 1, but the answer does not state that Regulation E determines liability or that it governs debit card transfers with overdraft credit."
+    },
+    {
+      "cid": "c38",
+      "qid": "q034",
+      "run": "weak",
+      "run_id": "r20261105T141055Z",
+      "prit": "faithful",
+      "judge": "unfaithful",
+      "facts": [
+        {
+          "n": 1,
+          "prit": true,
+          "judge": false
+        },
+        {
+          "n": 2,
+          "prit": true,
+          "judge": false
+        }
+      ],
+      "note": "20-day late payment does not satisfy 60-day delinquency threshold under 1026.55(b)(4) to increase rate on existing balances",
+      "rationale": "The answer provides specific dates (17 December 2026, 18 November 2026, 22 December 2026) that are not supported by any passage or tool result, and these dates directly answer the main question about deadlines."
+    },
+    {
+      "cid": "c40",
+      "qid": "q020",
+      "run": "weak",
+      "run_id": "r20261105T141055Z",
+      "prit": "faithful",
+      "judge": "partially_faithful",
+      "facts": [
+        {
+          "n": 1,
+          "prit": true,
+          "judge": false
+        },
+        {
+          "n": 2,
+          "prit": true,
+          "judge": false
+        },
+        {
+          "n": 3,
+          "prit": true,
+          "judge": false
+        }
+      ],
+      "note": "overturned 2024 overdraft rule correctly identified as not law in force; no $5 cap under Reg E",
+      "rationale": "The answer correctly declines to answer and accurately describes the passages provided, but makes an unsupported claim about which specific regulation section governs the topic."
+    }
+  ],
+  "bootstrap": {
+    "reps": 2000,
+    "seed": 20261105,
+    "resampled": "questions"
+  }
+}
