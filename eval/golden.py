@@ -8,6 +8,9 @@ Two stages:
   labelled  pass 2: adds regulation, gold_ids, reference_answer, key_facts, should_abstain,
             abstain_category, expected_tool_call / expected_result, uncertain, today
 
+After all questions were labelled, `python -m eval.split --write` gave each a `split` (dev or test,
+session 18); from then on every question must have one, and a split never changes.
+
 `check()` returns every problem it finds as a readable line, so one run shows them all;
 tests/test_golden.py fails while the real file has any. `python -m eval.golden` prints the counts
 and the problems.
@@ -200,6 +203,9 @@ def check(items: list[GoldenItem], statuses: dict[str, str] | None = None) -> li
             problems.append(f"question used {n} times: {text[:60]!r}")
     for item in items:
         problems += [f"{item.id}: {p}" for p in check_item(item, statuses)]
+    if any(i.split for i in items):                 # session 18: once the split exists, it covers everything
+        problems += [f"{i.id}: no split; every question needs one (dev or test) once the split exists"
+                     for i in items if not i.split]
     return problems
 
 
@@ -460,6 +466,8 @@ def summary(items: list[GoldenItem]) -> str:
         if declines:
             lines.append("  declines by category: " + ", ".join(
                 f"{k} {n}" for k, n in sorted(Counter(i.abstain_category for i in declines).items())))
+    if any(i.split for i in items):
+        lines.append("  split: " + ", ".join(f"{k} {n}" for k, n in sorted(Counter(i.split or "none" for i in items).items())))
     return "\n".join(lines)
 
 

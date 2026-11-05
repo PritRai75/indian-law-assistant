@@ -25,6 +25,7 @@
 #                     not_in_force, sign_off
 #   today             the date the question treats as today, if it says one (unquoted: 2026-11-03)
 #   uncertain         true leaves the question out of scoring (default false)
+#   split             dev or test, written once by python -m eval.split --write (never change it)
 #   expected_tool_call / expected_result   only when the answer needs dispute_timeline. Compute the
 #                     result by hand from the regulation text and a calendar first (labeling rule 3);
 #                     python -m eval.golden then compares it with the tool. Investigate any mismatch.
@@ -66,6 +67,7 @@
 
 [[question]]
 id = "q001"
+split = "dev"
 stage = "labelled"
 persona = "frontline"
 type = "unauthorized"
@@ -100,6 +102,7 @@ deadlines = [
 
 [[question]]
 id = "q002"
+split = "dev"
 stage = "labelled"
 persona = "frontline"
 type = "unauthorized"
@@ -131,6 +134,7 @@ deadlines = []
 
 [[question]]
 id = "q003"
+split = "dev"
 stage = "labelled"
 persona = "frontline"
 type = "dispute"
@@ -163,6 +167,7 @@ deadlines = [
 
 [[question]]
 id = "q004"
+split = "dev"
 stage = "labelled"
 persona = "compliance"
 type = "deadline"
@@ -195,6 +200,7 @@ deadlines = [
 
 [[question]]
 id = "q005"
+split = "dev"
 stage = "labelled"
 persona = "compliance"
 type = "fees_terms"
@@ -215,6 +221,7 @@ should_abstain = false
 
 [[question]]
 id = "q006"
+split = "dev"
 stage = "labelled"
 persona = "frontline"
 type = "payments_disclosures"
@@ -236,6 +243,7 @@ should_abstain = false
 
 [[question]]
 id = "q007"
+split = "dev"
 stage = "labelled"
 persona = "compliance"
 type = "unauthorized"
@@ -257,6 +265,7 @@ should_abstain = false
 
 [[question]]
 id = "q008"
+split = "dev"
 stage = "labelled"
 persona = "frontline"
 type = "decline"
@@ -278,6 +287,7 @@ abstain_category = "network_rules"
 
 [[question]]
 id = "q009"
+split = "dev"
 stage = "labelled"
 persona = "compliance"
 type = "decline"
@@ -298,6 +308,7 @@ abstain_category = "other_law"
 
 [[question]]
 id = "q010"
+split = "dev"
 stage = "labelled"
 persona = "compliance"
 type = "decline"
@@ -321,6 +332,7 @@ abstain_category = "excluded_part"
 
 [[question]]
 id = "q011"
+split = "test"
 stage = "labelled"
 persona = "frontline"
 type = "unauthorized"
@@ -343,6 +355,7 @@ should_abstain = false
 
 [[question]]
 id = "q012"
+split = "test"
 stage = "labelled"
 persona = "frontline"
 type = "dispute"
@@ -375,6 +388,7 @@ deadlines = [
 
 [[question]]
 id = "q013"
+split = "test"
 stage = "labelled"
 persona = "compliance"
 type = "dispute"
@@ -397,6 +411,7 @@ should_abstain = false
 
 [[question]]
 id = "q014"
+split = "test"
 stage = "labelled"
 persona = "compliance"
 type = "deadline"
@@ -429,6 +444,7 @@ deadlines = [
 
 [[question]]
 id = "q015"
+split = "test"
 stage = "labelled"
 persona = "frontline"
 type = "fees_terms"
@@ -451,6 +467,7 @@ should_abstain = false
 
 [[question]]
 id = "q016"
+split = "dev"
 stage = "labelled"
 persona = "compliance"
 type = "fees_terms"
@@ -474,6 +491,7 @@ should_abstain = false
 
 [[question]]
 id = "q017"
+split = "test"
 stage = "labelled"
 persona = "compliance"
 type = "payments_disclosures"
@@ -495,6 +513,7 @@ should_abstain = false
 
 [[question]]
 id = "q018"
+split = "dev"
 stage = "labelled"
 persona = "compliance"
 type = "payments_disclosures"
@@ -518,6 +537,7 @@ should_abstain = false
 
 [[question]]
 id = "q019"
+split = "test"
 stage = "labelled"
 persona = "frontline"
 type = "reg_e_account"
@@ -540,6 +560,7 @@ should_abstain = false
 
 [[question]]
 id = "q020"
+split = "dev"
 stage = "labelled"
 persona = "frontline"
 type = "reg_e_account"
@@ -562,6 +583,7 @@ should_abstain = false
 
 [[question]]
 id = "q021"
+split = "test"
 stage = "labelled"
 persona = "compliance"
 type = "reg_e_account"
@@ -585,6 +607,7 @@ should_abstain = false
 
 [[question]]
 id = "q022"
+split = "test"
 stage = "labelled"
 persona = "compliance"
 type = "fees_terms"
@@ -608,6 +631,7 @@ should_abstain = false
 
 [[question]]
 id = "q023"
+split = "dev"
 stage = "labelled"
 persona = "frontline"
 type = "cross_reg"
@@ -640,6 +664,7 @@ liability_tiers = ["max_50"]
 
 [[question]]
 id = "q024"
+split = "dev"
 stage = "labelled"
 persona = "frontline"
 type = "decline"
@@ -663,6 +688,7 @@ abstain_category = "state_law"
 
 [[question]]
 id = "q025"
+split = "test"
 stage = "labelled"
 persona = "frontline"
 type = "decline"
@@ -685,6 +711,7 @@ abstain_category = "issuer_terms"
 
 [[question]]
 id = "q026"
+split = "test"
 stage = "labelled"
 persona = "frontline"
 type = "decline"
@@ -707,6 +734,7 @@ abstain_category = "not_in_force"
 
 [[question]]
 id = "q027"
+split = "test"
 stage = "labelled"
 persona = "compliance"
 type = "reg_e_account"
@@ -728,6 +756,7 @@ should_abstain = false
 
 [[question]]
 id = "q028"
+split = "dev"
 stage = "labelled"
 persona = "compliance"
 type = "decline"
@@ -750,6 +779,7 @@ abstain_category = "sign_off"
 
 [[question]]
 id = "q029"
+split = "test"
 stage = "labelled"
 persona = "frontline"
 type = "decline"
@@ -772,6 +802,7 @@ abstain_category = "excluded_part"
 
 [[question]]
 id = "q030"
+split = "test"
 stage = "labelled"
 persona = "compliance"
 type = "decline"
@@ -797,6 +828,7 @@ abstain_category = "other_law"
 
 [[question]]
 id = "q031"
+split = "test"
 stage = "labelled"
 persona = "frontline"
 type = "deadline"
@@ -830,6 +862,7 @@ deadlines = [
 
 [[question]]
 id = "q032"
+split = "test"
 stage = "labelled"
 persona = "compliance"
 type = "deadline"
@@ -862,6 +895,7 @@ deadlines = [
 
 [[question]]
 id = "q033"
+split = "test"
 stage = "labelled"
 persona = "frontline"
 type = "dispute"
@@ -884,6 +918,7 @@ should_abstain = false
 
 [[question]]
 id = "q034"
+split = "dev"
 stage = "labelled"
 persona = "compliance"
 type = "deadline"
@@ -916,6 +951,7 @@ deadlines = [
 
 [[question]]
 id = "q035"
+split = "test"
 stage = "labelled"
 persona = "frontline"
 type = "payments_disclosures"
@@ -938,6 +974,7 @@ should_abstain = false
 
 [[question]]
 id = "q036"
+split = "test"
 stage = "labelled"
 persona = "compliance"
 type = "cross_reg"
@@ -968,6 +1005,7 @@ liability_tiers = ["max_50"]
 
 [[question]]
 id = "q037"
+split = "test"
 stage = "labelled"
 persona = "compliance"
 type = "cross_reg"
@@ -990,6 +1028,7 @@ should_abstain = false
 
 [[question]]
 id = "q038"
+split = "dev"
 stage = "labelled"
 persona = "frontline"
 type = "fees_terms"
@@ -1011,6 +1050,7 @@ should_abstain = false
 
 [[question]]
 id = "q039"
+split = "test"
 stage = "labelled"
 persona = "frontline"
 type = "reg_e_account"
@@ -1033,6 +1073,7 @@ should_abstain = false
 
 [[question]]
 id = "q040"
+split = "dev"
 stage = "labelled"
 persona = "frontline"
 type = "decline"
@@ -1055,6 +1096,7 @@ abstain_category = "not_in_force"
 
 [[question]]
 id = "q041"
+split = "test"
 stage = "labelled"
 persona = "compliance"
 type = "decline"
@@ -1077,6 +1119,7 @@ abstain_category = "network_rules"
 
 [[question]]
 id = "q042"
+split = "dev"
 stage = "labelled"
 persona = "frontline"
 type = "decline"
@@ -1099,6 +1142,7 @@ abstain_category = "issuer_terms"
 
 [[question]]
 id = "q043"
+split = "test"
 stage = "labelled"
 persona = "compliance"
 type = "decline"
@@ -1120,6 +1164,7 @@ abstain_category = "state_law"
 
 [[question]]
 id = "q044"
+split = "dev"
 stage = "labelled"
 persona = "compliance"
 type = "decline"
@@ -1142,6 +1187,7 @@ abstain_category = "other_law"
 
 [[question]]
 id = "q045"
+split = "test"
 stage = "labelled"
 persona = "frontline"
 type = "decline"
@@ -1165,6 +1211,7 @@ abstain_category = "excluded_part"
 
 [[question]]
 id = "q046"
+split = "test"
 stage = "labelled"
 persona = "frontline"
 type = "unauthorized"
@@ -1196,6 +1243,7 @@ liability_tiers = ["max_500"]
 
 [[question]]
 id = "q047"
+split = "test"
 stage = "labelled"
 persona = "compliance"
 type = "deadline"
@@ -1227,6 +1275,7 @@ liability_tiers = ["later_transfers_unprotected"]
 
 [[question]]
 id = "q048"
+split = "test"
 stage = "labelled"
 persona = "frontline"
 type = "deadline"
@@ -1260,6 +1309,7 @@ deadlines = [
 
 [[question]]
 id = "q049"
+split = "dev"
 stage = "labelled"
 persona = "compliance"
 type = "dispute"
@@ -1283,6 +1333,7 @@ should_abstain = false
 
 [[question]]
 id = "q050"
+split = "test"
 stage = "labelled"
 persona = "frontline"
 type = "payments_disclosures"
@@ -1307,6 +1358,7 @@ should_abstain = false
 
 [[question]]
 id = "q051"
+split = "test"
 stage = "labelled"
 persona = "compliance"
 type = "payments_disclosures"
@@ -1329,6 +1381,7 @@ should_abstain = false
 
 [[question]]
 id = "q052"
+split = "dev"
 stage = "labelled"
 persona = "frontline"
 type = "reg_e_account"
@@ -1353,6 +1406,7 @@ should_abstain = false
 
 [[question]]
 id = "q053"
+split = "dev"
 stage = "labelled"
 persona = "compliance"
 type = "dispute"
@@ -1375,6 +1429,7 @@ should_abstain = false
 
 [[question]]
 id = "q054"
+split = "test"
 stage = "labelled"
 persona = "compliance"
 type = "fees_terms"
@@ -1396,6 +1451,7 @@ should_abstain = false
 
 [[question]]
 id = "q055"
+split = "test"
 stage = "labelled"
 persona = "frontline"
 type = "reg_e_account"
@@ -1419,6 +1475,7 @@ should_abstain = false
 
 [[question]]
 id = "q056"
+split = "test"
 stage = "labelled"
 persona = "compliance"
 type = "decline"
@@ -1440,6 +1497,7 @@ abstain_category = "not_in_force"
 
 [[question]]
 id = "q057"
+split = "test"
 stage = "labelled"
 persona = "frontline"
 type = "decline"
@@ -1462,6 +1520,7 @@ abstain_category = "network_rules"
 
 [[question]]
 id = "q058"
+split = "test"
 stage = "labelled"
 persona = "compliance"
 type = "decline"
@@ -1483,6 +1542,7 @@ abstain_category = "sign_off"
 
 [[question]]
 id = "q059"
+split = "test"
 stage = "labelled"
 persona = "frontline"
 type = "decline"
@@ -1504,6 +1564,7 @@ abstain_category = "state_law"
 
 [[question]]
 id = "q060"
+split = "test"
 stage = "labelled"
 persona = "compliance"
 type = "decline"
