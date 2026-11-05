@@ -1,0 +1,248 @@
+# Judge calibration labels (rubric j1). Written by Prit Raithatha.
+# Read each item in scratch/calibration/sheet.html and fill in its block here.
+#   faithfulness  "faithful", "partially_faithful" or "unfaithful"
+#   key_facts     one true or false per key fact, in the sheet's order, e.g. [true, false]
+#   note          optional, a few words
+# Check any time: python -m eval.calibrate --check. Labels are final once committed:
+# don't change them after seeing the judge's verdicts.
+
+[[label]]
+id = "c01"
+faithfulness = "partially_faithful"
+key_facts = [true, false]
+note = "Mentions § 1005.6 rules not in provided passages; misses second key fact"
+
+[[label]]
+id = "c02"
+faithfulness = "faithful"
+key_facts = [false, false, false]
+note = "Plain decline as § 1005.5(b) was not provided; all key facts false"
+
+[[label]]
+id = "c03"
+faithfulness = "partially_faithful"
+key_facts = [true, false]
+note = "Mentions FDCPA from memory; misses key fact about billing error dispute collection rules"
+
+[[label]]
+id = "c04"
+faithfulness = "faithful"
+key_facts = [true, true, true]
+note = "Fully faithful response covering all 3 key facts"
+
+[[label]]
+id = "c05"
+faithfulness = "faithful"
+key_facts = [true, true]
+note = "Fully faithful; supported by comment 1005.6(b)(3)-2 and dispute_timeline tool result. Both key facts present."
+
+[[label]]
+id = "c06"
+faithfulness = "partially_faithful"
+key_facts = [false, true]
+note = "Core § 1026.10(d)(2) reasoning supported; introduced 5 p.m. rule from memory without § 1026.10(b) passage. Key fact 1 false, key fact 2 true."
+
+[[label]]
+id = "c07"
+faithfulness = "faithful"
+key_facts = [true, true, true]
+note = "Fully faithful; all 3 key facts present and accurate"
+
+[[label]]
+id = "c08"
+faithfulness = "faithful"
+key_facts = [true, false]
+note = "Fully faithful; all claims supported by provided § 1005.6(b) passage. Key fact 1 true, key fact 2 false."
+
+[[label]]
+id = "c09"
+faithfulness = "faithful"
+key_facts = [false, false, true]
+note = "Fully faithful based on provided passages. Key facts 1 and 2 miss specific notice/written confirmation requirements; key fact 3 is true."
+
+[[label]]
+id = "c10"
+faithfulness = "partially_faithful"
+key_facts = [true, false]
+note = "Mentions FDCPA from memory without passage support. Key fact 1 true, key fact 2 false."
+
+[[label]]
+id = "c11"
+faithfulness = "partially_faithful"
+key_facts = [true, true]
+note = "Core decline supported; cited National Bank Act from memory without passage support. Both key facts true."
+
+[[label]]
+id = "c12"
+faithfulness = "faithful"
+key_facts = [false, false]
+note = "Plain decline as § 1026.12/1026.13 provisions were not provided; both key facts false"
+
+[[label]]
+id = "c13"
+faithfulness = "partially_faithful"
+key_facts = [true, true]
+note = "Billing error dispute right and timeline supported by passage 1 and tool; stated withholding rule from memory without § 1026.13(d) passage. Both key facts true."
+
+[[label]]
+id = "c14"
+faithfulness = "partially_faithful"
+key_facts = [true, true]
+note = "Core decline supported; cited § 1005.34 / Subpart B from memory without passage support. Both key facts true."
+
+[[label]]
+id = "c15"
+faithfulness = "faithful"
+key_facts = [true, true]
+note = "Fully faithful; all claims supported by § 1005.11(c) passage and tool output. Both key facts present."
+
+[[label]]
+id = "c16"
+faithfulness = "partially_faithful"
+key_facts = [true, true]
+note = "Core answer supported by § 1026.13(b)(1); cited comment 1026.7(b)(9)-2 from memory without passage support. Both key facts true."
+
+[[label]]
+id = "c17"
+faithfulness = "partially_faithful"
+key_facts = [true, false]
+note = "Core decline supported; cited Regulation E from memory without passage support. Key fact 1 true, key fact 2 false."
+
+[[label]]
+id = "c18"
+faithfulness = "faithful"
+key_facts = [true, false]
+note = "Fully faithful; correctly declined payment withholding rule due to missing § 1026.13(d) passage. Key fact 1 true, key fact 2 false."
+
+[[label]]
+id = "c19"
+faithfulness = "partially_faithful"
+key_facts = [false, false]
+note = "Main answer supported by dispute_timeline tool result; cited § 1026.12(b)(4) from memory. Both key facts false ($50 vs $0, omitted online card-not-present exception)."
+
+[[label]]
+id = "c20"
+faithfulness = "faithful"
+key_facts = [true, true]
+note = "Fully faithful; supported by § 1005.10(c) passages and tool output. Both key facts present."
+
+[[label]]
+id = "c21"
+faithfulness = "faithful"
+key_facts = [false, true]
+note = "1026.10(b) cutoff rule omitted from passages; 1026.10(d) claims fully supported"
+
+[[label]]
+id = "c22"
+faithfulness = "faithful"
+key_facts = [true, true]
+note = "overturned 2024 overdraft rule correctly identified as not law in force"
+
+[[label]]
+id = "c23"
+faithfulness = "faithful"
+key_facts = [true, true]
+note = "credit bureau timeline not in Reg Z; creditor's prompt notice duty correctly identified"
+
+[[label]]
+id = "c24"
+faithfulness = "unfaithful"
+key_facts = [false, true]
+note = "10 business day date miscalculated as 2026-11-19 instead of 2026-11-20 (missed Veterans Day)"
+
+[[label]]
+id = "c25"
+faithfulness = "faithful"
+key_facts = [true, true]
+note = "debit card unauthorized transfers without lost/stolen card correctly analyzed with $0 liability"
+
+[[label]]
+id = "c26"
+faithfulness = "unfaithful"
+key_facts = [true, true]
+note = "stated unincluded statutory billing error category from memory rather than strictly relying on provided passage"
+
+[[label]]
+id = "c27"
+faithfulness = "unfaithful"
+key_facts = [false, false]
+note = "incorrectly claimed Reg Z governs overdraft credit line liability; Reg E governs per 1005.12(a)(1)(iv)(A)"
+
+[[label]]
+id = "c28"
+faithfulness = "faithful"
+key_facts = [true, true]
+note = "correctly declined formal document clearance / compliance sign-off as outside permitted scope"
+
+[[label]]
+id = "c29"
+faithfulness = "faithful"
+key_facts = [true, true]
+note = "closed-end credit (installment loan) correctly identified as excluded part and declined"
+
+[[label]]
+id = "c30"
+faithfulness = "faithful"
+key_facts = [true, true]
+note = "SCRA military interest rate cap correctly identified as outside law (other_law) and declined"
+
+[[label]]
+id = "c31"
+faithfulness = "faithful"
+key_facts = [true, true]
+note = "state usury laws and choice of law correctly identified as outside Reg Z and declined"
+
+[[label]]
+id = "c32"
+faithfulness = "faithful"
+key_facts = [true, true]
+note = "2 complete billing cycles correctly calculated as ending 25 January 2027"
+
+
+[[label]]
+id = "c33"
+faithfulness = "faithful"
+key_facts = [true, true]
+note = "clarification request for unrecognized charge correctly identified as billing error under 1026.13(a)(6)"
+
+[[label]]
+id = "c34"
+faithfulness = "faithful"
+key_facts = [true, true]
+note = "Reg E ACH error resolution deadlines correctly calculated (10 b-days: Nov 17, 45 cal-days: Dec 17)"
+
+[[label]]
+id = "c35"
+faithfulness = "faithful"
+key_facts = [true, true]
+note = "prohibition on card issuer setoff under 1026.12(d)(1) and authorization exceptions correctly applied"
+
+[[label]]
+id = "c36"
+faithfulness = "faithful"
+key_facts = [true, true]
+note = "Reg Z credit card $50 max liability cap correctly applied to ATM cash advances"
+
+[[label]]
+id = "c37"
+faithfulness = "faithful"
+key_facts = [true, true]
+note = "adding overdraft credit line to debit card requires consumer request/application under 1026.12(a)(1)"
+
+[[label]]
+id = "c38"
+faithfulness = "faithful"
+key_facts = [true, true]
+note = "20-day late payment does not satisfy 60-day delinquency threshold under 1026.55(b)(4) to increase rate on existing balances"
+
+[[label]]
+id = "c39"
+faithfulness = "faithful"
+key_facts = [true, true]
+note = "bank cannot charge overdraft fee on one-time debit card transaction without affirmative opt-in under 1005.17(b)(1)"
+
+[[label]]
+id = "c40"
+faithfulness = "faithful"
+key_facts = [true, true, true]
+note = "overturned 2024 overdraft rule correctly identified as not law in force; no $5 cap under Reg E"

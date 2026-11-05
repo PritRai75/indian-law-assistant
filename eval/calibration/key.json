@@ -1,0 +1,291 @@
+{
+  "seed": 20261105,
+  "runs": [
+    "r20261105T140818Z",
+    "r20261105T141055Z"
+  ],
+  "judge_version": "j1",
+  "golden_sha256": "e606cfee9d91c2407cc5ea834cda42902eac3c461320408f002a12e6dab2bc5e",
+  "items": {
+    "c01": {
+      "run_id": "r20261105T141055Z",
+      "qid": "q008",
+      "key_facts": 2,
+      "should_abstain": true,
+      "persona": "frontline"
+    },
+    "c02": {
+      "run_id": "r20261105T140818Z",
+      "qid": "q020",
+      "key_facts": 3,
+      "should_abstain": false,
+      "persona": "frontline"
+    },
+    "c03": {
+      "run_id": "r20261105T141055Z",
+      "qid": "q044",
+      "key_facts": 2,
+      "should_abstain": true,
+      "persona": "compliance"
+    },
+    "c04": {
+      "run_id": "r20261105T141055Z",
+      "qid": "q018",
+      "key_facts": 3,
+      "should_abstain": false,
+      "persona": "compliance"
+    },
+    "c05": {
+      "run_id": "r20261105T140818Z",
+      "qid": "q001",
+      "key_facts": 2,
+      "should_abstain": false,
+      "persona": "frontline"
+    },
+    "c06": {
+      "run_id": "r20261105T141055Z",
+      "qid": "q006",
+      "key_facts": 2,
+      "should_abstain": false,
+      "persona": "frontline"
+    },
+    "c07": {
+      "run_id": "r20261105T140818Z",
+      "qid": "q018",
+      "key_facts": 3,
+      "should_abstain": false,
+      "persona": "compliance"
+    },
+    "c08": {
+      "run_id": "r20261105T140818Z",
+      "qid": "q008",
+      "key_facts": 2,
+      "should_abstain": true,
+      "persona": "frontline"
+    },
+    "c09": {
+      "run_id": "r20261105T140818Z",
+      "qid": "q016",
+      "key_facts": 3,
+      "should_abstain": false,
+      "persona": "compliance"
+    },
+    "c10": {
+      "run_id": "r20261105T140818Z",
+      "qid": "q044",
+      "key_facts": 2,
+      "should_abstain": true,
+      "persona": "compliance"
+    },
+    "c11": {
+      "run_id": "r20261105T140818Z",
+      "qid": "q024",
+      "key_facts": 2,
+      "should_abstain": true,
+      "persona": "frontline"
+    },
+    "c12": {
+      "run_id": "r20261105T141055Z",
+      "qid": "q002",
+      "key_facts": 2,
+      "should_abstain": false,
+      "persona": "frontline"
+    },
+    "c13": {
+      "run_id": "r20261105T140818Z",
+      "qid": "q003",
+      "key_facts": 2,
+      "should_abstain": false,
+      "persona": "frontline"
+    },
+    "c14": {
+      "run_id": "r20261105T141055Z",
+      "qid": "q010",
+      "key_facts": 2,
+      "should_abstain": true,
+      "persona": "compliance"
+    },
+    "c15": {
+      "run_id": "r20261105T140818Z",
+      "qid": "q034",
+      "key_facts": 2,
+      "should_abstain": false,
+      "persona": "compliance"
+    },
+    "c16": {
+      "run_id": "r20261105T140818Z",
+      "qid": "q049",
+      "key_facts": 2,
+      "should_abstain": false,
+      "persona": "compliance"
+    },
+    "c17": {
+      "run_id": "r20261105T141055Z",
+      "qid": "q028",
+      "key_facts": 2,
+      "should_abstain": true,
+      "persona": "compliance"
+    },
+    "c18": {
+      "run_id": "r20261105T141055Z",
+      "qid": "q003",
+      "key_facts": 2,
+      "should_abstain": false,
+      "persona": "frontline"
+    },
+    "c19": {
+      "run_id": "r20261105T140818Z",
+      "qid": "q002",
+      "key_facts": 2,
+      "should_abstain": false,
+      "persona": "frontline"
+    },
+    "c20": {
+      "run_id": "r20261105T140818Z",
+      "qid": "q052",
+      "key_facts": 2,
+      "should_abstain": false,
+      "persona": "frontline"
+    },
+    "c21": {
+      "run_id": "r20261105T140818Z",
+      "qid": "q006",
+      "key_facts": 2,
+      "should_abstain": false,
+      "persona": "frontline"
+    },
+    "c22": {
+      "run_id": "r20261105T141055Z",
+      "qid": "q040",
+      "key_facts": 2,
+      "should_abstain": true,
+      "persona": "frontline"
+    },
+    "c23": {
+      "run_id": "r20261105T141055Z",
+      "qid": "q009",
+      "key_facts": 2,
+      "should_abstain": true,
+      "persona": "compliance"
+    },
+    "c24": {
+      "run_id": "r20261105T141055Z",
+      "qid": "q004",
+      "key_facts": 2,
+      "should_abstain": false,
+      "persona": "compliance"
+    },
+    "c25": {
+      "run_id": "r20261105T141055Z",
+      "qid": "q001",
+      "key_facts": 2,
+      "should_abstain": false,
+      "persona": "frontline"
+    },
+    "c26": {
+      "run_id": "r20261105T141055Z",
+      "qid": "q053",
+      "key_facts": 2,
+      "should_abstain": false,
+      "persona": "compliance"
+    },
+    "c27": {
+      "run_id": "r20261105T141055Z",
+      "qid": "q007",
+      "key_facts": 2,
+      "should_abstain": false,
+      "persona": "compliance"
+    },
+    "c28": {
+      "run_id": "r20261105T141055Z",
+      "qid": "q005",
+      "key_facts": 2,
+      "should_abstain": false,
+      "persona": "compliance"
+    },
+    "c29": {
+      "run_id": "r20261105T140818Z",
+      "qid": "q028",
+      "key_facts": 2,
+      "should_abstain": true,
+      "persona": "compliance"
+    },
+    "c30": {
+      "run_id": "r20261105T140818Z",
+      "qid": "q009",
+      "key_facts": 2,
+      "should_abstain": true,
+      "persona": "compliance"
+    },
+    "c31": {
+      "run_id": "r20261105T141055Z",
+      "qid": "q024",
+      "key_facts": 2,
+      "should_abstain": true,
+      "persona": "frontline"
+    },
+    "c32": {
+      "run_id": "r20261105T140818Z",
+      "qid": "q053",
+      "key_facts": 2,
+      "should_abstain": false,
+      "persona": "compliance"
+    },
+    "c33": {
+      "run_id": "r20261105T140818Z",
+      "qid": "q042",
+      "key_facts": 2,
+      "should_abstain": true,
+      "persona": "frontline"
+    },
+    "c34": {
+      "run_id": "r20261105T140818Z",
+      "qid": "q004",
+      "key_facts": 2,
+      "should_abstain": false,
+      "persona": "compliance"
+    },
+    "c35": {
+      "run_id": "r20261105T140818Z",
+      "qid": "q040",
+      "key_facts": 2,
+      "should_abstain": true,
+      "persona": "frontline"
+    },
+    "c36": {
+      "run_id": "r20261105T140818Z",
+      "qid": "q007",
+      "key_facts": 2,
+      "should_abstain": false,
+      "persona": "compliance"
+    },
+    "c37": {
+      "run_id": "r20261105T141055Z",
+      "qid": "q049",
+      "key_facts": 2,
+      "should_abstain": false,
+      "persona": "compliance"
+    },
+    "c38": {
+      "run_id": "r20261105T141055Z",
+      "qid": "q034",
+      "key_facts": 2,
+      "should_abstain": false,
+      "persona": "compliance"
+    },
+    "c39": {
+      "run_id": "r20261105T141055Z",
+      "qid": "q038",
+      "key_facts": 2,
+      "should_abstain": false,
+      "persona": "frontline"
+    },
+    "c40": {
+      "run_id": "r20261105T141055Z",
+      "qid": "q020",
+      "key_facts": 3,
+      "should_abstain": false,
+      "persona": "frontline"
+    }
+  }
+}
