@@ -194,6 +194,25 @@ def test_tool_outcomes():
     assert retried["tool_outcome"] == "correct_call" and retried["tool_calls"] == 2   # any matching call counts
 
 
+def test_g5_closing_dates_match_when_the_call_starts_with_the_label():
+    z = {"regulation": "Z", "event": "error", "notice_date": "2027-03-02",
+         "cycle_closing_dates": ["2027-03-10", "2027-04-10", "2027-05-10"]}
+    item = items_from(with_tool())[0].model_copy(update={"expected_tool_call": G.ToolCall(name="dispute_timeline", args=z)})
+    outcome = lambda dates: R.grade_tool(item, [{"name": "dispute_timeline", "args": {**z, "cycle_closing_dates": dates}}])
+    assert outcome(z["cycle_closing_dates"])["tool_outcome"] == "correct_call"
+    assert outcome(["2027-05-10", "2027-04-10", "2027-03-10"])["tool_outcome"] == "correct_call"   # order doesn't matter
+    assert outcome(z["cycle_closing_dates"] + ["2027-06-10"])["tool_outcome"] == "correct_call"     # a later extra: same deadline
+    for wrong in (["2027-03-10", "2027-04-10"],                         # too few: the tool falls back to 90 days
+                  ["2027-02-10", "2027-03-10", "2027-04-10", "2027-05-10"],   # an earlier extra shifts the cycles
+                  []):                                                  # none at all
+        m = outcome(wrong)
+        assert (m["tool_outcome"], m["arg_diffs"]) == ("wrong_args", ["cycle_closing_dates"]), wrong
+    no_list = item.model_copy(update={"expected_tool_call": G.ToolCall(
+        name="dispute_timeline", args={k: v for k, v in z.items() if k != "cycle_closing_dates"})})
+    assert R.grade_tool(no_list, [{"name": "dispute_timeline", "args": z}])["tool_outcome"] == "wrong_args"
+    assert R.arg_matches("notice_date", "2027-03-02", "2027-03-02") and not R.arg_matches("notice_date", "2027-03-02", None)
+
+
 def test_norm_args_writes_dates_and_lists_one_way():
     assert R.norm_args({"notice_date": date(2026, 12, 1), "cycle_closing_dates": ["2027-01-05", "2026-12-05"],
                         "statement_sent": None}) == {"notice_date": "2026-12-01",

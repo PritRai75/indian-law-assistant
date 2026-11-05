@@ -36,7 +36,8 @@ How each metric is graded (choices marked * are Claude's, session 14, open to Pr
   failure (no_valid_citation, output_invalid, tool_limit) is recorded as its cause.
 - Tool calls: no call expected -> correct if none was made. A call expected -> correct if any call has
   the expected name and arguments*, compared after dropping empty arguments, writing dates as
-  YYYY-MM-DD and sorting date lists. Outcomes: correct_call, correct_no_call, missed_call,
+  YYYY-MM-DD and sorting date lists; cycle_closing_dates also match when the call's list starts with
+  the label's (g5, Prit's choice, session 18). Outcomes: correct_call, correct_no_call, missed_call,
   unneeded_call, wrong_args (with the differing argument names).
 - Calculation exactness, items with expected_result: every expected deadline date must appear in the
   final answer text*, in any common form (2026-11-20, November 20, 2026, 20 November, 11/20/2026; a
@@ -77,9 +78,10 @@ from eval import golden as G
 
 REPO = Path(__file__).resolve().parents[1]
 DB_FILE = REPO / "runs.db"
-GRADER_VERSION = "g4"                 # bump when a grading rule changes, so old and new numbers aren't mixed
+GRADER_VERSION = "g5"                 # bump when a grading rule changes, so old and new numbers aren't mixed
 # g1 first harness; g2 tier amounts in the text for Reg E only (S14); g3 citations read with app.citations (S15);
-# g4 bracketed comment sub-points, "-2(ii)", read as the comment (S15)
+# g4 bracketed comment sub-points, "-2(ii)", read as the comment (S15); g5 cycle_closing_dates match when the
+# call's list starts with the label's (S18)
 EVAL_TODAY = date(2026, 11, 3)        # "today" for questions that don't state their own
 GUARD_CAUSES = ("no_valid_citation", "output_invalid", "tool_limit")
 
@@ -158,6 +160,16 @@ def norm_args(args: dict) -> dict:
     return out
 
 
+def arg_matches(name: str, want, got) -> bool:
+    """One tool argument, label against call (both through norm_args). Equal, except (g5, session 18):
+    a call's cycle_closing_dates matches when it starts with the label's list, since later closings
+    don't change a Reg Z resolution deadline; a shorter or different list does (the tool then falls
+    back to the 90-day limit). A label without the list still needs a call without it."""
+    if name == "cycle_closing_dates" and want and got:
+        return got[:len(want)] == want
+    return want == got
+
+
 def grade_tool(item: G.GoldenItem, calls: list[dict]) -> dict:
     exp = item.expected_tool_call
     m = {"tool_calls": len(calls), "tool_errors": sum("error" in (c.get("result") or {}) for c in calls),
@@ -171,7 +183,7 @@ def grade_tool(item: G.GoldenItem, calls: list[dict]) -> dict:
         diffs = []
         for c in calls:
             got = norm_args(c.get("args"))
-            names = sorted(k for k in set(want) | set(got) if want.get(k) != got.get(k))
+            names = sorted(k for k in set(want) | set(got) if not arg_matches(k, want.get(k), got.get(k)))
             diffs.append(names + (["name"] if c.get("name") != exp.name else []))
         best = min(diffs, key=len)
         m["tool_outcome"] = "correct_call" if not best else "wrong_args"
@@ -202,6 +214,20 @@ def grade_calc(item: G.GoldenItem, resp: dict) -> dict:
     return {"calc_checks": checks, "calc_missing": missing, "calc_exact": exact, "tool_result_right": right}
 
 
+def retrieval_metrics(gold: list[str], retrieved: list[str], ix: IndexView) -> dict:
+    """Rank of the first retrieved chunk holding a provision in a gold family, hits, reciprocal rank,
+    and gold recall. Shared with the CI retrieval check (eval/retrieval.py)."""
+    def holds_gold(chunk_id):
+        return any(G.in_family(g, p) for g in gold for p in ix.chunk_provisions.get(chunk_id, []))
+    rank = next((r for r, cid in enumerate(retrieved, 1) if holds_gold(cid)), None)
+    in_retrieved = [p for cid in retrieved for p in ix.chunk_provisions.get(cid, [])]
+    return {"k": len(retrieved), "first_gold_rank": rank,
+            "hit_at_1": rank is not None and rank <= 1, "hit_at_3": rank is not None and rank <= 3,
+            "hit_at_5": rank is not None and rank <= 5, "rr": 1 / rank if rank else 0.0,
+            "gold_total": len(gold),
+            "gold_found": sum(any(G.in_family(g, p) for p in in_retrieved) for g in gold)}
+
+
 def grade(item: G.GoldenItem, resp: dict, ix: IndexView) -> dict:
     """Every code-graded metric for one question. `resp` is an app.schema.Response as a dict."""
     answered = not resp["abstained"]
@@ -218,16 +244,9 @@ def grade(item: G.GoldenItem, resp: dict, ix: IndexView) -> dict:
     m["abstain_cause"] = (cause or "model") if resp["abstained"] else None
 
     # retrieval
-    def holds_gold(chunk_id):
-        return any(G.in_family(g, p) for g in gold for p in ix.chunk_provisions.get(chunk_id, []))
     retrieved = resp["retrieved_ids"]
-    rank = next((r for r, cid in enumerate(retrieved, 1) if holds_gold(cid)), None)
     in_retrieved = [p for cid in retrieved for p in ix.chunk_provisions.get(cid, [])]
-    m.update({"k": len(retrieved), "first_gold_rank": rank,
-              "hit_at_1": rank is not None and rank <= 1, "hit_at_3": rank is not None and rank <= 3,
-              "hit_at_5": rank is not None and rank <= 5, "rr": 1 / rank if rank else 0.0,
-              "gold_total": len(gold),
-              "gold_found": sum(any(G.in_family(g, p) for p in in_retrieved) for g in gold)})
+    m.update(retrieval_metrics(gold, retrieved, ix))
 
     # citations (raw strings, before the guard, read with the guard's reader)
     known, readings = cit.read_all([c for c in resp["raw_citations"] if c.strip()], ix.spelling)
