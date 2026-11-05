@@ -160,3 +160,145 @@ def test_judge_command_refuses_a_run_on_the_sheet(db, tmp_path, monkeypatch, cap
     monkeypatch.setattr(C.blind_block, "__defaults__", (C.LABELS_FILE, C.KEY_FILE, C.git_dirty))
     assert J.main([RUNS[0], "--db", str(tmp_path / "runs.db")]) == 2
     assert "Not judged:" in capsys.readouterr().out
+
+
+# ---------------------------------------------------------------- part 2: --compare
+
+SHORT = {"f": "faithful", "p": "partially_faithful", "u": "unfaithful"}
+
+
+def test_wilson_matches_statsmodels():
+    # proportion_confint(k, n, method="wilson") from statsmodels 0.15.0 (session 20)
+    for k, n, want in [(37, 40, (0.8014, 0.9742)), (0, 10, (0.0, 0.2775)), (10, 10, (0.7225, 1.0)),
+                       (5, 9, (0.2667, 0.8112))]:
+        assert tuple(round(x, 4) for x in C.wilson(k, n)) == want
+
+
+def test_kappa_matches_scikit_learn():
+    # cohen_kappa_score from scikit-learn 1.9.1 (session 20)
+    prit, judge = "f f f p p u f p f f".split(), "f f p p u u f f f u".split()
+    assert C.kappa(list(zip(prit, judge))) == pytest.approx(0.34426229508196726)
+    assert C.kappa(list(zip([1, 1, 0, 0, 1, 1, 1, 0], [1, 0, 0, 0, 1, 1, 1, 1]))) == pytest.approx(0.4666666666666667)
+    assert C.kappa([("f", "f"), ("u", "u")]) == 1.0
+    assert C.kappa([("f", "f")] * 5) is None                       # one label for both: undefined
+    assert C.kappa([]) is None
+
+
+def item(cid, qid, prit, judge, pk, jk, *, run="default", decline=False, persona="frontline"):
+    return {"cid": cid, "qid": qid, "run_id": run, "run": run, "decline": decline, "persona": persona,
+            "prit": SHORT[prit], "judge": SHORT[judge], "prit_kf": pk, "judge_kf": jk, "note": "",
+            "rationale": "", "judge_model": "m"}
+
+
+def test_bootstrap_resamples_whole_questions_and_is_seeded():
+    items = [item(f"c{n}", f"q{n % 3}", "f", "f" if n % 4 else "u", [True], [True]) for n in range(12)]
+    stat = lambda s: C.kappa(C.faith_pairs(s))                     # noqa: E731
+    a, b = C.bootstrap(items, stat, reps=300), C.bootstrap(items, stat, reps=300)
+    assert a == b                                                  # seeded
+    seen = []
+    C.bootstrap(items, lambda s: seen.append(sorted({it["qid"] for it in s})) or 0.0, reps=50)
+    for qids in seen:                                              # a question comes with all its answers
+        assert set(qids) <= {"q0", "q1", "q2"}
+    sizes = set()
+    C.bootstrap(items, lambda s: sizes.add(len(s)) or 0.0, reps=50)
+    assert sizes == {12}                                           # every question here has 4 answers
+    same = [item(f"c{n}", f"q{n}", "f", "f", [True], [True]) for n in range(5)]
+    assert C.bootstrap(same, stat, reps=20) == {"lo": None, "hi": None, "undefined": 20, "reps": 20}
+
+
+def test_compare_counts():
+    items = [item("c01", "q001", "f", "f", [True, True], [True, True]),
+             item("c02", "q001", "f", "p", [True], [False], run="weak"),
+             item("c03", "q002", "p", "p", [False], [True], decline=True),
+             item("c04", "q003", "u", "f", [True], [True], persona="compliance"),
+             item("c05", "q004", "p", "u", [], [], run="weak", decline=True, persona="compliance")]
+    c = C.compare(items, reps=200)
+    f = c["faithfulness"]
+    assert (c["n"], c["questions"], f["agree"]) == (5, 4, 2)
+    assert f["confusion"]["faithful"] == {"faithful": 1, "partially_faithful": 1, "unfaithful": 0}
+    assert f["confusion"]["unfaithful"]["faithful"] == 1
+    assert f["judge_more_lenient"] == ["c04"] and f["judge_stricter"] == ["c02", "c05"]
+    assert (f["prit_faithful"], f["judge_faithful"]) == (2, 2)
+    assert c["faithful_or_not"]["agree"] == 3                     # c01, c03, c05 agree on faithful-or-not
+    kf = c["key_facts"]
+    assert (kf["n"], kf["agree"]) == (5, 3)
+    assert kf["confusion"] == {"prit_true": {"judge_true": 3, "judge_false": 1},
+                               "prit_false": {"judge_true": 1, "judge_false": 0}}
+    assert c["slices"]["run: weak"]["n"] == 2 and c["slices"]["declines"]["agree"] == 1
+    assert c["slices"]["compliance"]["facts"] == 1
+    assert [d["cid"] for d in c["disagreements"]] == ["c02", "c03", "c04", "c05"]
+    assert c["disagreements"][1]["facts"] == [{"n": 1, "prit": False, "judge": True}]
+    text = C.compare_report(c, judge_version="j1", missing=[("c06", "no j1 verdict yet")])
+    assert "agreement   2/5 = 40.0%" in text and "Not compared (1): c06 no j1 verdict yet" in text
+    assert "c03 q002 default key fact 1 Prit false, judge true" in text
+
+
+def verdict(facts, label="faithful"):
+    return J.JudgeVerdict.model_validate({
+        "claims": [{"claim": "x", "supported": label == "faithful", "source": None}], "faithfulness": label,
+        "key_facts": [{"n": i, "covered": x} for i, x in enumerate(facts, 1)], "rationale": "r"}).model_dump_json()
+
+
+def test_paired_items_joins_labels_and_verdicts(db, files):
+    k = C.write_sheet(db, RUNS, chunks=CHUNKS, **files)
+    fill(files)
+    items_ = k["items"]
+    first, second, third = list(items_)[:3]
+    for cid, label, status in [(first, "unfaithful", "judged"), (second, "faithful", "skipped")]:
+        info = items_[cid]
+        db.execute("INSERT INTO judgements (run_id, qid, judge_version, judge_model, status, skip_reason, verdict_json) "
+                   "VALUES (?, ?, 'j1', 'm', ?, ?, ?)", (info["run_id"], info["qid"], status,
+                   "no_valid_citation" if status == "skipped" else None, verdict([True] * info["key_facts"], label)))
+    info = items_[third]
+    db.execute("INSERT INTO judgements (run_id, qid, judge_version, judge_model, status, verdict_json) "
+               "VALUES (?, ?, 'j1', 'm', 'judged', ?)", (info["run_id"], info["qid"], verdict([True] * (info["key_facts"] + 1))))
+    db.commit()
+    got, missing = C.paired_items(db, labels=files["labels"], key=files["key"])
+    assert [it["cid"] for it in got] == [first]
+    assert got[0]["prit"] == "faithful" and got[0]["judge"] == "unfaithful"
+    assert got[0]["run"] == ("default" if items_[first]["run_id"] == RUNS[0] else "weak")
+    why = dict(missing)
+    assert why[second] == "skipped (no_valid_citation)"
+    assert "key facts" in why[third] and why["c40"] == "no j1 verdict yet" and len(missing) == 39
+    assert C.paired_items(db, judge_version="j2", labels=files["labels"], key=files["key"])[0] == []
+
+
+def test_compare_waits_for_complete_committed_labels(db, files):
+    C.write_sheet(db, RUNS, chunks=CHUNKS, **files)
+    kw = {"labels": files["labels"], "key": files["key"]}
+    assert "only 0 of 40 labels are done" in C.compare_refusal(**kw, dirty=lambda _: False)
+    fill(files)
+    assert "uncommitted changes" in C.compare_refusal(**kw, dirty=lambda p: p == files["labels"])
+    assert C.compare_refusal(**kw, dirty=lambda _: False) is None
+
+
+def test_a_saved_comparison_doesnt_block_the_judge(db, files):
+    C.write_sheet(db, RUNS, chunks=CHUNKS, **files)
+    fill(files)
+    only_folder = lambda p: p == files["labels"].parent          # noqa: E731 - e.g. an untracked compare-j1.json
+    assert C.blind_block(RUNS[0], labels=files["labels"], key=files["key"], dirty=only_folder) is None
+    assert C.compare_refusal(labels=files["labels"], key=files["key"], dirty=only_folder) is None
+
+
+def test_compare_command_reports_and_saves(db, tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(C, "LABELS_FILE", tmp_path / "cal" / "labels.toml")
+    monkeypatch.setattr(C, "KEY_FILE", tmp_path / "cal" / "key.json")
+    files = {"sheet": tmp_path / "s.html", "labels": C.LABELS_FILE, "key": C.KEY_FILE}
+    k = C.write_sheet(db, RUNS, chunks=CHUNKS, **files)
+    fill(files)
+    monkeypatch.setattr(C.compare_refusal, "__defaults__", (C.LABELS_FILE, C.KEY_FILE, lambda _: False))
+    dbfile = str(tmp_path / "runs.db")
+    assert C.main(["--compare", "--db", dbfile]) == 2
+    assert "Judge both runs first" in capsys.readouterr().out
+    for cid, info in k["items"].items():
+        db.execute("INSERT INTO judgements (run_id, qid, judge_version, judge_model, status, verdict_json) "
+                   "VALUES (?, ?, 'j1', 'm', 'judged', ?)",
+                   (info["run_id"], info["qid"], verdict([cid != "c01"] * info["key_facts"])))
+    db.commit()
+    assert C.main(["--compare", "--save", "--db", dbfile]) == 0
+    out = capsys.readouterr().out
+    assert "agreement   40/40 = 100.0%" in out and "Disagreements (1)" in out
+    saved = json.loads((tmp_path / "cal" / "compare-j1.json").read_text(encoding="utf-8"))
+    assert saved["runs"] == {"default": RUNS[0], "weak": RUNS[1]} and saved["n"] == 40
+    assert saved["faithfulness"]["kappa"] is None                  # every label "faithful": kappa undefined
+    assert saved["key_facts"]["agree"] == saved["key_facts"]["n"] - k["items"]["c01"]["key_facts"]

@@ -5,6 +5,9 @@ measures the judge against an independent reading.
 From the repo root (no AWS call):
     python -m eval.calibrate --sheet RUN_DEFAULT RUN_WEAK   pick the 40 answers, write the sheet and the labels file
     python -m eval.calibrate --check                        check labels.toml: what's filled in, what's wrong
+    python -m eval.calibrate --compare                      the judge against the labels (after judging both runs)
+    python -m eval.calibrate --compare --save               the same, also saved as eval/calibration/compare-j1.json
+    python -m eval.calibrate --compare --judge-version j1   an earlier rubric's verdicts (both rounds are reported)
 
 Files:
 - scratch/calibration/sheet.html   read this in a browser (git-ignored; it holds the passages, so it's big)
@@ -25,6 +28,24 @@ How the 40 are picked (Prit's choice, session 19: 40 by seeded pick; details Cla
 3. Inside each group, a seeded shuffle (CALIBRATION_SEED) picks which; then the 40 are shuffled again
    and numbered c01-c40 in that order, so neither the run nor the question order shows.
 The sheet never shows the run, the question ID, code-graded metrics or any judge output.
+
+Part 2, --compare (Claude's design, session 20, open to Prit's push-back). It runs only once the labels
+are complete and committed, and reads the judge's stored verdicts for the same 40 answers (runs.db,
+one rubric version). It reports:
+- faithfulness, 3 labels: agreement with a Wilson 95% interval; Cohen's kappa with a bootstrap 95%
+  interval; the 3x3 confusion matrix (rows Prit, columns judge); how many answers each called faithful;
+  where the judge was more lenient or stricter (faithful > partially_faithful > unfaithful);
+- faithful or not, 2 labels (partially and unfaithful together, the README's "fully faithful" share):
+  agreement and kappa, the same way;
+- key facts: agreement over every fact and kappa, both with bootstrap intervals, and the 2x2 counts;
+- the same numbers by run, answerable/decline and persona (no intervals: the slices are small);
+- every disagreement with Prit's note, the judge's rationale and the command to see the verdict.
+Kappa is plain (unweighted) Cohen's kappa: a faithful-vs-partially split counts as much as
+faithful-vs-unfaithful. The bootstrap resamples whole questions (2000 times, seeded), not answers or
+facts: 40 answers cover 23 questions, and answers to one question share its key facts, so they aren't
+independent. The Wilson interval (session 19's plan) treats the 40 answers as independent, so it is a
+little narrower than it should be. The spec asks for an interval on the confusion matrix too; its
+cells (often 0 to 3 answers) are shown as counts only.
 """
 from __future__ import annotations
 
@@ -294,10 +315,262 @@ def blind_block(run_id: str, labels=LABELS_FILE, key=KEY_FILE, dirty=git_dirty) 
         return (f"{run_id} is on the calibration sheet and only {done} of {total} labels are done"
                 + (f" ({len(problems)} problem(s); see python -m eval.calibrate --check)" if problems else "")
                 + ". Judging it now would show you verdicts before your labels are final.")
-    if dirty(labels.parent):
+    if any(dirty(f) for f in (labels, key)):        # the two files only: a saved compare-*.json is fine
         return (f"{run_id} is on the calibration sheet: commit eval/calibration/ first, so the labels are "
                 "fixed before any verdict exists.")
     return None
+
+
+# ================================================================ part 2: the judge against Prit's labels
+
+ORDER = {"unfaithful": 0, "partially_faithful": 1, "faithful": 2}   # for "more lenient" / "stricter"
+RUN_NAMES = ("default", "weak")              # key.json's runs, in the order --sheet was given them
+BOOTSTRAP_REPS = 2000
+Z95 = 1.959963984540054
+
+
+def wilson(k: int, n: int, z: float = Z95) -> tuple[float, float]:
+    """The Wilson score 95% interval for k successes in n."""
+    if n == 0:
+        return (float("nan"), float("nan"))
+    p = k / n
+    d = 1 + z * z / n
+    centre = (p + z * z / (2 * n)) / d
+    half = z * (p * (1 - p) / n + z * z / (4 * n * n)) ** 0.5 / d
+    return (max(0.0, centre - half), min(1.0, centre + half))
+
+
+def kappa(pairs: list[tuple]) -> float | None:
+    """Cohen's kappa for (Prit, judge) pairs: agreement corrected for the agreement chance alone would
+    give, from each rater's own label counts. None when it's undefined (both used one same label)."""
+    n = len(pairs)
+    if n == 0:
+        return None
+    observed = sum(a == b for a, b in pairs) / n
+    cats = {a for a, _ in pairs} | {b for _, b in pairs}
+    chance = sum((sum(a == c for a, _ in pairs) / n) * (sum(b == c for _, b in pairs) / n) for c in cats)
+    if chance >= 1:
+        return None
+    return (observed - chance) / (1 - chance)
+
+
+def percentile(sorted_vals: list[float], q: float) -> float:
+    """Linear interpolation between order statistics (numpy's default)."""
+    pos = (len(sorted_vals) - 1) * q
+    lo = int(pos)
+    hi = min(lo + 1, len(sorted_vals) - 1)
+    return sorted_vals[lo] + (sorted_vals[hi] - sorted_vals[lo]) * (pos - lo)
+
+
+def bootstrap(items: list[dict], stat, *, reps: int = BOOTSTRAP_REPS, seed: int = CALIBRATION_SEED) -> dict:
+    """Percentile 95% interval for stat(items), resampling whole questions (clusters), not single
+    answers: the 40 answers cover 23 questions, and two answers to one question share its key facts,
+    so they aren't independent. Resamples where stat is undefined are left out and counted."""
+    by_q: dict[str, list[dict]] = {}
+    for it in items:
+        by_q.setdefault(it["qid"], []).append(it)
+    clusters = [by_q[q] for q in sorted(by_q)]
+    rng = random.Random(seed)
+    vals, undefined = [], 0
+    for _ in range(reps):
+        sample = [it for _ in clusters for it in clusters[rng.randrange(len(clusters))]]
+        v = stat(sample)
+        if v is None:
+            undefined += 1
+        else:
+            vals.append(v)
+    vals.sort()
+    if not vals:
+        return {"lo": None, "hi": None, "undefined": undefined, "reps": reps}
+    return {"lo": percentile(vals, 0.025), "hi": percentile(vals, 0.975), "undefined": undefined, "reps": reps}
+
+
+def faith_pairs(items, binary=False):
+    if binary:
+        return [(it["prit"] == "faithful", it["judge"] == "faithful") for it in items]
+    return [(it["prit"], it["judge"]) for it in items]
+
+
+def fact_pairs(items):
+    return [(p, j) for it in items for p, j in zip(it["prit_kf"], it["judge_kf"])]
+
+
+def paired_items(db, *, judge_version: str = J.JUDGE_VERSION, labels=LABELS_FILE, key=KEY_FILE):
+    """(items, not_compared). Each item joins one label block to the judge's verdict on the same answer.
+    not_compared lists (cid, reason) for answers without a usable verdict."""
+    k = json.loads(key.read_text(encoding="utf-8"))
+    blocks = {b["id"]: b for b in tomllib.loads(labels.read_text(encoding="utf-8"))["label"]}
+    items, missing = [], []
+    for cid, info in k["items"].items():
+        row = db.execute("SELECT status, skip_reason, error, verdict_json, judge_model FROM judgements "
+                         "WHERE run_id = ? AND qid = ? AND judge_version = ?",
+                         (info["run_id"], info["qid"], judge_version)).fetchone()
+        if row is None:
+            missing.append((cid, f"no {judge_version} verdict yet"))
+            continue
+        status, skip, error, vj, model = row
+        if status != "judged":
+            missing.append((cid, f"{status}" + (f" ({skip})" if skip else "") + (f": {error}" if error else "")))
+            continue
+        v = J.JudgeVerdict.model_validate_json(vj)
+        b = blocks[cid]
+        if len(v.key_facts) != len(b["key_facts"]):
+            missing.append((cid, f"the verdict has {len(v.key_facts)} key facts, the label {len(b['key_facts'])}"))
+            continue
+        items.append({"cid": cid, "qid": info["qid"], "run_id": info["run_id"],
+                      "run": RUN_NAMES[k["runs"].index(info["run_id"])],
+                      "decline": bool(info["should_abstain"]), "persona": info["persona"],
+                      "prit": b["faithfulness"], "judge": v.faithfulness,
+                      "prit_kf": list(b["key_facts"]), "judge_kf": [x.covered for x in v.key_facts],
+                      "note": b.get("note", ""), "rationale": v.rationale, "judge_model": model})
+    return items, missing
+
+
+def _slice(items) -> dict:
+    fp, kp = faith_pairs(items), fact_pairs(items)
+    return {"n": len(items), "agree": sum(a == b for a, b in fp),
+            "kappa": kappa(fp), "kappa_binary": kappa(faith_pairs(items, binary=True)),
+            "facts": len(kp), "facts_agree": sum(a == b for a, b in kp), "facts_kappa": kappa(kp)}
+
+
+def compare(items: list[dict], *, reps: int = BOOTSTRAP_REPS, seed: int = CALIBRATION_SEED) -> dict:
+    """Every number --compare prints, as a dict (saved with --save)."""
+    n = len(items)
+    fp, bp, kp = faith_pairs(items), faith_pairs(items, binary=True), fact_pairs(items)
+    agree, b_agree, k_agree = (sum(a == b for a, b in p) for p in (fp, bp, kp))
+    bs = lambda stat: bootstrap(items, stat, reps=reps, seed=seed)          # noqa: E731
+    lenient = [it["cid"] for it in items if ORDER[it["judge"]] > ORDER[it["prit"]]]
+    strict = [it["cid"] for it in items if ORDER[it["judge"]] < ORDER[it["prit"]]]
+    slices = {}
+    for name, test in [("run: default", lambda it: it["run"] == "default"),
+                       ("run: weak", lambda it: it["run"] == "weak"),
+                       ("answerable", lambda it: not it["decline"]), ("declines", lambda it: it["decline"]),
+                       ("frontline", lambda it: it["persona"] == "frontline"),
+                       ("compliance", lambda it: it["persona"] == "compliance")]:
+        slices[name] = _slice([it for it in items if test(it)])
+    disagreements = []
+    for it in items:
+        facts = [i for i, (p, j) in enumerate(zip(it["prit_kf"], it["judge_kf"]), 1) if p != j]
+        if it["prit"] != it["judge"] or facts:
+            disagreements.append({"cid": it["cid"], "qid": it["qid"], "run": it["run"], "run_id": it["run_id"],
+                                  "prit": it["prit"], "judge": it["judge"],
+                                  "facts": [{"n": i, "prit": it["prit_kf"][i - 1], "judge": it["judge_kf"][i - 1]}
+                                            for i in facts],
+                                  "note": it["note"], "rationale": it["rationale"]})
+    return {
+        "n": n, "questions": len({it["qid"] for it in items}),
+        "faithfulness": {
+            "agree": agree, "agreement": agree / n if n else None, "wilson95": wilson(agree, n),
+            "kappa": kappa(fp), "kappa95": bs(lambda s: kappa(faith_pairs(s))),
+            "confusion": {p: {j: sum(it["prit"] == p and it["judge"] == j for it in items) for j in LABELS}
+                          for p in LABELS},
+            "judge_more_lenient": lenient, "judge_stricter": strict,
+            "prit_faithful": sum(it["prit"] == "faithful" for it in items),
+            "judge_faithful": sum(it["judge"] == "faithful" for it in items)},
+        "faithful_or_not": {
+            "agree": b_agree, "agreement": b_agree / n if n else None, "wilson95": wilson(b_agree, n),
+            "kappa": kappa(bp), "kappa95": bs(lambda s: kappa(faith_pairs(s, binary=True)))},
+        "key_facts": {
+            "n": len(kp), "agree": k_agree, "agreement": k_agree / len(kp) if kp else None,
+            "agreement95": bs(lambda s: (sum(a == b for a, b in fact_pairs(s)) / len(fact_pairs(s)))
+                              if fact_pairs(s) else None),
+            "kappa": kappa(kp), "kappa95": bs(lambda s: kappa(fact_pairs(s))),
+            "confusion": {"prit_true": {"judge_true": sum(p and j for p, j in kp), "judge_false": sum(p and not j for p, j in kp)},
+                          "prit_false": {"judge_true": sum(j and not p for p, j in kp), "judge_false": sum(not p and not j for p, j in kp)}},
+            "prit_covered": sum(p for p, _ in kp), "judge_covered": sum(j for _, j in kp)},
+        "slices": slices, "disagreements": disagreements,
+        "bootstrap": {"reps": reps, "seed": seed, "resampled": "questions"},
+    }
+
+
+def _pct(x):
+    return "n/a" if x is None or x != x else f"{100 * x:.1f}%"
+
+
+def _num(x):
+    return "undefined" if x is None else f"{x:.2f}"
+
+
+def _ci(b, pct=False):
+    if b["lo"] is None:
+        return "interval undefined"
+    f = _pct if pct else _num
+    extra = f"; {b['undefined']} of {b['reps']} resamples undefined" if b["undefined"] else ""
+    return f"95% {f(b['lo'])} to {f(b['hi'])}{extra}"
+
+
+def compare_report(c: dict, *, judge_version: str, missing: list[tuple]) -> str:
+    f, b, kf = c["faithfulness"], c["faithful_or_not"], c["key_facts"]
+    short = {"faithful": "faithful", "partially_faithful": "partial", "unfaithful": "unfaithful"}
+    lines = [f"Judge {judge_version} against Prit's labels: {c['n']} answers to {c['questions']} questions"]
+    if missing:
+        lines.append(f"  Not compared ({len(missing)}): " + "; ".join(f"{cid} {why}" for cid, why in missing))
+    lines += [
+        "",
+        "Faithfulness (3 labels)",
+        f"  agreement   {f['agree']}/{c['n']} = {_pct(f['agreement'])} "
+        f"(Wilson 95% {_pct(f['wilson95'][0])} to {_pct(f['wilson95'][1])})",
+        f"  kappa       {_num(f['kappa'])} ({_ci(f['kappa95'])})",
+        f"  faithful    Prit {f['prit_faithful']}/{c['n']}, judge {f['judge_faithful']}/{c['n']}",
+        f"  judge more lenient on {len(f['judge_more_lenient'])}, stricter on {len(f['judge_stricter'])}",
+        "",
+        "  Confusion (rows Prit, columns judge)",
+        "  " + " " * 12 + "".join(f"{short[j]:>12}" for j in LABELS),
+    ]
+    lines += ["  " + f"{short[p]:<12}" + "".join(f"{f['confusion'][p][j]:>12}" for j in LABELS) for p in LABELS]
+    lines += [
+        "",
+        "Faithful or not (2 labels: partial and unfaithful together)",
+        f"  agreement   {b['agree']}/{c['n']} = {_pct(b['agreement'])} "
+        f"(Wilson 95% {_pct(b['wilson95'][0])} to {_pct(b['wilson95'][1])})",
+        f"  kappa       {_num(b['kappa'])} ({_ci(b['kappa95'])})",
+        "",
+        f"Key facts ({kf['n']} facts in {c['n']} answers)",
+        f"  agreement   {kf['agree']}/{kf['n']} = {_pct(kf['agreement'])} ({_ci(kf['agreement95'], pct=True)})",
+        f"  kappa       {_num(kf['kappa'])} ({_ci(kf['kappa95'])})",
+        f"  covered     Prit {kf['prit_covered']}/{kf['n']}, judge {kf['judge_covered']}/{kf['n']}",
+        f"  Prit true, judge false: {kf['confusion']['prit_true']['judge_false']}; "
+        f"Prit false, judge true: {kf['confusion']['prit_false']['judge_true']}",
+        "",
+        "By slice (small samples: read these as pointers, not results)",
+        f"  {'':16}{'n':>4}{'agree':>9}{'kappa':>8}{'f/not k':>9}{'facts agree':>14}{'kappa':>8}",
+        "  (f/not k: kappa on faithful or not)",
+    ]
+    for name, s in c["slices"].items():
+        lines.append(f"  {name:16}{s['n']:>4}{s['agree']:>5}/{s['n']:<3}{_num(s['kappa']):>8}"
+                     f"{_num(s['kappa_binary']):>9}{s['facts_agree']:>9}/{s['facts']:<4}{_num(s['facts_kappa']):>8}")
+    lines += ["", f"Disagreements ({len(c['disagreements'])}): see one in full with "
+                  "python -m eval.judge RUN_ID --show QID"]
+    for d in c["disagreements"]:
+        what = []
+        if d["prit"] != d["judge"]:
+            what.append(f"faithfulness Prit {short[d['prit']]}, judge {short[d['judge']]}")
+        what += [f"key fact {x['n']} Prit {str(x['prit']).lower()}, judge {str(x['judge']).lower()}" for x in d["facts"]]
+        lines.append(f"  {d['cid']} {d['qid']} {d['run']:7} {'; '.join(what)}")
+        lines.append(f"      Prit:  {d['note']}" if d["note"] else "      Prit:  (no note)")
+        lines.append(f"      judge: {d['rationale']}")
+        lines.append(f"      python -m eval.judge {d['run_id']} --show {d['qid']}")
+    lines += ["", f"Intervals: Wilson for agreement on answers; the rest by bootstrap ({c['bootstrap']['reps']} "
+                  "resamples of whole questions, seeded), since answers to the same question aren't independent."]
+    return "\n".join(lines)
+
+
+def compare_refusal(labels=LABELS_FILE, key=KEY_FILE, dirty=git_dirty) -> str | None:
+    """Why --compare must not run yet, or None: the labels must be complete and committed, so every
+    comparison is against the labels as they were before any verdict existed."""
+    if not labels.exists() or not key.exists():
+        return "no calibration labels yet (python -m eval.calibrate --sheet first)"
+    done, total, problems = check(labels, key)
+    if problems or done < total:
+        return f"only {done} of {total} labels are done; see python -m eval.calibrate --check"
+    if any(dirty(f) for f in (labels, key)):
+        return ("labels.toml or key.json has uncommitted changes. Labels don't change after verdicts exist; "
+                "restore the committed ones (git restore eval/calibration/labels.toml eval/calibration/key.json)")
+    return None
+
+
+def compare_file(judge_version: str) -> Path:
+    return LABELS_FILE.parent / f"compare-{judge_version}.json"
 
 
 # ================================================================ command line
@@ -307,6 +580,9 @@ def main(argv=None) -> int:
     ap.add_argument("--sheet", nargs=2, metavar=("RUN_DEFAULT", "RUN_WEAK"),
                     help="pick the items from these two runs and write the sheet and labels file")
     ap.add_argument("--check", action="store_true", help="check labels.toml")
+    ap.add_argument("--compare", action="store_true", help="the judge's verdicts against the labels")
+    ap.add_argument("--judge-version", default=J.JUDGE_VERSION, help=f"with --compare: whose verdicts (default {J.JUDGE_VERSION})")
+    ap.add_argument("--save", action="store_true", help="with --compare: also write eval/calibration/compare-VERSION.json")
     ap.add_argument("--db", type=Path, default=R.DB_FILE, help="the SQLite file (default runs.db)")
     args = ap.parse_args(argv)
     if hasattr(sys.stdout, "reconfigure"):
@@ -331,6 +607,31 @@ def main(argv=None) -> int:
         if not problems and done == total:
             print("All labelled and well-formed: commit eval/calibration/ before running the judge on these runs.")
         return 1 if problems else 0
+    if args.compare:
+        if (why := compare_refusal(LABELS_FILE, KEY_FILE)):
+            print(f"Not compared: {why}.")
+            return 2
+        key = json.loads(KEY_FILE.read_text(encoding="utf-8"))
+        if key.get("golden_sha256") != hashlib.sha256(G.GOLDEN_FILE.read_bytes()).hexdigest():
+            print("Note: eval/golden.toml has changed since the sheet was made; key facts are compared by "
+                  "position, so check any item whose facts changed.\n")
+        items, missing = paired_items(J.connect(args.db), judge_version=args.judge_version,
+                                      labels=LABELS_FILE, key=KEY_FILE)
+        if not items:
+            print(f"Not compared: no {args.judge_version} verdicts on the calibration answers yet. Judge both runs "
+                  "first: " + " and ".join(f"python -m eval.judge {r}" for r in key["runs"]))
+            return 2
+        c = compare(items)
+        print(compare_report(c, judge_version=args.judge_version, missing=missing))
+        if args.save:
+            out = {"judge_version": args.judge_version,
+                   "judge_models": sorted({it["judge_model"] for it in items}),
+                   "labels_sha256": hashlib.sha256(LABELS_FILE.read_bytes()).hexdigest(),
+                   "runs": dict(zip(RUN_NAMES, key["runs"])), "not_compared": missing, **c}
+            path = compare_file(args.judge_version)
+            path.write_text(json.dumps(out, indent=2) + "\n", encoding="utf-8", newline="\n")
+            print(f"\nSaved {path.relative_to(R.REPO) if path.is_relative_to(R.REPO) else path}")
+        return 1 if missing else 0
     ap.print_help()
     return 2
 
