@@ -11,8 +11,9 @@ From the repo root (needs `aws login` except --summary and --show):
     python -m eval.judge RUN_ID --summary        the counts, from stored verdicts (no model calls)
     python -m eval.judge RUN_ID --show q004      one stored verdict in full
 
-Calibration is blind: don't judge a run whose answers Prit is labelling until his labels are committed
-(the --smoke example uses nothing from the golden set).
+Calibration is blind: the judge refuses a run on the calibration sheet (eval/calibration/key.json) until
+every label is filled in and eval/calibration/ is committed (eval/calibrate.py). The --smoke example uses
+nothing from the golden set.
 
 What the judge (Sonnet 4.5, config.judge_model, temperature 0) receives, per the spec: the question,
 today's date, the passages the assistant was given (rebuilt from the index by their chunk IDs, in the
@@ -458,6 +459,10 @@ def main(argv=None) -> int:
         print(show(db, args.run_id, args.show))
         return 0
     if not args.summary:
+        from eval.calibrate import blind_block
+        if (why := blind_block(args.run_id)):
+            print(f"Not judged: {why}")
+            return 2
         print(f"Judging run {args.run_id} with rubric {JUDGE_VERSION} ({DEFAULT.judge_model}).")
         try:
             judge_run(db, args.run_id, config=DEFAULT, ids=args.ids, rejudge=args.rejudge)
