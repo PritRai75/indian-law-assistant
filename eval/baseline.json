@@ -1,0 +1,295 @@
+{
+ "about": "Retrieval on the dev split with committed question vectors; CI fails if any question's rank gets worse. Change only through a commit that says why (python -m eval.retrieval).",
+ "search": {
+  "k": 5,
+  "mode": "hybrid",
+  "rrf_k": 60,
+  "pool": 50
+ },
+ "split": "dev",
+ "overall": {
+  "hit_at_1": [
+   5,
+   16
+  ],
+  "hit_at_3": [
+   9,
+   16
+  ],
+  "hit_at_5": [
+   9,
+   16
+  ],
+  "mrr": 0.438,
+  "gold_recall": [
+   14,
+   25
+  ]
+ },
+ "by_persona": {
+  "compliance": {
+   "hit_at_1": [
+    2,
+    8
+   ],
+   "hit_at_3": [
+    4,
+    8
+   ],
+   "hit_at_5": [
+    4,
+    8
+   ],
+   "mrr": 0.375,
+   "gold_recall": [
+    7,
+    13
+   ]
+  },
+  "frontline": {
+   "hit_at_1": [
+    3,
+    8
+   ],
+   "hit_at_3": [
+    5,
+    8
+   ],
+   "hit_at_5": [
+    5,
+    8
+   ],
+   "mrr": 0.5,
+   "gold_recall": [
+    7,
+    12
+   ]
+  }
+ },
+ "questions": {
+  "q001": {
+   "persona": "frontline",
+   "type": "unauthorized",
+   "first_gold_rank": 1,
+   "gold_found": 1,
+   "gold_total": 1,
+   "retrieved": [
+    "1005.6(b)(3)-cmt",
+    "1026.52(b)(2)(i)-cmt#1",
+    "1026.55(a)-cmt#1",
+    "1026.5(b)(2)(ii)-cmt#2",
+    "1005.17(b)-cmt#4"
+   ]
+  },
+  "q002": {
+   "persona": "frontline",
+   "type": "unauthorized",
+   "first_gold_rank": null,
+   "gold_found": 0,
+   "gold_total": 1,
+   "retrieved": [
+    "1026.52(b)(2)(i)-cmt#1",
+    "1026.55(a)-cmt#1",
+    "1026.5(b)(2)(ii)-cmt#2",
+    "1026.52(b)(1)(ii)-cmt#1",
+    "1026.55(b)(3)-cmt#2"
+   ]
+  },
+  "q003": {
+   "persona": "frontline",
+   "type": "dispute",
+   "first_gold_rank": 1,
+   "gold_found": 1,
+   "gold_total": 3,
+   "retrieved": [
+    "1026.13(a)(3)-cmt",
+    "1026.55(b)(1)-cmt#3",
+    "1026.12(c)-cmt#1",
+    "1026.9(h)(3)-cmt",
+    "1026.55(a)-cmt#1"
+   ]
+  },
+  "q004": {
+   "persona": "compliance",
+   "type": "deadline",
+   "first_gold_rank": 2,
+   "gold_found": 2,
+   "gold_total": 2,
+   "retrieved": [
+    "1005.10(a)",
+    "1005.11(c)",
+    "1005.6(b)(2)-cmt",
+    "1026.9(h)(3)-cmt",
+    "1026.5(b)(2)(ii)-cmt#2"
+   ]
+  },
+  "q005": {
+   "persona": "compliance",
+   "type": "fees_terms",
+   "first_gold_rank": null,
+   "gold_found": 0,
+   "gold_total": 2,
+   "retrieved": [
+    "1026.59(a)(1)-cmt#3",
+    "1026.55(b)-cmt#3",
+    "1026.59(d)-cmt#3",
+    "1026.59(a)(1)-cmt#2",
+    "1026.55(b)-cmt#2"
+   ]
+  },
+  "q006": {
+   "persona": "frontline",
+   "type": "payments_disclosures",
+   "first_gold_rank": null,
+   "gold_found": 0,
+   "gold_total": 1,
+   "retrieved": [
+    "1026.7(b)(11)-cmt#1",
+    "1026.10(d)",
+    "1026.7(b)(11)-cmt#3",
+    "1026.7(b)(11)",
+    "1026.52(b)(1)(ii)-cmt#3"
+   ]
+  },
+  "q007": {
+   "persona": "compliance",
+   "type": "unauthorized",
+   "first_gold_rank": null,
+   "gold_found": 0,
+   "gold_total": 1,
+   "retrieved": [
+    "1005.12(a)-cmt#2",
+    "1026.12(c)(1)-cmt",
+    "1005.17(b)-cmt#4",
+    "1026.62(b)",
+    "1026.2(a)(15)-cmt#2"
+   ]
+  },
+  "q016": {
+   "persona": "compliance",
+   "type": "fees_terms",
+   "first_gold_rank": null,
+   "gold_found": 0,
+   "gold_total": 1,
+   "retrieved": [
+    "1026.56(j)-cmt#3",
+    "1026.56(j)",
+    "1026.56(b)(2)-cmt",
+    "1026.56(j)-cmt#1",
+    "1026.52(b)(2)(i)-cmt#3"
+   ]
+  },
+  "q018": {
+   "persona": "compliance",
+   "type": "payments_disclosures",
+   "first_gold_rank": 2,
+   "gold_found": 2,
+   "gold_total": 2,
+   "retrieved": [
+    "1026.5(b)(2)(ii)-cmt#1",
+    "1026.5(b)(2)",
+    "1026.7(b)(11)-cmt#3",
+    "1026.5(b)(2)(ii)-cmt#4",
+    "1026.5(b)(2)(ii)-cmt#2"
+   ]
+  },
+  "q020": {
+   "persona": "frontline",
+   "type": "reg_e_account",
+   "first_gold_rank": null,
+   "gold_found": 0,
+   "gold_total": 1,
+   "retrieved": [
+    "1026.61(a)(4)(ii)(A)-cmt",
+    "1005.17(b)-cmt#1",
+    "1026.60(f)-cmt",
+    "1026.12(c)(1)-cmt",
+    "1026.12(a)(1)-cmt#1"
+   ]
+  },
+  "q023": {
+   "persona": "frontline",
+   "type": "cross_reg",
+   "first_gold_rank": 2,
+   "gold_found": 2,
+   "gold_total": 2,
+   "retrieved": [
+    "1005.6(b)(3)-cmt",
+    "1005.6(b)(1)-cmt",
+    "1026.12(b)-cmt",
+    "1005.6(b)(2)-cmt",
+    "1026.12(b)"
+   ]
+  },
+  "q034": {
+   "persona": "compliance",
+   "type": "deadline",
+   "first_gold_rank": 1,
+   "gold_found": 2,
+   "gold_total": 3,
+   "retrieved": [
+    "1005.11(c)",
+    "1005.11(c)(4)-cmt",
+    "1005.11(b)(1)-cmt",
+    "1005.11(c)(3)-cmt",
+    "1026.10(a)-cmt"
+   ]
+  },
+  "q038": {
+   "persona": "frontline",
+   "type": "fees_terms",
+   "first_gold_rank": 1,
+   "gold_found": 2,
+   "gold_total": 2,
+   "retrieved": [
+    "1026.55(a)-cmt#1",
+    "1026.55(b)-cmt#3",
+    "1026.55(b)(3)-cmt#2",
+    "1026.55(b)(4)-cmt#2",
+    "1026.52(b)(1)(ii)-cmt#1"
+   ]
+  },
+  "q049": {
+   "persona": "compliance",
+   "type": "dispute",
+   "first_gold_rank": 1,
+   "gold_found": 1,
+   "gold_total": 1,
+   "retrieved": [
+    "1026.13(b)",
+    "1026.13(f)-cmt#1",
+    "1026.13(e)-cmt",
+    "1026.7(b)(9)-cmt",
+    "1026.7(a)(9)-cmt"
+   ]
+  },
+  "q052": {
+   "persona": "frontline",
+   "type": "reg_e_account",
+   "first_gold_rank": 2,
+   "gold_found": 1,
+   "gold_total": 1,
+   "retrieved": [
+    "1005.10(c)-cmt",
+    "1005.10(c)",
+    "1026.9(h)(3)-cmt",
+    "1026.7(b)(11)-cmt#3",
+    "1026.9(c)(1)(i)-cmt"
+   ]
+  },
+  "q053": {
+   "persona": "compliance",
+   "type": "dispute",
+   "first_gold_rank": null,
+   "gold_found": 0,
+   "gold_total": 1,
+   "retrieved": [
+    "1026.13(a)(5)-cmt",
+    "1026.13(g)(2)-cmt",
+    "1026.53-cmt#2",
+    "1026.52(b)(1)(ii)-cmt#3",
+    "1026.13(f)-cmt#1"
+   ]
+  }
+ }
+}
