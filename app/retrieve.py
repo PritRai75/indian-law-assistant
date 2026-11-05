@@ -37,7 +37,7 @@ ROOT = Path(__file__).resolve().parents[1]
 INDEX = ROOT / "index"
 RRF_K = 60          # the usual constant: dampens the gap between rank 1 and rank 2
 POOL = 50           # how deep each list goes into the fusion
-BM25_K1, BM25_B = 1.5, 0.75
+BM25_K1, BM25_B = 1.5, 0.0
 PARTS = {"E": "1005", "Z": "1026"}
 
 # Words: runs of letters. Numbers stand alone, so "1026.13(c)(2)" -> "1026", "13", "c", "2".
