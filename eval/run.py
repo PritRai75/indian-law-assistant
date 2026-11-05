@@ -6,6 +6,7 @@ From the repo root:
     python -m eval.run --split dev               the dev split
     python -m eval.run --ids q001 q004           only these questions (any split)
     python -m eval.run --split test --final      the test split: once, at the very end
+    python -m eval.run --k 2 --tool-off          the dev split with weaker settings (judge calibration)
     python -m eval.run --runs                    list the logged runs
     python -m eval.run --regrade RUN_ID          grade a logged run again from its stored answers, no model calls
 
@@ -554,6 +555,20 @@ def list_runs(db) -> str:
 
 # ================================================================ command line
 
+def config_from_args(args):
+    """The default config with --k and --tool-off applied. Both are logged with the run (config_json,
+    config_hash), so a weak run is never mistaken for a default one."""
+    from app.config import DEFAULT
+    changes = {}
+    if args.k is not None:
+        if args.k < 1:
+            raise SystemExit("--k must be at least 1")
+        changes["k"] = args.k
+    if args.tool_off:
+        changes["tool_on"] = False
+    return DEFAULT.with_(**changes)
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(prog="python -m eval.run", description=__doc__.split("\n\n")[0])
     ap.add_argument("--split", choices=["dev", "test", "unsplit"], default="dev",
@@ -563,6 +578,8 @@ def main(argv=None) -> int:
     ap.add_argument("--today", type=date.fromisoformat, default=EVAL_TODAY,
                     help=f"'today' for questions that don't state one (default {EVAL_TODAY})")
     ap.add_argument("--pause", type=float, default=0.0, help="seconds to wait between questions")
+    ap.add_argument("--k", type=int, metavar="N", help="passages given to the model (default: the config's k)")
+    ap.add_argument("--tool-off", action="store_true", help="run without the dispute_timeline tool")
     ap.add_argument("--note", default="", help="a short note saved with the run")
     ap.add_argument("--db", type=Path, default=DB_FILE, help="the SQLite file (default runs.db)")
     ap.add_argument("--runs", action="store_true", help="list the logged runs and stop")
@@ -591,7 +608,7 @@ def main(argv=None) -> int:
         print("The test split runs once, at the very end. Add --final if that's now.")
         return 2
 
-    from app.config import DEFAULT
+    config = config_from_args(args)
     items, notes = select(G.load(), None if args.ids else args.split, args.ids)
     for n in notes:
         print(n)
@@ -599,9 +616,12 @@ def main(argv=None) -> int:
         hint = " Questions without a split are run with --split unsplit." if args.split == "dev" and not args.ids else ""
         print(f"No labelled questions to run.{hint}")
         return 2
-    print(f"Running {len(items)} question(s); answers are logged as they come in ({args.db.name}).")
+    changed = {k: v for k, v in (("k", args.k), ("tool_on", False if args.tool_off else None)) if v is not None}
+    print(f"Running {len(items)} question(s)"
+          + (f" with {', '.join(f'{k} = {v}' for k, v in changed.items())}" if changed else "")
+          + f"; answers are logged as they come in ({args.db.name}).")
     try:
-        run_id, summary = run(items, DEFAULT, db=db, split=None if args.ids else args.split, ids=args.ids,
+        run_id, summary = run(items, config, db=db, split=None if args.ids else args.split, ids=args.ids,
                               today=args.today, pause=args.pause, note=args.note)
     except Exception as e:                          # noqa: BLE001 - the first question failed
         print(f"\nThe first question failed, so the run stopped: {type(e).__name__}: {e}")
