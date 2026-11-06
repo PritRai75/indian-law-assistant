@@ -556,10 +556,12 @@ def list_runs(db) -> str:
 # ================================================================ command line
 
 def config_from_args(args):
-    """The default config with --k and --tool-off applied. Both are logged with the run (config_json,
-    config_hash), so a weak run is never mistaken for a default one."""
+    """The default config with --k, --tool-off and --search applied. All are logged with the run
+    (config_json, config_hash), so a weak or experiment run is never mistaken for a default one."""
     from app.config import DEFAULT
     changes = {}
+    if getattr(args, "search", None):
+        changes["search_mode"] = args.search
     if args.k is not None:
         if args.k < 1:
             raise SystemExit("--k must be at least 1")
@@ -580,6 +582,8 @@ def main(argv=None) -> int:
     ap.add_argument("--pause", type=float, default=0.0, help="seconds to wait between questions")
     ap.add_argument("--k", type=int, metavar="N", help="passages given to the model (default: the config's k)")
     ap.add_argument("--tool-off", action="store_true", help="run without the dispute_timeline tool")
+    ap.add_argument("--search", choices=["vector", "bm25", "hybrid"],
+                    help="search mode (default: the config's, hybrid; experiment 2 compares them)")
     ap.add_argument("--note", default="", help="a short note saved with the run")
     ap.add_argument("--db", type=Path, default=DB_FILE, help="the SQLite file (default runs.db)")
     ap.add_argument("--runs", action="store_true", help="list the logged runs and stop")

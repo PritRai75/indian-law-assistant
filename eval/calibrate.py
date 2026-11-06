@@ -3,11 +3,20 @@ Prit labels about 40 logged answers himself, before any judge verdict on them ex
 measures the judge against an independent reading.
 
 From the repo root (no AWS call):
-    python -m eval.calibrate --sheet RUN_DEFAULT RUN_WEAK   pick the 40 answers, write the sheet and the labels file
+    python -m eval.calibrate --sheet RUN_A RUN_B --set set2   pick the answers (30 by default), write the sheet and labels file
+    (--set set2, set3, ... puts a new set in its own folder; without --set, commands mean set 1)
     python -m eval.calibrate --check                        check labels.toml: what's filled in, what's wrong
     python -m eval.calibrate --compare                      the judge against the labels (after judging both runs)
     python -m eval.calibrate --compare --save               the same, also saved as eval/calibration/compare-j1.json
     python -m eval.calibrate --compare --judge-version j1   an earlier rubric's verdicts (both rounds are reported)
+
+Sets (session 20). Set 1 (session 19: 40 answers from r20261105T140818Z and r20261105T141055Z) is kept
+as committed but set aside as a measure: items c28-c40 were labelled against the wrong questions (their
+notes describe q028-q040). Its disagreements were used to design rubric j2. Set 2 (Prit: 30 fresh
+answers from two new dev runs with settings different from set 1's, so the answers differ at
+temperature 0) is labelled blind with j2 already fixed, then judged with j1 and j2. --sheet refuses a
+run that another set already uses. The labels file shows each question's first words above its block,
+so a mix-up shows while labelling.
 
 Files:
 - scratch/calibration/sheet.html   read this in a browser (git-ignored; it holds the passages, so it's big)
@@ -28,6 +37,8 @@ How the 40 are picked (Prit's choice, session 19: 40 by seeded pick; details Cla
 3. Inside each group, a seeded shuffle (CALIBRATION_SEED) picks which; then the 40 are shuffled again
    and numbered c01-c40 in that order, so neither the run nor the question order shows.
 The sheet never shows the run, the question ID, code-graded metrics or any judge output.
+The rules at the top of the sheet follow the current rubric (j2 from session 20; set 1's sheet
+showed j1's rules).
 
 Part 2, --compare (Claude's design, session 20, open to Prit's push-back). It runs only once the labels
 are complete and committed, and reads the judge's stored verdicts for the same 40 answers (runs.db,
@@ -64,13 +75,41 @@ from eval import judge as J
 from eval import run as R
 
 CALIBRATION_SEED = 20261105
-TARGET = 40
+TARGET = 30                                 # set 2 (Prit, session 20); set 1 had 40
 ANSWERABLE_SHARE = 16 / 24                  # the dev split: 16 answerable, 8 declines
 LABELS = ("faithful", "partially_faithful", "unfaithful")
 
-SHEET_FILE = R.REPO / "scratch" / "calibration" / "sheet.html"
-LABELS_FILE = R.REPO / "eval" / "calibration" / "labels.toml"
-KEY_FILE = R.REPO / "eval" / "calibration" / "key.json"
+CAL_DIR = R.REPO / "eval" / "calibration"
+SHEET_FILE = R.REPO / "scratch" / "calibration" / "sheet.html"      # set 1's files (session 19)
+LABELS_FILE = CAL_DIR / "labels.toml"
+KEY_FILE = CAL_DIR / "key.json"
+
+
+def set_paths(name: str = "set1") -> dict:
+    """The sheet, labels and key of one calibration set. Set 1 (session 19) sits at the top of
+    eval/calibration/; later sets each have a folder, eval/calibration/set2/ and so on."""
+    if name == "set1":
+        return {"sheet": SHEET_FILE, "labels": LABELS_FILE, "key": KEY_FILE}
+    if not name.startswith("set") or not name[3:].isdigit():
+        raise SystemExit(f"a set is named set1, set2, ...; not {name!r}")
+    return {"sheet": R.REPO / "scratch" / "calibration" / name / "sheet.html",
+            "labels": CAL_DIR / name / "labels.toml", "key": CAL_DIR / name / "key.json"}
+
+
+def all_keys(cal_dir: Path | None = None) -> list[Path]:
+    """Every calibration set's key.json."""
+    cal_dir = cal_dir or CAL_DIR
+    return [k for k in [cal_dir / "key.json", *sorted(cal_dir.glob("set*/key.json"))] if k.exists()]
+
+
+def run_name(db, run_id: str) -> str:
+    """A short name from the run's logged settings, e.g. "hybrid k5" or "vector k3 no tool"."""
+    row = db.execute("SELECT config_json FROM runs WHERE run_id = ?", (run_id,)).fetchone()
+    try:
+        c = json.loads(row[0])
+        return f"{c['search_mode']} k{c['k']}" + ("" if c["tool_on"] else " no tool")
+    except (TypeError, KeyError, ValueError):
+        return run_id
 
 
 # ================================================================ picking the 40
@@ -144,11 +183,21 @@ RULES = """
 <ul>
 <li><b>Judge only against the passages and tool results shown</b>, not what you know or the reference
 answer. A claim is supported when a passage or tool result states it or it follows directly from one.
-A date or amount needs a passage or tool result that gives it.</li>
+Facts the question states (dates, weekdays, amounts) count as given.</li>
+<li><b>Dates:</b> a date a passage or tool result gives is supported. So is a date counted in calendar
+days from a date in the question or a tool result, by a period a passage or tool result states, if the
+count is right (check it). Business-day counts, and "that day is a holiday / a business day", need a
+tool result.</li>
 <li><b>Not supported:</b> stated from memory (network rules, state law, statutes), contradicting a passage,
 "must" turned into "may", a condition dropped or added, or text whose Status line isn't "in force"
-presented as law in force.</li>
-<li><b>Not claims:</b> citations, "[citation removed]", and "this is outside the regulations / the passages".</li>
+presented as law in force. <b>Naming the law or provision that governs something</b> when no passage
+says so ("that's the Fair Credit Reporting Act", "see Subpart B") is not supported either; in a decline
+it is a side claim.</li>
+<li><b>Judge a claim at the scope it states:</b> "not prohibited by § 1026.10(d)" is supported if that
+passage supports it. Something left out is not an unsupported claim; it shows in the key facts.</li>
+<li><b>Not claims:</b> citations, "[citation removed]", "this is outside the regulations / the passages",
+and suggestions about what to do or review next ("consult § 1026.13(a)") unless they state what a rule
+requires.</li>
 <li><b>faithful</b>: every claim supported (also when there are no claims).
 <b>partially_faithful</b>: something unsupported, but everything that answers the main ask is supported.
 <b>unfaithful</b>: something that answers the main ask is unsupported.</li>
@@ -194,40 +243,60 @@ def sheet_html(chosen: list[tuple], ids: list[str], chunks: dict) -> str:
             f'<nav>{nav}</nav>{body}</main></body></html>')
 
 
-def labels_template(chosen: list[tuple], ids: list[str]) -> str:
-    head = ("# Judge calibration labels (rubric j1). Written by Prit Raithatha.\n"
-            "# Read each item in scratch/calibration/sheet.html and fill in its block here.\n"
+def preview(question: str, words: int = 10) -> str:
+    """The question's first words, for a comment in the labels file (no quotes or line breaks)."""
+    w = question.replace('"', "'").split()
+    return " ".join(w[:words]) + (" ..." if len(w) > words else "")
+
+
+def labels_template(chosen: list[tuple], ids: list[str], sheet: str = "scratch/calibration/sheet.html",
+                    check_flag: str = "") -> str:
+    head = (f"# Judge calibration labels (rules of rubric {J.JUDGE_VERSION}). Written by Prit Raithatha.\n"
+            f"# Read each item in {sheet} and fill in its block here.\n"
             "#   faithfulness  \"faithful\", \"partially_faithful\" or \"unfaithful\"\n"
             "#   key_facts     one true or false per key fact, in the sheet's order, e.g. [true, false]\n"
             "#   note          optional, a few words\n"
-            "# Check any time: python -m eval.calibrate --check. Labels are final once committed:\n"
+            "# Label only from the sheet. Each block starts with the first words of its question: check\n"
+            "# they match the sheet's item before you fill it in.\n"
+            f"# Check any time: python -m eval.calibrate --check{check_flag}. Labels are final once committed:\n"
             "# don't change them after seeing the judge's verdicts.\n")
-    blocks = [f'\n[[label]]\nid = "{c}"\nfaithfulness = ""\n'
+    blocks = [f'\n# {c}: "{preview(item.question)}"\n[[label]]\nid = "{c}"\nfaithfulness = ""\n'
               f'key_facts = []        # {len(item.key_facts or [])} key fact{"s" if len(item.key_facts or []) != 1 else ""}\n'
               f'note = ""\n' for c, (_, item, _, _) in zip(ids, chosen)]
     return head + "".join(blocks)
 
 
-def write_sheet(db, runs: list[str], *, seed=CALIBRATION_SEED, chunks=None, force=False,
-                sheet=SHEET_FILE, labels=LABELS_FILE, key=KEY_FILE) -> dict:
+def write_sheet(db, runs: list[str], *, seed=CALIBRATION_SEED, chunks=None, force=False, size=TARGET,
+                sheet=SHEET_FILE, labels=LABELS_FILE, key=KEY_FILE, other_keys=None) -> dict:
     """Pick the items and write the sheet, the labels file and the key. Returns the key."""
     if len(set(runs)) != len(runs):
         raise SystemExit("give two different runs")
+    for other in (all_keys() if other_keys is None else other_keys):
+        if other.resolve() != key.resolve():
+            used = set(runs) & set(json.loads(other.read_text(encoding="utf-8")).get("runs", []))
+            if used:
+                raise SystemExit(f"{', '.join(sorted(used))} already used by calibration set "
+                                 f"{other.parent.name if other.parent != CAL_DIR else 'set1'}: use fresh runs")
     if labels.exists() and not force:
         raise SystemExit(f"{labels.relative_to(R.REPO) if labels.is_relative_to(R.REPO) else labels} already "
                          "exists; it may hold your labels. Delete it yourself first if you mean to start again.")
     pools = [candidates(db, r) for r in runs]
-    chosen = pick(pools, seed)
-    if len(chosen) < TARGET:
+    chosen = pick(pools, seed, size)
+    if len(chosen) < size:
         print(f"Only {len(chosen)} judgeable answers in these runs; the sheet has all of them.")
     ids = [f"c{n:02d}" for n in range(1, len(chosen) + 1)]
     chunks = chunks or J.chunk_lookup()
     sheet.parent.mkdir(parents=True, exist_ok=True)
     labels.parent.mkdir(parents=True, exist_ok=True)
     sheet.write_text(sheet_html(chosen, ids, chunks), encoding="utf-8")
-    template = labels_template(chosen, ids)
+    flag = "" if labels.parent == CAL_DIR else f" --set {labels.parent.name}"
+    template = labels_template(chosen, ids, sheet.relative_to(R.REPO).as_posix() if sheet.is_relative_to(R.REPO)
+                               else sheet.as_posix(), flag)
     labels.write_text(template, encoding="utf-8", newline="\n")
-    k = {"seed": seed, "runs": runs, "judge_version": J.JUDGE_VERSION,
+    names = [run_name(db, r) for r in runs]
+    if len(set(names)) < len(names):
+        names = [f"{n} #{i}" for i, n in enumerate(names, 1)]
+    k = {"seed": seed, "size": size, "runs": runs, "run_names": names, "judge_version": J.JUDGE_VERSION,
          "golden_sha256": hashlib.sha256(G.GOLDEN_FILE.read_bytes()).hexdigest(),
          "items": {c: {"run_id": r, "qid": item.id, "key_facts": len(item.key_facts or []),
                        "should_abstain": item.should_abstain, "persona": item.persona}
@@ -303,9 +372,15 @@ def git_dirty(path: Path) -> bool | None:
     return bool(out.strip())
 
 
-def blind_block(run_id: str, labels=LABELS_FILE, key=KEY_FILE, dirty=git_dirty) -> str | None:
-    """Why the judge must not judge this run yet, or None. A run on the calibration sheet is judged only
-    once every label is filled in, well-formed and committed, so Prit never sees a verdict first."""
+def blind_block(run_id: str, labels=None, key=None, dirty=git_dirty, cal_dir=None) -> str | None:
+    """Why the judge must not judge this run yet, or None. A run on any calibration set's sheet is
+    judged only once that set's labels are all filled in, well-formed and committed, so Prit never sees
+    a verdict first. With labels and key given, only that set is checked."""
+    if labels is None or key is None:
+        for k in all_keys(cal_dir):
+            if (why := blind_block(run_id, k.parent / "labels.toml", k, dirty)):
+                return why
+        return None
     if not key.exists():
         return None
     if run_id not in json.loads(key.read_text(encoding="utf-8")).get("runs", []):
@@ -316,15 +391,15 @@ def blind_block(run_id: str, labels=LABELS_FILE, key=KEY_FILE, dirty=git_dirty) 
                 + (f" ({len(problems)} problem(s); see python -m eval.calibrate --check)" if problems else "")
                 + ". Judging it now would show you verdicts before your labels are final.")
     if any(dirty(f) for f in (labels, key)):        # the two files only: a saved compare-*.json is fine
-        return (f"{run_id} is on the calibration sheet: commit eval/calibration/ first, so the labels are "
-                "fixed before any verdict exists.")
+        return (f"{run_id} is on a calibration sheet: commit {labels.parent.relative_to(R.REPO).as_posix() if labels.is_relative_to(R.REPO) else labels.parent}/ "
+                "first, so the labels are fixed before any verdict exists.")
     return None
 
 
 # ================================================================ part 2: the judge against Prit's labels
 
 ORDER = {"unfaithful": 0, "partially_faithful": 1, "faithful": 2}   # for "more lenient" / "stricter"
-RUN_NAMES = ("default", "weak")              # key.json's runs, in the order --sheet was given them
+RUN_NAMES = ("default", "weak")              # set 1's runs (its key.json has no run_names)
 BOOTSTRAP_REPS = 2000
 Z95 = 1.959963984540054
 
@@ -399,6 +474,7 @@ def paired_items(db, *, judge_version: str = J.JUDGE_VERSION, labels=LABELS_FILE
     """(items, not_compared). Each item joins one label block to the judge's verdict on the same answer.
     not_compared lists (cid, reason) for answers without a usable verdict."""
     k = json.loads(key.read_text(encoding="utf-8"))
+    names = k.get("run_names") or RUN_NAMES
     blocks = {b["id"]: b for b in tomllib.loads(labels.read_text(encoding="utf-8"))["label"]}
     items, missing = [], []
     for cid, info in k["items"].items():
@@ -418,7 +494,7 @@ def paired_items(db, *, judge_version: str = J.JUDGE_VERSION, labels=LABELS_FILE
             missing.append((cid, f"the verdict has {len(v.key_facts)} key facts, the label {len(b['key_facts'])}"))
             continue
         items.append({"cid": cid, "qid": info["qid"], "run_id": info["run_id"],
-                      "run": RUN_NAMES[k["runs"].index(info["run_id"])],
+                      "run": names[k["runs"].index(info["run_id"])],
                       "decline": bool(info["should_abstain"]), "persona": info["persona"],
                       "prit": b["faithfulness"], "judge": v.faithfulness,
                       "prit_kf": list(b["key_facts"]), "judge_kf": [x.covered for x in v.key_facts],
@@ -442,8 +518,8 @@ def compare(items: list[dict], *, reps: int = BOOTSTRAP_REPS, seed: int = CALIBR
     lenient = [it["cid"] for it in items if ORDER[it["judge"]] > ORDER[it["prit"]]]
     strict = [it["cid"] for it in items if ORDER[it["judge"]] < ORDER[it["prit"]]]
     slices = {}
-    for name, test in [("run: default", lambda it: it["run"] == "default"),
-                       ("run: weak", lambda it: it["run"] == "weak"),
+    runs = list(dict.fromkeys(it["run"] for it in items))
+    for name, test in [*[(f"run: {r}", lambda it, r=r: it["run"] == r) for r in runs],
                        ("answerable", lambda it: not it["decline"]), ("declines", lambda it: it["decline"]),
                        ("frontline", lambda it: it["persona"] == "frontline"),
                        ("compliance", lambda it: it["persona"] == "compliance")]:
@@ -537,7 +613,7 @@ def compare_report(c: dict, *, judge_version: str, missing: list[tuple]) -> str:
         "  (f/not k: kappa on faithful or not)",
     ]
     for name, s in c["slices"].items():
-        lines.append(f"  {name:16}{s['n']:>4}{s['agree']:>5}/{s['n']:<3}{_num(s['kappa']):>8}"
+        lines.append(f"  {name[:16]:16}{s['n']:>4}{s['agree']:>5}/{s['n']:<3}{_num(s['kappa']):>8}"
                      f"{_num(s['kappa_binary']):>9}{s['facts_agree']:>9}/{s['facts']:<4}{_num(s['facts_kappa']):>8}")
     lines += ["", f"Disagreements ({len(c['disagreements'])}): see one in full with "
                   "python -m eval.judge RUN_ID --show QID"]
@@ -546,7 +622,7 @@ def compare_report(c: dict, *, judge_version: str, missing: list[tuple]) -> str:
         if d["prit"] != d["judge"]:
             what.append(f"faithfulness Prit {short[d['prit']]}, judge {short[d['judge']]}")
         what += [f"key fact {x['n']} Prit {str(x['prit']).lower()}, judge {str(x['judge']).lower()}" for x in d["facts"]]
-        lines.append(f"  {d['cid']} {d['qid']} {d['run']:7} {'; '.join(what)}")
+        lines.append(f"  {d['cid']} {d['qid']} {d['run']:<7} {'; '.join(what)}")
         lines.append(f"      Prit:  {d['note']}" if d["note"] else "      Prit:  (no note)")
         lines.append(f"      judge: {d['rationale']}")
         lines.append(f"      python -m eval.judge {d['run_id']} --show {d['qid']}")
@@ -569,16 +645,18 @@ def compare_refusal(labels=LABELS_FILE, key=KEY_FILE, dirty=git_dirty) -> str | 
     return None
 
 
-def compare_file(judge_version: str) -> Path:
-    return LABELS_FILE.parent / f"compare-{judge_version}.json"
+def compare_file(judge_version: str, labels: Path = LABELS_FILE) -> Path:
+    return labels.parent / f"compare-{judge_version}.json"
 
 
 # ================================================================ command line
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(prog="python -m eval.calibrate", description=__doc__.split("\n\n")[0])
-    ap.add_argument("--sheet", nargs=2, metavar=("RUN_DEFAULT", "RUN_WEAK"),
+    ap.add_argument("--sheet", nargs=2, metavar=("RUN_A", "RUN_B"),
                     help="pick the items from these two runs and write the sheet and labels file")
+    ap.add_argument("--set", default="set1", help="which calibration set: set1 (session 19), set2, ... (default set1)")
+    ap.add_argument("--size", type=int, default=TARGET, help=f"with --sheet: how many answers (default {TARGET})")
     ap.add_argument("--check", action="store_true", help="check labels.toml")
     ap.add_argument("--compare", action="store_true", help="the judge's verdicts against the labels")
     ap.add_argument("--judge-version", default=J.JUDGE_VERSION, help=f"with --compare: whose verdicts (default {J.JUDGE_VERSION})")
@@ -587,6 +665,9 @@ def main(argv=None) -> int:
     args = ap.parse_args(argv)
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")
+    P = set_paths(args.set)
+    rel = lambda path: path.relative_to(R.REPO).as_posix() if path.is_relative_to(R.REPO) else str(path)  # noqa: E731
+    flag = "" if args.set == "set1" else f" --set {args.set}"
     if args.sheet:
         db = J.connect(args.db)
         judged = db.execute("SELECT COUNT(*) FROM judgements WHERE run_id IN (?, ?)", args.sheet).fetchone()[0]
@@ -594,43 +675,43 @@ def main(argv=None) -> int:
             print(f"Refused: {judged} judge verdict(s) already exist for these runs, so labelling them "
                   "wouldn't be blind. Use two fresh runs.")
             return 2
-        k = write_sheet(db, list(args.sheet))
+        k = write_sheet(db, list(args.sheet), size=args.size, **P)
         print(spread(k))
-        print(f"\nRead:   {SHEET_FILE.relative_to(R.REPO)}\nLabel:  {LABELS_FILE.relative_to(R.REPO)}\n"
-              f"Check:  python -m eval.calibrate --check\n(Don't open {KEY_FILE.relative_to(R.REPO)} while labelling.)")
+        print(f"\nRead:   {rel(P['sheet'])}\nLabel:  {rel(P['labels'])}\n"
+              f"Check:  python -m eval.calibrate --check{flag}\n(Don't open {rel(P['key'])} while labelling.)")
         return 0
     if args.check:
-        done, total, problems = check()
+        done, total, problems = check(P["labels"], P["key"])
         print(f"{done} of {total} labelled.")
         for p in problems:
             print(f"  {p}")
         if not problems and done == total:
-            print("All labelled and well-formed: commit eval/calibration/ before running the judge on these runs.")
+            print(f"All labelled and well-formed: commit {rel(P['labels'].parent)}/ before running the judge on these runs.")
         return 1 if problems else 0
     if args.compare:
-        if (why := compare_refusal(LABELS_FILE, KEY_FILE)):
+        if (why := compare_refusal(P["labels"], P["key"])):
             print(f"Not compared: {why}.")
             return 2
-        key = json.loads(KEY_FILE.read_text(encoding="utf-8"))
+        key = json.loads(P["key"].read_text(encoding="utf-8"))
         if key.get("golden_sha256") != hashlib.sha256(G.GOLDEN_FILE.read_bytes()).hexdigest():
             print("Note: eval/golden.toml has changed since the sheet was made; key facts are compared by "
                   "position, so check any item whose facts changed.\n")
         items, missing = paired_items(J.connect(args.db), judge_version=args.judge_version,
-                                      labels=LABELS_FILE, key=KEY_FILE)
+                                      labels=P["labels"], key=P["key"])
         if not items:
             print(f"Not compared: no {args.judge_version} verdicts on the calibration answers yet. Judge both runs "
-                  "first: " + " and ".join(f"python -m eval.judge {r}" for r in key["runs"]))
+                  "first: " + " and ".join(f"python -m eval.judge {r} --rubric {args.judge_version}" for r in key["runs"]))
             return 2
         c = compare(items)
-        print(compare_report(c, judge_version=args.judge_version, missing=missing))
+        print(f"Calibration {args.set}\n" + compare_report(c, judge_version=args.judge_version, missing=missing))
         if args.save:
-            out = {"judge_version": args.judge_version,
+            out = {"set": args.set, "judge_version": args.judge_version,
                    "judge_models": sorted({it["judge_model"] for it in items}),
-                   "labels_sha256": hashlib.sha256(LABELS_FILE.read_bytes()).hexdigest(),
-                   "runs": dict(zip(RUN_NAMES, key["runs"])), "not_compared": missing, **c}
-            path = compare_file(args.judge_version)
+                   "labels_sha256": hashlib.sha256(P["labels"].read_bytes()).hexdigest(),
+                   "runs": dict(zip(key.get("run_names") or RUN_NAMES, key["runs"])), "not_compared": missing, **c}
+            path = compare_file(args.judge_version, P["labels"])
             path.write_text(json.dumps(out, indent=2) + "\n", encoding="utf-8", newline="\n")
-            print(f"\nSaved {path.relative_to(R.REPO) if path.is_relative_to(R.REPO) else path}")
+            print(f"\nSaved {rel(path)}")
         return 1 if missing else 0
     ap.print_help()
     return 2

@@ -8,6 +8,7 @@ From the repo root (needs `aws login` except --summary and --show):
     python -m eval.judge RUN_ID                  judge every answer in the run not yet judged with this rubric
     python -m eval.judge RUN_ID --ids q004 q009  only these questions
     python -m eval.judge RUN_ID --rejudge        judge again, replacing this rubric version's verdicts
+    python -m eval.judge RUN_ID --rubric j1      use an earlier rubric (verdicts are stored per version)
     python -m eval.judge RUN_ID --summary        the counts, from stored verdicts (no model calls)
     python -m eval.judge RUN_ID --show q004      one stored verdict in full
 
@@ -43,6 +44,23 @@ Choices marked * are Claude's (session 19), open to Prit's push-back:
   party and condition in the fact must be there.
 - * Verdicts are stored per rubric version (JUDGE_VERSION); a rubric edit fails tests/test_judge.py
   until the version is bumped, so verdicts from different rubrics are never mixed.
+
+Rubric j2 (session 20), the spec's one revision. Prit chose all four changes, which Claude proposed
+after reading the disagreements on calibration set 1 (40 answers, set aside as a measure after a
+labelling mix-up and used only to design j2). j2 is fixed before set 2 (30 fresh answers) is labelled,
+so set 2 measures j1 and j2 on answers neither was written from. j1 stays runnable (--rubric j1).
+1. Naming a law, part, subpart or provision as governing something, with no passage or tool result
+   saying so ("governed by the Fair Credit Reporting Act", "see Subpart B"), is an unsupported claim;
+   in a decline it is a side claim (so partially_faithful, not unfaithful). Prompt rule 4 and
+   decision 48: declines say the topic is outside Z and E, without naming the outside law.
+2. Dates: a calendar-day count from a date in the question or a tool result, by a period a passage or
+   tool result gives, is supported if correct (the judge checks it). Business-day counts and
+   holiday/business-day statements need a tool result: only the tool has the holiday table.
+   Facts the question states count as given.
+3. Suggestions about what to do or review next ("consult § 1026.13(a)") aren't claims unless they
+   state what a rule requires.
+4. A claim is judged at the scope it states ("not prohibited by § 1026.10(d)" against that passage);
+   something left out is not an unsupported claim, since omissions are graded by key facts.
 """
 from __future__ import annotations
 
@@ -63,13 +81,17 @@ from pydantic import BaseModel, ConfigDict
 from eval import golden as G
 from eval import run as R
 
-JUDGE_VERSION = "j1"
-# j1 first rubric (session 19)
+JUDGE_VERSION = "j2"
+# j1 first rubric (session 19); j2 the one revision (session 20, Prit chose all four changes from the
+# disagreements on calibration set 1): naming an outside law is an unsupported claim (a side claim in
+# a decline); calendar-day counts may be worked out if correct, business days need a tool result;
+# suggestions about what to do next aren't claims; a claim is judged at the scope it states and an
+# omission is a key-fact matter.
 
 GUARD_CAUSES = R.GUARD_CAUSES          # the guard's fixed fallback texts are not judged
 MAX_TOKENS = 3000                       # a claims list for a six-sentence answer fits in well under this
 
-JUDGE_PROMPT = """\
+JUDGE_PROMPT_J1 = """\
 You grade one answer written by an assistant for staff at a US bank and credit card issuer. The \
 assistant answers questions about Regulation E (12 CFR Part 1005) and Regulation Z (12 CFR Part 1026) \
 using only the numbered passages it was given and the results of a date tool, dispute_timeline. You \
@@ -113,6 +135,68 @@ Reply with one JSON object and nothing else, no text before or after it and no c
  "rationale": "one sentence"}
 List every key fact once, by its number, in order.
 """
+
+JUDGE_PROMPT_J2 = """\
+You grade one answer written by an assistant for staff at a US bank and credit card issuer. The \
+assistant answers questions about Regulation E (12 CFR Part 1005) and Regulation Z (12 CFR Part 1026) \
+using only the numbered passages it was given and the results of a date tool, dispute_timeline. You \
+receive what the assistant received (the question, today's date, the passages and the tool results), \
+its answer, and a reference answer with numbered key facts written by a human expert.
+
+Do three things.
+
+1. Claims. Split the answer into its claims: each separate statement of a rule, fact, date, amount, \
+deadline or conclusion. A sentence may hold several claims. For each, decide whether the passages or \
+tool results support it.
+- Supported: a passage or tool result states it, or it follows directly from one; different wording \
+is fine. Facts the question itself states (dates, weekdays, amounts, what happened) count as given.
+- Dates and day counts: a date, deadline or amount is supported when a tool result or passage gives \
+it. A date reached by counting calendar days from a date in the question or a tool result, by a \
+period a passage or tool result states, is also supported if the count is right: check the count \
+yourself. A count of business days, or a statement that a day is or isn't a business day or a \
+holiday, is supported only when a tool result gives it.
+- Not supported: no passage or tool result states it, even if it is true in real life (for example a \
+card network rule, state law or a statute stated from memory); it contradicts a passage; it changes \
+a rule's strength or scope ("must" turned into "may", a condition or exception dropped or added); or \
+it presents text from a passage whose Status line is not "in force" as law in force.
+- Naming a law, regulation part, subpart or provision as the one that governs something, when no \
+passage or tool result says so ("that is governed by the Fair Credit Reporting Act", "see Subpart B", \
+"the rule is in § 1005.5"), is a claim, and it is not supported. In an answer that declines, such a \
+statement is a side claim: it does not answer the main thing the question asks.
+- Judge a claim at the scope it states. A conclusion limited to one provision ("this is not \
+prohibited by § 1026.10(d)") is supported when that provision's passage supports it, even if other \
+rules not in the passages might also bear on the question. Something the answer leaves out is not an \
+unsupported claim: omissions are graded by the key facts.
+- The reference answer is not evidence. Judge support only against the passages and tool results.
+- Not claims: citations themselves, "[citation removed]" markers, statements that something is \
+outside the regulations or the passages or that the assistant can't answer it, and suggestions about \
+what to do or review next ("consult § 1026.13(a)", "the procedures would need to be evaluated") \
+unless they state what a rule requires. Leave those out of the claims list.
+For each claim give its source: "passage N", "tool", "question", or null when not supported.
+
+2. Faithfulness label.
+- faithful: every claim is supported (also when the answer makes no claims).
+- partially_faithful: at least one claim is not supported, but every claim that answers the main \
+thing the question asks is supported.
+- unfaithful: a claim that answers the main thing the question asks is not supported.
+
+3. Key facts. For each numbered key fact, decide whether the answer states it. Wording may differ, but \
+every date, number, amount, party and condition in the fact must be there; a fact stated only in part, \
+or with a different date or amount, is not covered. Ignore any citation inside a key fact: the fact is \
+covered if the answer states its substance, whatever the answer cites. Coverage is about what the \
+answer says, not whether the passages support it. Use the reference answer only to understand what \
+a key fact means.
+
+Reply with one JSON object and nothing else, no text before or after it and no code fence:
+{"claims": [{"claim": "...", "supported": true, "source": "passage 2"}],
+ "faithfulness": "faithful",
+ "key_facts": [{"n": 1, "covered": true}],
+ "rationale": "one sentence"}
+List every key fact once, by its number, in order.
+"""
+
+RUBRICS = {"j1": JUDGE_PROMPT_J1, "j2": JUDGE_PROMPT_J2}
+JUDGE_PROMPT = RUBRICS[JUDGE_VERSION]
 
 REPAIR = ("Your last reply could not be used ({error}). Reply again with only the JSON object described: "
           "claims, faithfulness, key_facts (one entry per key fact, numbered from 1) and rationale.")
@@ -233,10 +317,10 @@ def _client(config):
     return answer_client(config.read_timeout)
 
 
-def judge_one(message: str, n_facts: int, *, config, client) -> dict:
+def judge_one(message: str, n_facts: int, *, config, client, rubric: str = JUDGE_PROMPT) -> dict:
     """Ask the judge. Returns {"verdict": JudgeVerdict or None, "error", "usage", "calls", "latency_ms"}."""
     started = time.perf_counter()
-    req = {"modelId": config.judge_model, "system": [{"text": JUDGE_PROMPT}],
+    req = {"modelId": config.judge_model, "system": [{"text": rubric}],
            "inferenceConfig": {"temperature": 0.0, "maxTokens": MAX_TOKENS}}
     messages = [{"role": "user", "content": [{"text": message}]}]
     usage, calls, verdict, problem = {"inputTokens": 0, "outputTokens": 0}, 0, None, None
@@ -289,11 +373,11 @@ def logged_answers(db, run_id: str, ids: list[str] | None = None):
     return out
 
 
-def save(db, run_id, qid, *, config, status, skip=None, result=None, message=None):
+def save(db, run_id, qid, *, config, status, skip=None, result=None, message=None, version=JUDGE_VERSION):
     v = (result or {}).get("verdict")
     usage = (result or {}).get("usage", {})
     db.execute("INSERT OR REPLACE INTO judgements VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", (
-        run_id, qid, JUDGE_VERSION, config.judge_model, datetime.now(timezone.utc).isoformat(),
+        run_id, qid, version, config.judge_model, datetime.now(timezone.utc).isoformat(),
         status, skip, (result or {}).get("error"),
         v.faithfulness if v else None,
         sum(k.covered for k in v.key_facts) if v else None, len(v.key_facts) if v else None,
@@ -304,13 +388,16 @@ def save(db, run_id, qid, *, config, status, skip=None, result=None, message=Non
     db.commit()
 
 
-def judge_run(db, run_id, *, config, client=None, ids=None, rejudge=False, chunks=None, progress=print) -> None:
+def judge_run(db, run_id, *, config, client=None, ids=None, rejudge=False, chunks=None, progress=print,
+              version: str = JUDGE_VERSION) -> None:
     """Judge every logged answer in the run (or `ids`) that this rubric version hasn't judged yet."""
+    if version not in RUBRICS:
+        raise SystemExit(f"no rubric {version!r}; there are {', '.join(RUBRICS)}")
     done = {q for (q,) in db.execute("SELECT qid FROM judgements WHERE run_id = ? AND judge_version = ?",
-                                     (run_id, JUDGE_VERSION))}
+                                     (run_id, version))}
     todo = [(i, r, t) for i, r, t in logged_answers(db, run_id, ids) if rejudge or i.id not in done]
     if not todo:
-        progress(f"Nothing to judge: every answer in {run_id} already has a {JUDGE_VERSION} verdict "
+        progress(f"Nothing to judge: every answer in {run_id} already has a {version} verdict "
                  f"(use --rejudge to replace them).")
         return
     chunks = chunks or chunk_lookup()
@@ -318,19 +405,20 @@ def judge_run(db, run_id, *, config, client=None, ids=None, rejudge=False, chunk
     called = False
     for n, (item, resp, today) in enumerate(todo, 1):
         if (why := skip_reason(resp)):
-            save(db, run_id, item.id, config=config, status="skipped", skip=why)
+            save(db, run_id, item.id, config=config, status="skipped", skip=why, version=version)
             progress(f"  [{n}/{len(todo)}] {item.id}: skipped ({why})")
             continue
         message = judge_message(item, resp, today, chunks)
         try:
-            result = judge_one(message, len(item.key_facts or []), config=config, client=client)
+            result = judge_one(message, len(item.key_facts or []), config=config, client=client,
+                               rubric=RUBRICS[version])
         except Exception as e:                  # noqa: BLE001 - an error on the first call stops the run
             if not called:
                 raise
             result = {"verdict": None, "error": f"{type(e).__name__}: {e}"}
         called = True
         status = "judged" if result["verdict"] else "error"
-        save(db, run_id, item.id, config=config, status=status, result=result, message=message)
+        save(db, run_id, item.id, config=config, status=status, result=result, message=message, version=version)
         v = result["verdict"]
         progress(f"  [{n}/{len(todo)}] {item.id}: " + (
             f"judged ({sum(k.covered for k in v.key_facts)}/{len(v.key_facts)} key facts)" if v else
@@ -339,11 +427,11 @@ def judge_run(db, run_id, *, config, client=None, ids=None, rejudge=False, chunk
 
 # ================================================================ summary
 
-def summary(db, run_id: str) -> dict:
+def summary(db, run_id: str, version: str = JUDGE_VERSION) -> dict:
     rows = db.execute(
         "SELECT j.qid, j.status, j.skip_reason, j.faithfulness, j.kf_covered, j.kf_total, r.persona, r.should_abstain "
         "FROM judgements j JOIN results r ON r.run_id = j.run_id AND r.qid = j.qid "
-        "WHERE j.run_id = ? AND j.judge_version = ? ORDER BY j.qid", (run_id, JUDGE_VERSION)).fetchall()
+        "WHERE j.run_id = ? AND j.judge_version = ? ORDER BY j.qid", (run_id, version)).fetchall()
 
     def tally(rs):
         judged = [r for r in rs if r[1] == "judged"]
@@ -354,7 +442,7 @@ def summary(db, run_id: str) -> dict:
                 "key_facts": (sum(r[4] or 0 for r in judged), sum(r[5] or 0 for r in judged)),
                 "key_fact_share_mean": round(statistics.fmean(shares), 3) if shares else None}
 
-    out = {"run_id": run_id, "judge_version": JUDGE_VERSION, "overall": tally(rows), "by_persona": {},
+    out = {"run_id": run_id, "judge_version": version, "overall": tally(rows), "by_persona": {},
            "answerable": tally([r for r in rows if not r[7]]), "declines": tally([r for r in rows if r[7]]),
            "skipped": [(r[0], r[2]) for r in rows if r[1] == "skipped"],
            "errors": [r[0] for r in rows if r[1] == "error"]}
@@ -380,11 +468,11 @@ def report(s: dict) -> str:
     return "\n".join(lines)
 
 
-def show(db, run_id: str, qid: str) -> str:
+def show(db, run_id: str, qid: str, version: str = JUDGE_VERSION) -> str:
     row = db.execute("SELECT status, skip_reason, error, verdict_json FROM judgements "
-                     "WHERE run_id = ? AND qid = ? AND judge_version = ?", (run_id, qid, JUDGE_VERSION)).fetchone()
+                     "WHERE run_id = ? AND qid = ? AND judge_version = ?", (run_id, qid, version)).fetchone()
     if row is None:
-        return f"No {JUDGE_VERSION} verdict for {qid} in {run_id}."
+        return f"No {version} verdict for {qid} in {run_id}."
     status, skip, error, vj = row
     if status != "judged":
         return f"{qid}: {status}" + (f" ({skip})" if skip else "") + (f": {error}" if error else "")
@@ -440,7 +528,9 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser(prog="python -m eval.judge", description=__doc__.split("\n\n")[0])
     ap.add_argument("run_id", nargs="?", help="a run from python -m eval.run --runs")
     ap.add_argument("--ids", nargs="+", metavar="QID", help="only these questions")
-    ap.add_argument("--rejudge", action="store_true", help=f"replace existing {JUDGE_VERSION} verdicts")
+    ap.add_argument("--rubric", choices=list(RUBRICS), default=JUDGE_VERSION,
+                    help=f"which rubric version (default {JUDGE_VERSION}, the current one)")
+    ap.add_argument("--rejudge", action="store_true", help="replace this rubric version's existing verdicts")
     ap.add_argument("--summary", action="store_true", help="print the counts from stored verdicts, no model calls")
     ap.add_argument("--show", metavar="QID", help="print one stored verdict, no model calls")
     ap.add_argument("--smoke", action="store_true", help="judge one made-up example (checks AWS access)")
@@ -456,22 +546,22 @@ def main(argv=None) -> int:
         ap.error("give a RUN_ID (python -m eval.run --runs lists them), or --smoke")
     db = connect(args.db)
     if args.show:
-        print(show(db, args.run_id, args.show))
+        print(show(db, args.run_id, args.show, args.rubric))
         return 0
     if not args.summary:
         from eval.calibrate import blind_block
         if (why := blind_block(args.run_id)):
             print(f"Not judged: {why}")
             return 2
-        print(f"Judging run {args.run_id} with rubric {JUDGE_VERSION} ({DEFAULT.judge_model}).")
+        print(f"Judging run {args.run_id} with rubric {args.rubric} ({DEFAULT.judge_model}).")
         try:
-            judge_run(db, args.run_id, config=DEFAULT, ids=args.ids, rejudge=args.rejudge)
+            judge_run(db, args.run_id, config=DEFAULT, ids=args.ids, rejudge=args.rejudge, version=args.rubric)
         except Exception as e:                  # noqa: BLE001 - the first call failed
             print(f"\nThe first judge call failed, so judging stopped: {type(e).__name__}: {e}")
             print("This is usually the AWS login: run `aws login`, check `aws sts get-caller-identity`, and try again.")
             return 1
         print()
-    print(report(summary(db, args.run_id)))
+    print(report(summary(db, args.run_id, args.rubric)))
     return 0
 
 

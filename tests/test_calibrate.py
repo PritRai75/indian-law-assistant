@@ -2,6 +2,7 @@
 two made-up runs over the real dev questions, with made-up answers."""
 import json
 import tomllib
+from dataclasses import asdict
 
 import pytest
 
@@ -15,6 +16,7 @@ CHUNKS = J.chunk_lookup()
 SOME = list(CHUNKS)[:2]
 RUNS = ["r20990101T000000Z", "r20990101T000100Z"]
 FALLBACK = {"q020": "no_valid_citation", "q040": "output_invalid"}      # in the weak run only
+NAMES = ["hybrid k5", "hybrid k2 no tool"]                                 # from each run's logged config
 
 
 def answer(qid, run):
@@ -25,9 +27,11 @@ def answer(qid, run):
 
 @pytest.fixture
 def db(tmp_path):
+    from app.config import DEFAULT
     d = J.connect(tmp_path / "runs.db")
-    for run in RUNS:
-        d.execute("INSERT INTO runs (run_id, today_default) VALUES (?, ?)", (run, "2026-11-03"))
+    for run, config in zip(RUNS, [DEFAULT, DEFAULT.with_(k=2, tool_on=False)]):
+        d.execute("INSERT INTO runs (run_id, today_default, config_json) VALUES (?, ?, ?)",
+                  (run, "2026-11-03", json.dumps(asdict(config))))
         for item in DEV:
             R.log_result(d, run, item, answer(item.id, run), None, {"should_abstain": item.should_abstain})
     R.log_result(d, RUNS[0], G.GoldenItem.model_validate({**DEV[0].model_dump(), "id": "q999"}), None,
@@ -42,14 +46,15 @@ def files(tmp_path):
 
 
 def test_targets_follow_the_dev_proportion():
-    assert C.targets(2) == [(13, 7), (13, 7)]
+    assert C.targets(2) == [(10, 5), (10, 5)]                      # set 2: 30 (Prit, session 20)
+    assert C.targets(2, 40) == [(13, 7), (13, 7)]                  # set 1: 40
     assert C.targets(2, 41) == [(14, 7), (13, 7)]
 
 
 def test_pick_is_balanced_seeded_and_skips_fallbacks(db):
     pools = [C.candidates(db, r) for r in RUNS]
     assert [len(p) for p in pools] == [24, 22]                    # q999 failed; two fallbacks in the weak run
-    chosen = C.pick(pools)
+    chosen = C.pick(pools, total=40)
     assert len(chosen) == 40
     for run in RUNS:
         mine = [c for c in chosen if c[0] == run]
@@ -57,8 +62,8 @@ def test_pick_is_balanced_seeded_and_skips_fallbacks(db):
         assert sum(not c[1].should_abstain for c in mine) == 13
     assert not any(c[0] == RUNS[1] and c[1].id in FALLBACK for c in chosen)
     assert len({(c[0], c[1].id) for c in chosen}) == 40             # no answer twice
-    assert [(c[0], c[1].id) for c in C.pick(pools)] == [(c[0], c[1].id) for c in chosen]   # seeded
-    assert [(c[0], c[1].id) for c in C.pick(pools, seed=1)] != [(c[0], c[1].id) for c in chosen]
+    assert [(c[0], c[1].id) for c in C.pick(pools, total=40)] == [(c[0], c[1].id) for c in chosen]   # seeded
+    assert [(c[0], c[1].id) for c in C.pick(pools, seed=1, total=40)] != [(c[0], c[1].id) for c in chosen]
     order = [c[0] for c in chosen]
     assert order != sorted(order)                                  # runs are mixed, not in blocks
 
@@ -68,7 +73,7 @@ def test_pick_fills_a_short_group_from_the_rest(db):
     few_declines = [c for c in pools[1] if not c[1].should_abstain] + \
                    [c for c in pools[1] if c[1].should_abstain][:3]
     assert len(few_declines) == 18                                 # 15 answerable (q020 fell back) + 3 declines
-    chosen = C.pick([pools[0], few_declines])
+    chosen = C.pick([pools[0], few_declines], total=40)
     weak = [c for c in chosen if c[0] == RUNS[1]]
     assert len(chosen) == 40 and len(weak) == 18                   # all it had: 15 answerable filled in for declines
     assert sum(c[1].should_abstain for c in weak) == 3
@@ -76,7 +81,7 @@ def test_pick_fills_a_short_group_from_the_rest(db):
 
 
 def test_sheet_is_blind_and_complete(db, files):
-    k = C.write_sheet(db, RUNS, chunks=CHUNKS, **files)
+    k = C.write_sheet(db, RUNS, chunks=CHUNKS, size=40, other_keys=[], **files)
     page = files["sheet"].read_text(encoding="utf-8")
     for run in RUNS:
         assert run not in page
@@ -92,7 +97,7 @@ def test_sheet_is_blind_and_complete(db, files):
 
 
 def test_labels_template_parses_and_starts_empty(db, files):
-    C.write_sheet(db, RUNS, chunks=CHUNKS, **files)
+    C.write_sheet(db, RUNS, chunks=CHUNKS, size=40, other_keys=[], **files)
     data = tomllib.loads(files["labels"].read_text(encoding="utf-8"))
     assert [b["id"] for b in data["label"]] == [f"c{n:02d}" for n in range(1, 41)]
     assert C.check(files["labels"], files["key"]) == (0, 40, [])
@@ -110,7 +115,7 @@ def fill(files, edit=None):
 
 
 def test_check_counts_and_finds_problems(db, files):
-    C.write_sheet(db, RUNS, chunks=CHUNKS, **files)
+    C.write_sheet(db, RUNS, chunks=CHUNKS, size=40, other_keys=[], **files)
     fill(files)
     assert C.check(files["labels"], files["key"]) == (40, 40, [])
     fill(files, {"c01": '[[label]]\nid = "c01"\nfaithfulness = "mostly"\nkey_facts = [true]\n',
@@ -127,11 +132,11 @@ def test_check_counts_and_finds_problems(db, files):
 
 
 def test_sheet_never_overwrites_labels(db, files):
-    C.write_sheet(db, RUNS, chunks=CHUNKS, **files)
+    C.write_sheet(db, RUNS, chunks=CHUNKS, size=40, other_keys=[], **files)
     with pytest.raises(SystemExit, match="already exists"):
-        C.write_sheet(db, RUNS, chunks=CHUNKS, **files)
+        C.write_sheet(db, RUNS, chunks=CHUNKS, size=40, other_keys=[], **files)
     with pytest.raises(SystemExit, match="two different runs"):
-        C.write_sheet(db, [RUNS[0], RUNS[0]], chunks=CHUNKS, force=True, **files)
+        C.write_sheet(db, [RUNS[0], RUNS[0]], chunks=CHUNKS, force=True, size=40, other_keys=[], **files)
 
 
 def test_sheet_refused_once_a_run_has_verdicts(db, tmp_path, capsys):
@@ -143,12 +148,12 @@ def test_sheet_refused_once_a_run_has_verdicts(db, tmp_path, capsys):
 
 
 def test_judge_waits_for_complete_committed_labels(db, files):
-    C.write_sheet(db, RUNS, chunks=CHUNKS, **files)
+    C.write_sheet(db, RUNS, chunks=CHUNKS, size=40, other_keys=[], **files)
     kw = {"labels": files["labels"], "key": files["key"]}
     assert C.blind_block("r20990102T000000Z", **kw, dirty=lambda _: False) is None     # not on the sheet
     assert "only 0 of 40 labels are done" in C.blind_block(RUNS[0], **kw, dirty=lambda _: False)
     fill(files)
-    assert "commit eval/calibration/ first" in C.blind_block(RUNS[1], **kw, dirty=lambda _: True)
+    assert "first, so the labels are fixed" in C.blind_block(RUNS[1], **kw, dirty=lambda _: True)
     assert C.blind_block(RUNS[1], **kw, dirty=lambda _: False) is None
     assert C.blind_block(RUNS[1], **kw, dirty=lambda _: None) is None                  # git can't tell: allowed
 
@@ -156,8 +161,9 @@ def test_judge_waits_for_complete_committed_labels(db, files):
 def test_judge_command_refuses_a_run_on_the_sheet(db, tmp_path, monkeypatch, capsys):
     monkeypatch.setattr(C, "LABELS_FILE", tmp_path / "cal" / "labels.toml")
     monkeypatch.setattr(C, "KEY_FILE", tmp_path / "cal" / "key.json")
-    C.write_sheet(db, RUNS, chunks=CHUNKS, sheet=tmp_path / "s.html", labels=C.LABELS_FILE, key=C.KEY_FILE)
-    monkeypatch.setattr(C.blind_block, "__defaults__", (C.LABELS_FILE, C.KEY_FILE, C.git_dirty))
+    C.write_sheet(db, RUNS, chunks=CHUNKS, size=40, other_keys=[], sheet=tmp_path / "s.html",
+                  labels=C.LABELS_FILE, key=C.KEY_FILE)
+    monkeypatch.setattr(C, "CAL_DIR", tmp_path / "cal")             # the judge looks at every set's key
     assert J.main([RUNS[0], "--db", str(tmp_path / "runs.db")]) == 2
     assert "Not judged:" in capsys.readouterr().out
 
@@ -240,7 +246,7 @@ def verdict(facts, label="faithful"):
 
 
 def test_paired_items_joins_labels_and_verdicts(db, files):
-    k = C.write_sheet(db, RUNS, chunks=CHUNKS, **files)
+    k = C.write_sheet(db, RUNS, chunks=CHUNKS, size=40, other_keys=[], **files)
     fill(files)
     items_ = k["items"]
     first, second, third = list(items_)[:3]
@@ -253,10 +259,10 @@ def test_paired_items_joins_labels_and_verdicts(db, files):
     db.execute("INSERT INTO judgements (run_id, qid, judge_version, judge_model, status, verdict_json) "
                "VALUES (?, ?, 'j1', 'm', 'judged', ?)", (info["run_id"], info["qid"], verdict([True] * (info["key_facts"] + 1))))
     db.commit()
-    got, missing = C.paired_items(db, labels=files["labels"], key=files["key"])
+    got, missing = C.paired_items(db, judge_version="j1", labels=files["labels"], key=files["key"])
     assert [it["cid"] for it in got] == [first]
     assert got[0]["prit"] == "faithful" and got[0]["judge"] == "unfaithful"
-    assert got[0]["run"] == ("default" if items_[first]["run_id"] == RUNS[0] else "weak")
+    assert got[0]["run"] == NAMES[RUNS.index(items_[first]["run_id"])]
     why = dict(missing)
     assert why[second] == "skipped (no_valid_citation)"
     assert "key facts" in why[third] and why["c40"] == "no j1 verdict yet" and len(missing) == 39
@@ -264,7 +270,7 @@ def test_paired_items_joins_labels_and_verdicts(db, files):
 
 
 def test_compare_waits_for_complete_committed_labels(db, files):
-    C.write_sheet(db, RUNS, chunks=CHUNKS, **files)
+    C.write_sheet(db, RUNS, chunks=CHUNKS, size=40, other_keys=[], **files)
     kw = {"labels": files["labels"], "key": files["key"]}
     assert "only 0 of 40 labels are done" in C.compare_refusal(**kw, dirty=lambda _: False)
     fill(files)
@@ -273,7 +279,7 @@ def test_compare_waits_for_complete_committed_labels(db, files):
 
 
 def test_a_saved_comparison_doesnt_block_the_judge(db, files):
-    C.write_sheet(db, RUNS, chunks=CHUNKS, **files)
+    C.write_sheet(db, RUNS, chunks=CHUNKS, size=40, other_keys=[], **files)
     fill(files)
     only_folder = lambda p: p == files["labels"].parent          # noqa: E731 - e.g. an untracked compare-j1.json
     assert C.blind_block(RUNS[0], labels=files["labels"], key=files["key"], dirty=only_folder) is None
@@ -284,21 +290,78 @@ def test_compare_command_reports_and_saves(db, tmp_path, monkeypatch, capsys):
     monkeypatch.setattr(C, "LABELS_FILE", tmp_path / "cal" / "labels.toml")
     monkeypatch.setattr(C, "KEY_FILE", tmp_path / "cal" / "key.json")
     files = {"sheet": tmp_path / "s.html", "labels": C.LABELS_FILE, "key": C.KEY_FILE}
-    k = C.write_sheet(db, RUNS, chunks=CHUNKS, **files)
+    k = C.write_sheet(db, RUNS, chunks=CHUNKS, size=40, other_keys=[], **files)
     fill(files)
     monkeypatch.setattr(C.compare_refusal, "__defaults__", (C.LABELS_FILE, C.KEY_FILE, lambda _: False))
     dbfile = str(tmp_path / "runs.db")
-    assert C.main(["--compare", "--db", dbfile]) == 2
+    assert C.main(["--compare", "--judge-version", "j1", "--db", dbfile]) == 2
     assert "Judge both runs first" in capsys.readouterr().out
     for cid, info in k["items"].items():
         db.execute("INSERT INTO judgements (run_id, qid, judge_version, judge_model, status, verdict_json) "
                    "VALUES (?, ?, 'j1', 'm', 'judged', ?)",
                    (info["run_id"], info["qid"], verdict([cid != "c01"] * info["key_facts"])))
     db.commit()
-    assert C.main(["--compare", "--save", "--db", dbfile]) == 0
+    assert C.main(["--compare", "--judge-version", "j1", "--save", "--db", dbfile]) == 0
     out = capsys.readouterr().out
     assert "agreement   40/40 = 100.0%" in out and "Disagreements (1)" in out
     saved = json.loads((tmp_path / "cal" / "compare-j1.json").read_text(encoding="utf-8"))
-    assert saved["runs"] == {"default": RUNS[0], "weak": RUNS[1]} and saved["n"] == 40
+    assert saved["runs"] == dict(zip(NAMES, RUNS)) and saved["n"] == 40 and saved["set"] == "set1"
     assert saved["faithfulness"]["kappa"] is None                  # every label "faithful": kappa undefined
     assert saved["key_facts"]["agree"] == saved["key_facts"]["n"] - k["items"]["c01"]["key_facts"]
+
+
+# ---------------------------------------------------------------- sets (session 20)
+
+def test_set_paths():
+    assert C.set_paths("set1") == {"sheet": C.SHEET_FILE, "labels": C.LABELS_FILE, "key": C.KEY_FILE}
+    p2 = C.set_paths("set2")
+    assert p2["labels"] == C.CAL_DIR / "set2" / "labels.toml" and p2["key"] == C.CAL_DIR / "set2" / "key.json"
+    assert p2["sheet"].parts[-3:] == ("calibration", "set2", "sheet.html") and "scratch" in p2["sheet"].parts
+    with pytest.raises(SystemExit, match="set1, set2"):
+        C.set_paths("final")
+
+
+def test_set2_sheet_has_30_named_runs_and_question_previews(db, tmp_path):
+    files = {"sheet": tmp_path / "s2" / "sheet.html", "labels": tmp_path / "cal" / "set2" / "labels.toml",
+             "key": tmp_path / "cal" / "set2" / "key.json"}
+    k = C.write_sheet(db, RUNS, chunks=CHUNKS, other_keys=[], **files)
+    assert k["size"] == 30 and len(k["items"]) == 30 and k["run_names"] == NAMES
+    assert sum(not i["should_abstain"] for i in k["items"].values()) == 20
+    text = files["labels"].read_text(encoding="utf-8")
+    assert C.check(files["labels"], files["key"]) == (0, 30, [])
+    by_id = {i.id: i for i in DEV}
+    for cid, info in k["items"].items():                         # each block is headed by its own question
+        assert f'# {cid}: "{C.preview(by_id[info["qid"]].question)}"\n[[label]]\nid = "{cid}"' in text
+    assert C.preview('One "two" three four', words=3) == "One 'two' three ..."
+
+
+def test_sheet_refuses_runs_another_set_uses(db, tmp_path, files):
+    other = tmp_path / "cal" / "key.json"
+    other.parent.mkdir(parents=True)
+    other.write_text(json.dumps({"runs": [RUNS[1], "r20990101T999999Z"]}), encoding="utf-8")
+    files = {"sheet": tmp_path / "s2.html", "labels": tmp_path / "cal" / "set2" / "labels.toml",
+             "key": tmp_path / "cal" / "set2" / "key.json"}
+    with pytest.raises(SystemExit, match="already used by calibration set"):
+        C.write_sheet(db, RUNS, chunks=CHUNKS, other_keys=[other], **files)
+    assert not files["labels"].exists()
+
+
+def test_judge_waits_for_every_set_holding_the_run(db, tmp_path):
+    cal = tmp_path / "cal"
+    one = {"sheet": tmp_path / "s1.html", "labels": cal / "labels.toml", "key": cal / "key.json"}
+    C.write_sheet(db, RUNS, chunks=CHUNKS, size=40, other_keys=[], **one)
+    fill(one)                                                     # set 1: complete
+    d2 = J.connect(tmp_path / "runs.db")
+    new = ["r20990102T000000Z", "r20990102T000100Z"]
+    for run in new:
+        d2.execute("INSERT INTO runs (run_id, today_default) VALUES (?, ?)", (run, "2026-11-03"))
+        for item in DEV:
+            R.log_result(d2, run, item, answer(item.id, RUNS[0]), None, {"should_abstain": item.should_abstain})
+    two = {"sheet": tmp_path / "s2.html", "labels": cal / "set2" / "labels.toml", "key": cal / "set2" / "key.json"}
+    C.write_sheet(d2, new, chunks=CHUNKS, other_keys=[one["key"]], **two)   # set 2: not labelled yet
+    assert [k.name for k in C.all_keys(cal)] == ["key.json", "key.json"]
+    clean = lambda _: False                                       # noqa: E731
+    assert C.blind_block(RUNS[0], dirty=clean, cal_dir=cal) is None
+    why = C.blind_block(new[0], dirty=clean, cal_dir=cal)
+    assert "only 0 of 30 labels are done" in why
+    assert C.blind_block("r20990103T000000Z", dirty=clean, cal_dir=cal) is None    # on no sheet

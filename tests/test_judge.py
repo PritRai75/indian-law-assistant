@@ -18,13 +18,30 @@ from eval import run as R
 # edit: bump JUDGE_VERSION in eval/judge.py and record the new version's hash here.
 RUBRIC_HASHES = {
     "j1": "3cdb949fd58fc0b28f651ea63ae0583b24e936d50ccc5d631db0d93d18cd62da",   # S19: first rubric
+    "j2": "044cb661c4af08f38466c1b0d29d169ee11f1fdfb3f3efe9bf2cb34b8499b18f",   # S20: the one revision
 }
 
 
 def test_rubric_text_matches_its_version():
-    digest = hashlib.sha256(J.JUDGE_PROMPT.encode("utf-8")).hexdigest()
-    assert RUBRIC_HASHES.get(J.JUDGE_VERSION) == digest, (
-        f"JUDGE_PROMPT changed: bump JUDGE_VERSION and record {digest} for it")
+    assert set(J.RUBRICS) == set(RUBRIC_HASHES) and J.JUDGE_PROMPT == J.RUBRICS[J.JUDGE_VERSION]
+    for version, text in J.RUBRICS.items():
+        digest = hashlib.sha256(text.encode("utf-8")).hexdigest()
+        assert RUBRIC_HASHES[version] == digest, (
+            f"rubric {version} changed: never edit an old rubric; add a new version and record {digest} for it")
+
+
+def test_j2_differs_from_j1_only_by_the_four_changes():
+    j1, j2 = J.RUBRICS["j1"], J.RUBRICS["j2"]
+    assert "A date, deadline or amount is supported only if a tool result or passage gives it." in j1
+    assert "only if a tool result or passage gives it" not in j2
+    for phrase in ["Facts the question itself states",                       # change 2: dates
+                   "counting calendar days", "check the count yourself", "A count of business days",
+                   "Fair Credit Reporting Act", "such a statement is a side claim",   # change 1: outside law
+                   "suggestions about what to do or review next",                  # change 3: advice
+                   "Judge a claim at the scope it states", "omissions are graded by the key facts"]:   # change 4
+        assert phrase in j2 and phrase not in j1, phrase
+    kept = [line for line in j1.splitlines() if line not in j2.splitlines()]
+    assert len(kept) == 3                      # the lines j2 rewrote; everything else is word for word
 
 
 # ---------------------------------------------------------------- key facts without citations
@@ -245,6 +262,23 @@ def test_show_prints_claims_and_key_facts(db):
     assert J.show(db, RUN, "q038") == "q038: skipped (no_valid_citation)"
 
 
+def test_an_earlier_rubric_can_still_be_used(db):
+    fake = FakeBedrock(verdict(), verdict())
+    J.judge_run(db, RUN, config=CONFIG, client=fake, chunks=CHUNKS, progress=lambda _: None, version="j1")
+    assert fake.requests[0]["system"][0]["text"] == J.RUBRICS["j1"] != J.JUDGE_PROMPT
+    assert {v for (v,) in db.execute("SELECT judge_version FROM judgements")} == {"j1"}
+    assert J.summary(db, RUN)["overall"]["n"] == 0                    # j2's summary sees no j1 verdicts
+    assert J.summary(db, RUN, "j1")["overall"]["judged"] == 2
+    assert J.show(db, RUN, "q004") == f"No j2 verdict for q004 in {RUN}."
+    assert J.show(db, RUN, "q004", "j1").startswith("q004: faithful")
+    fake2 = FakeBedrock(verdict(), verdict())
+    J.judge_run(db, RUN, config=CONFIG, client=fake2, chunks=CHUNKS, progress=lambda _: None)   # j2 too
+    assert fake2.requests[0]["system"][0]["text"] == J.RUBRICS["j2"]
+    assert db.execute("SELECT COUNT(*) FROM judgements").fetchone()[0] == 6
+    with pytest.raises(SystemExit, match="no rubric"):
+        J.judge_run(db, RUN, config=CONFIG, client=FakeBedrock(), chunks=CHUNKS, version="j9")
+
+
 def test_unknown_run_or_question(db):
     with pytest.raises(SystemExit, match="no run"):
         J.judge_run(db, "r0", config=CONFIG, client=FakeBedrock(), chunks=CHUNKS)
@@ -263,8 +297,8 @@ def test_smoke_example_uses_no_golden_question():
 
 # ---------------------------------------------------------------- eval.run --k / --tool-off
 
-def args(k=None, tool_off=False):
-    return SimpleNamespace(k=k, tool_off=tool_off)
+def args(k=None, tool_off=False, search=None):
+    return SimpleNamespace(k=k, tool_off=tool_off, search=search)
 
 
 def test_run_flags_change_and_log_the_config():
@@ -275,3 +309,11 @@ def test_run_flags_change_and_log_the_config():
     assert config_hash(weak, "2026-10-23") != config_hash(DEFAULT, "2026-10-23")
     with pytest.raises(SystemExit, match="at least 1"):
         R.config_from_args(args(k=0))
+
+
+def test_search_flag_changes_and_logs_the_config():
+    from app.config import DEFAULT, config_hash
+    vec = R.config_from_args(args(search="vector"))
+    assert vec.search_mode == "vector" and vec.k == DEFAULT.k and vec.tool_on
+    assert config_hash(vec, "2026-10-23") != config_hash(DEFAULT, "2026-10-23")
+    assert R.config_from_args(args(search="hybrid")) == DEFAULT
