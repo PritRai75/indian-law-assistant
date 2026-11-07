@@ -31,7 +31,7 @@ from functools import lru_cache
 from app import citations as cit
 from app import retrieve as rt
 from app.config import DEFAULT, config_hash
-from app.prompts import PROMPT_VERSION, SYSTEM_PROMPT, build_user_message
+from app.prompts import PROMPTS, build_user_message
 from app.schema import ANSWER_JSON_SCHEMA, ModelAnswer, Response, ToolCall
 from app.tools import TOOL_SPEC, dispute_timeline
 
@@ -136,7 +136,7 @@ def guard(model_answer, allowed, provisions=None):
 
 def converse_request(config):
     req = {"modelId": config.generator_model,
-           "system": [{"text": SYSTEM_PROMPT}],
+           "system": [{"text": PROMPTS[config.prompt]}],
            "inferenceConfig": {"temperature": config.temperature, "maxTokens": config.max_tokens}}
     if config.tool_on:
         req["toolConfig"] = {"tools": [TOOL_SPEC]}
@@ -233,7 +233,7 @@ def answer(question, today, *, config=DEFAULT, client=None, query_vec=None):
         answer=text, citations=valid, tool_calls=tool_calls, abstained=abstained, abstain_reason=reason,
         retrieved_ids=[r["id"] for r in results], regulations_as_of=as_of,
         raw_answer=raw_answer, raw_citations=raw, invalid_citations=invalid, flags=flags,
-        prompt_version=PROMPT_VERSION, config_hash=config_hash(config, as_of), model_id=config.generator_model,
+        prompt_version=config.prompt, config_hash=config_hash(config, as_of), model_id=config.generator_model,
         usage=dict(usage), model_calls=calls, latency_ms=round((time.perf_counter() - started) * 1000))
 
 

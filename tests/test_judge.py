@@ -297,8 +297,8 @@ def test_smoke_example_uses_no_golden_question():
 
 # ---------------------------------------------------------------- eval.run --k / --tool-off
 
-def args(k=None, tool_off=False, search=None):
-    return SimpleNamespace(k=k, tool_off=tool_off, search=search)
+def args(k=None, tool_off=False, search=None, prompt=None):
+    return SimpleNamespace(k=k, tool_off=tool_off, search=search, prompt=prompt)
 
 
 def test_run_flags_change_and_log_the_config():
@@ -317,3 +317,11 @@ def test_search_flag_changes_and_logs_the_config():
     assert vec.search_mode == "vector" and vec.k == DEFAULT.k and vec.tool_on
     assert config_hash(vec, "2026-10-23") != config_hash(DEFAULT, "2026-10-23")
     assert R.config_from_args(args(search="hybrid")) == DEFAULT
+
+
+def test_prompt_flag_changes_and_logs_the_config():
+    from app.config import DEFAULT, config_hash
+    p3 = R.config_from_args(args(prompt="p3"))
+    assert p3.prompt == "p3" and p3.search_mode == DEFAULT.search_mode and p3.k == DEFAULT.k
+    assert config_hash(p3, "2026-10-23") != config_hash(DEFAULT, "2026-10-23")
+    assert R.config_from_args(args(prompt="p2")) == DEFAULT

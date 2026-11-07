@@ -297,8 +297,10 @@ needs_index = pytest.mark.skipif(not (ROOT / "index" / "embeddings.npy").exists(
 class FakeClient:
     def __init__(self, *replies):
         self.replies = list(replies)
+        self.requests = []
 
     def converse(self, **request):
+        self.requests.append(request)
         return copy.deepcopy(self.replies.pop(0))
 
 
@@ -430,3 +432,19 @@ def test_reg_z_tier_is_a_cap_so_its_amount_is_not_required():
     item = reg_tier_item("Z", "max_50")
     m = R.grade(item, resp(answer="He owes $0 [§ 1005.17(b)(1)]."), IX)
     assert (m["calc_checks"], m["calc_missing"], m["calc_exact"]) == (0, [], None)
+
+
+@needs_index
+def test_a_p3_run_logs_its_prompt_and_sends_it(tmp_path):
+    from app.prompts import SYSTEM_PROMPT_P3
+    client = FakeClient(text_reply({"answer": "It must describe the service [§ 1005.17(b)(1)].",
+                                    "citations": ["1005.17(b)(1)"], "abstained": False, "abstain_reason": None}))
+    db = R.connect(tmp_path / "runs.db")
+    config = DEFAULT.with_(prompt="p3")
+    run_id, _ = R.run(items_from(ANSWERABLE), config, db=db, split="unsplit", client=client, embed=fake_embed,
+                      progress=lambda _: None)
+    head = db.execute("SELECT prompt_version, config_json, config_hash FROM runs").fetchone()
+    assert head[0] == "p3" and json.loads(head[1])["prompt"] == "p3"
+    assert client.requests[0]["system"] == [{"text": SYSTEM_PROMPT_P3}]
+    resp = json.loads(db.execute("SELECT response_json FROM results").fetchone()[0])
+    assert resp["prompt_version"] == "p3" and resp["config_hash"] == head[2]

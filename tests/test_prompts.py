@@ -16,6 +16,7 @@ needs_index = pytest.mark.skipif(not (ROOT / "index" / "chunks.json").exists(), 
 PROMPT_HASHES = {
     "p1": "f64d0e22177ff96a184f68bb713c85ab93ba1aba591131784f43bf8a52dee426",
     "p2": "bb93800274dea0e40728f2bee26b044723f8fe9805dcef144330547857ad3350",   # S12: final reply is JSON only
+    "p3": "373e1240549656241e9ae09cb6a5dee72862c9da889577f39d3df22ad3d3509b",   # S22: experiment 4's decline rules
 }
 
 
@@ -25,13 +26,49 @@ def test_prompt_text_matches_its_version():
         f"SYSTEM_PROMPT changed: bump PROMPT_VERSION and record {digest} for it")
 
 
-def test_prompt_names_the_real_tool():
-    assert TOOL_SPEC["toolSpec"]["name"] in pr.SYSTEM_PROMPT
+def test_every_prompt_version_is_pinned():
+    for version, text in pr.PROMPTS.items():
+        assert PROMPT_HASHES.get(version) == hashlib.sha256(text.encode("utf-8")).hexdigest(), (
+            f"prompt {version} changed: give it a new version and record its hash here")
+    assert pr.PROMPTS[pr.PROMPT_VERSION] is pr.SYSTEM_PROMPT
 
 
-def test_prompt_describes_every_answer_field():
+def test_p3_is_p2_with_only_the_abstain_paragraph_replaced():
+    # Experiment 4 changes one thing: every other word of p2 is in p3 unchanged.
+    assert pr.P2_ABSTAIN_PARAGRAPH in pr.SYSTEM_PROMPT and pr.P2_ABSTAIN_PARAGRAPH not in pr.SYSTEM_PROMPT_P3
+    assert pr.SYSTEM_PROMPT_P3.replace(pr.P3_DECLINE_RULES, pr.P2_ABSTAIN_PARAGRAPH) == pr.SYSTEM_PROMPT
+
+
+def test_p3_examples_share_no_wording_with_the_golden_questions():
+    # The decline examples are made up: no run of three words in a row from any of the 60 golden
+    # questions (checked in session 22), so experiment 4 isn't graded on its own examples.
+    import re
+    from eval import golden as G
+    words = lambda t: re.findall(r"[a-z0-9$%']+", t.lower())        # noqa: E731
+    rules = words(pr.P3_DECLINE_RULES)
+    mine = {tuple(rules[j:j + 3]) for j in range(len(rules) - 2)}
+    for item in G.load():
+        q = words(item.question)
+        shared = mine & {tuple(q[j:j + 3]) for j in range(len(q) - 2)}
+        assert not shared, f"{item.id}: {shared}"
+
+
+def test_p3_keeps_the_status_words_and_names_every_decline_reason():
+    for w in ("VACATED", "OVERTURNED BY CONGRESS", "PARTLY NOT IN FORCE"):
+        assert w in pr.P3_DECLINE_RULES
+    for letter in "abcdefgh":
+        assert f"\n{letter}. " in pr.P3_DECLINE_RULES
+
+
+@pytest.mark.parametrize("version", sorted(pr.PROMPTS))
+def test_prompt_names_the_real_tool(version):
+    assert TOOL_SPEC["toolSpec"]["name"] in pr.PROMPTS[version]
+
+
+@pytest.mark.parametrize("version", sorted(pr.PROMPTS))
+def test_prompt_describes_every_answer_field(version):
     for field in ("answer:", "citations:", "abstained:", "abstain_reason:"):
-        assert f"- {field}" in pr.SYSTEM_PROMPT
+        assert f"- {field}" in pr.PROMPTS[version]
 
 
 def fake_chunk(**kw):

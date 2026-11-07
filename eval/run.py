@@ -7,6 +7,7 @@ From the repo root:
     python -m eval.run --ids q001 q004           only these questions (any split)
     python -m eval.run --split test --final      the test split: once, at the very end
     python -m eval.run --k 2 --tool-off          the dev split with weaker settings (judge calibration)
+    python -m eval.run --prompt p3               the dev split with another prompt (experiment 4)
     python -m eval.run --runs                    list the logged runs
     python -m eval.run --regrade RUN_ID          grade a logged run again from its stored answers, no model calls
 
@@ -75,6 +76,7 @@ from pathlib import Path
 
 from app import citations as cit      # the citation guard's own reader; boto3 is only imported for AWS calls
 from app.answer import PROVISION       # how the guard finds IDs in a tool result
+from app.prompts import PROMPTS
 from eval import golden as G
 
 REPO = Path(__file__).resolve().parents[1]
@@ -475,7 +477,6 @@ def run(items, config, *, db, split=None, ids=None, client=None, embed=None, tod
     """Answer, grade and log every item. Returns (run ID, summary)."""
     from app import retrieve as rt
     from app.config import config_hash
-    from app.prompts import PROMPT_VERSION
     ix = ix or index_view()
     as_of = rt.load()[0][0]["as_of"]
     started = datetime.now(timezone.utc)
@@ -485,7 +486,7 @@ def run(items, config, *, db, split=None, ids=None, client=None, embed=None, tod
                " as_of, split, ids, golden_sha256, today_default, grader_version, n_items, note)"
                " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                (run_id, started.isoformat(), commit, None if dirty is None else int(dirty), config_hash(config, as_of),
-                json.dumps(asdict(config), sort_keys=True), PROMPT_VERSION, as_of, split, " ".join(ids or []) or None,
+                json.dumps(asdict(config), sort_keys=True), config.prompt, as_of, split, " ".join(ids or []) or None,
                 hashlib.sha256(golden_path.read_bytes()).hexdigest(), today.isoformat(), GRADER_VERSION, len(items), note))
     db.commit()
     rows = []
@@ -556,12 +557,14 @@ def list_runs(db) -> str:
 # ================================================================ command line
 
 def config_from_args(args):
-    """The default config with --k, --tool-off and --search applied. All are logged with the run
+    """The default config with --k, --tool-off, --search and --prompt applied. All are logged with the run
     (config_json, config_hash), so a weak or experiment run is never mistaken for a default one."""
     from app.config import DEFAULT
     changes = {}
     if getattr(args, "search", None):
         changes["search_mode"] = args.search
+    if getattr(args, "prompt", None):
+        changes["prompt"] = args.prompt
     if args.k is not None:
         if args.k < 1:
             raise SystemExit("--k must be at least 1")
@@ -584,6 +587,8 @@ def main(argv=None) -> int:
     ap.add_argument("--tool-off", action="store_true", help="run without the dispute_timeline tool")
     ap.add_argument("--search", choices=["vector", "bm25", "hybrid"],
                     help="search mode (default: the config's, hybrid; experiment 2 compares them)")
+    ap.add_argument("--prompt", choices=sorted(PROMPTS),
+                    help="the answer model's prompt (default: the config's, p2; experiment 4 compares p3)")
     ap.add_argument("--note", default="", help="a short note saved with the run")
     ap.add_argument("--db", type=Path, default=DB_FILE, help="the SQLite file (default runs.db)")
     ap.add_argument("--runs", action="store_true", help="list the logged runs and stop")
@@ -620,7 +625,8 @@ def main(argv=None) -> int:
         hint = " Questions without a split are run with --split unsplit." if args.split == "dev" and not args.ids else ""
         print(f"No labelled questions to run.{hint}")
         return 2
-    changed = {k: v for k, v in (("k", args.k), ("tool_on", False if args.tool_off else None)) if v is not None}
+    changed = {k: v for k, v in (("k", args.k), ("tool_on", False if args.tool_off else None),
+                                 ("search", args.search), ("prompt", args.prompt)) if v is not None}
     print(f"Running {len(items)} question(s)"
           + (f" with {', '.join(f'{k} = {v}' for k, v in changed.items())}" if changed else "")
           + f"; answers are logged as they come in ({args.db.name}).")

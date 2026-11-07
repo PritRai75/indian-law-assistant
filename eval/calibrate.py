@@ -103,11 +103,14 @@ def all_keys(cal_dir: Path | None = None) -> list[Path]:
 
 
 def run_name(db, run_id: str) -> str:
-    """A short name from the run's logged settings, e.g. "hybrid k5" or "vector k3 no tool"."""
-    row = db.execute("SELECT config_json FROM runs WHERE run_id = ?", (run_id,)).fetchone()
+    """A short name from the run's logged settings, e.g. "hybrid k5", "vector k3 no tool" or "hybrid k5
+    prompt p3" (the prompt only when it isn't the default)."""
+    from app.prompts import PROMPT_VERSION
+    row = db.execute("SELECT config_json, prompt_version FROM runs WHERE run_id = ?", (run_id,)).fetchone()
     try:
         c = json.loads(row[0])
-        return f"{c['search_mode']} k{c['k']}" + ("" if c["tool_on"] else " no tool")
+        return (f"{c['search_mode']} k{c['k']}" + ("" if c["tool_on"] else " no tool")
+                + ("" if row[1] in (None, PROMPT_VERSION) else f" prompt {row[1]}"))
     except (TypeError, KeyError, ValueError):
         return run_id
 

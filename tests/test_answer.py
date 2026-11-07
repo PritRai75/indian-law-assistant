@@ -71,6 +71,28 @@ def test_request_has_prompt_tool_and_settings():
     assert resp.retrieved_ids[0].startswith("1005.6")      # the named paragraph comes first
 
 
+def test_the_prompt_setting_picks_the_system_prompt_and_is_logged():
+    from app.prompts import SYSTEM_PROMPT_P3
+    resp, client = run(text(reply()), config=DEFAULT.with_(prompt="p3"))
+    assert client.requests[0]["system"] == [{"text": SYSTEM_PROMPT_P3}]
+    assert resp.prompt_version == "p3"
+    default, _ = run(text(reply()))
+    assert resp.config_hash != default.config_hash
+
+
+def test_an_unknown_prompt_is_refused():
+    with pytest.raises(ValueError, match="prompt must be one of"):
+        DEFAULT.with_(prompt="p9")
+
+
+def test_the_default_config_hashes_as_before_the_prompt_setting():
+    # Session 22 added `prompt`; the default (p2) must hash as it did, so earlier runs still match it.
+    from app.config import config_hash
+    assert config_hash(DEFAULT, "2026-10-23") == "b2bef7bd2dd0"
+    assert config_hash(DEFAULT.with_(search_mode="vector"), "2026-10-23") == "edca2fd6f78d"
+    assert config_hash(DEFAULT.with_(k=3, tool_on=False), "2026-10-23") == "e44b76a0af5a"
+
+
 def test_structured_mode_sends_the_schema():
     _, client = run(text(reply()), config=DEFAULT.with_(output_mode="structured"))
     fmt = client.requests[0]["outputConfig"]["textFormat"]

@@ -8,7 +8,7 @@ import hashlib
 import json
 from dataclasses import asdict, dataclass, replace
 
-from app.prompts import PROMPT_VERSION
+from app.prompts import PROMPT_VERSION, PROMPTS
 
 # The citation guard's rule (app.answer.guard). Bump it with any change to how the guard reads or
 # removes citations, since that changes answers. "c1": one ID per string (sessions 12-14);
@@ -31,10 +31,13 @@ class Config:
                                       # "structured": Bedrock structured outputs enforce the schema as well
     read_timeout: int = 120           # seconds; structured outputs can take ~90 s to compile a new schema
     max_question_chars: int = 2000
+    prompt: str = PROMPT_VERSION      # which app.prompts.PROMPTS text the answer model gets (experiment 4)
 
     def __post_init__(self):
         if self.search_mode not in ("vector", "bm25", "hybrid"):
             raise ValueError(f"search_mode must be vector, bm25 or hybrid, not {self.search_mode!r}")
+        if self.prompt not in PROMPTS:
+            raise ValueError(f"prompt must be one of {', '.join(PROMPTS)}, not {self.prompt!r}")
         if self.output_mode not in ("json", "structured"):
             raise ValueError(f"output_mode must be json or structured, not {self.output_mode!r}")
 
@@ -46,8 +49,10 @@ DEFAULT = Config()
 
 
 def config_hash(config, as_of):
-    """First 12 hex digits of a hash over the settings, PROMPT_VERSION, GUARD_VERSION and the corpus
-    "as of" date."""
-    blob = json.dumps({**asdict(config), "prompt_version": PROMPT_VERSION, "guard_version": GUARD_VERSION,
+    """First 12 hex digits of a hash over the settings, the prompt version, GUARD_VERSION and the corpus
+    "as of" date. The `prompt` setting enters as "prompt_version", as it did before it was a setting, so
+    a default config hashes as it did before session 22 (earlier runs stay comparable by hash)."""
+    settings = {k: v for k, v in asdict(config).items() if k != "prompt"}
+    blob = json.dumps({**settings, "prompt_version": config.prompt, "guard_version": GUARD_VERSION,
                        "as_of": as_of}, sort_keys=True)
     return hashlib.sha256(blob.encode("utf-8")).hexdigest()[:12]

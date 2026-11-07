@@ -531,3 +531,13 @@ def test_command_line_compare(two, tmp_path, capsys):
     assert "A: r20990101T000000Z (hybrid k5)" in out and md.read_text(encoding="utf-8").startswith("# Run comparison")
     with pytest.raises(SystemExit):
         P.main([RUN, "--compare", RUN_B, "--show", "q006", "--db", str(tmp_path / "runs.db")])
+
+
+def test_compare_reads_the_prompt_once_and_names_it(db):
+    # From session 22 config_json also holds "prompt": the comparison mustn't count it twice.
+    add_run(db, RUN_B, {"search_mode": "hybrid", "k": 5, "tool_on": True, "prompt": "p3"}, prompt="p3")
+    R.log_result(db, RUN_B, PLAIN, resp(), None, R.grade(PLAIN, resp(), IX))
+    c = P.compare(db, RUN, RUN_B, ix=IX)
+    assert c["settings"] == [("prompt_version", "p2", "p3")]
+    assert c["b"]["name"] == "hybrid k5 prompt p3" and c["a"]["name"] == "hybrid k5"
+    assert "WARNING: more than one" not in P.compare_text(c)
