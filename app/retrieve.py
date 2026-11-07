@@ -19,6 +19,11 @@ by side (`-k 10` for more). That call embeds the question with Titan, so it need
   different score scales never need to be made comparable. A provision the question names still
   comes first, as in bm25.
 
+`interpretations=False` searches the rule text only (experiment 1, session 22): the official
+interpretations (Supplement I, the "commentary" chunks) are left out, and the BM25 statistics are built
+on the rule chunks alone, as an index of rule text alone would have them. The default search is
+unchanged.
+
 `query_vec` lets a caller pass a ready-made question vector (CI uses committed question embeddings),
 so search runs without any AWS call. The BM25 statistics are built from index/chunks.json when the
 index is first loaded (well under a second), so there is no separate BM25 file to keep in sync.
@@ -195,6 +200,24 @@ def load():
 
 
 @lru_cache(maxsize=1)
+def load_rules():
+    """The index without the official interpretations (experiment 1): the rule chunks, their vectors and
+    BM25 statistics built on them alone."""
+    chunks, vecs, meta, _ = load()
+    keep = [i for i, c in enumerate(chunks) if c["kind"] == "rule"]
+    rules = [chunks[i] for i in keep]
+    return rules, vecs[keep], meta, BM25([tokens(c["embed_text"]) for c in rules])
+
+
+def named_in(query, chunks):
+    """Boolean per chunk of `chunks`: holds a provision the question names (as named_mask does for the
+    whole index), with the names read against these chunks' provisions only."""
+    refs = [r.lower() for r in resolve(read_refs(query), [p for c in chunks for p in c["provision_ids"]])[0]]
+    return np.array([any(covered_by(ref, p.lower()) for ref in refs for p in c["provision_ids"]) for c in chunks],
+                    dtype=bool)
+
+
+@lru_cache(maxsize=1)
 def provision_owner():
     """Lower-case provision ID -> index of the one chunk that holds it (each provision is in exactly one)."""
     chunks = load()[0]
@@ -249,13 +272,17 @@ def rrf(lists, n):
     return sorted(fused, key=lambda i: (-fused[i], i))[:n], fused
 
 
-def search(query, k=5, mode="hybrid", query_vec=None):
+def search(query, k=5, mode="hybrid", query_vec=None, interpretations=True):
     """Top k chunks for the query: dicts with rank, score, id, named (the question names a provision
-    in it) and the chunk itself."""
+    in it) and the chunk itself. interpretations=False: rule text only (experiment 1)."""
     if mode not in ("vector", "bm25", "hybrid"):
         raise ValueError(f"mode must be vector, bm25 or hybrid, not {mode!r}")
-    chunks, vecs, _, bm25 = load()
-    named = named_mask(query_refs(query))
+    if interpretations:
+        chunks, vecs, _, bm25 = load()
+        named = named_mask(query_refs(query))
+    else:
+        chunks, vecs, _, bm25 = load_rules()
+        named = named_in(query, chunks)
     if mode in ("vector", "hybrid"):
         q = embed_query(query) if query_vec is None else np.asarray(query_vec, dtype=np.float32)
         v_scores = vecs @ q

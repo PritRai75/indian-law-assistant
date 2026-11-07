@@ -601,9 +601,14 @@ def value_lines(sa: dict, sb: dict) -> list[tuple[str, str, str]]:
 
 def settings_diff(a: dict, b: dict) -> list[tuple[str, object, object]]:
     """(setting, A, B) for every logged setting that differs: the config and the prompt version. The
-    config's `prompt` key (from session 22) is the prompt_version column again, so it is read from there:
-    older runs have no such key."""
-    ca, cb = ({k: v for k, v in json.loads(r["config_json"] or "{}").items() if k != "prompt"} for r in (a, b))
+    config's `prompt` key (from session 22) is the prompt_version column again, so it is read from there.
+    A setting a run's log lacks (added after the run) counts as its default value, which is what that
+    run used."""
+    from dataclasses import asdict
+    from app.config import DEFAULT
+    base = asdict(DEFAULT)
+    ca, cb = ({k: v for k, v in {**base, **json.loads(r["config_json"] or "{}")}.items() if k != "prompt"}
+              for r in (a, b))
     out = [(k, ca.get(k), cb.get(k)) for k in sorted(set(ca) | set(cb)) if ca.get(k) != cb.get(k)]
     if a["prompt_version"] != b["prompt_version"]:
         out.append(("prompt_version", a["prompt_version"], b["prompt_version"]))

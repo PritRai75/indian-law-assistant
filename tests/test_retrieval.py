@@ -28,6 +28,26 @@ def test_the_committed_vectors_are_unit_length_and_dev_only():
     assert not test_ids & {q["id"] for q in info["questions"]}                  # CI never sees test questions
 
 
+# Experiment 1's search arm (session 22): hybrid k5 on the rule text only, the dev questions' first gold
+# ranks with the committed vectors (12 of 16 in the top 5, MRR 0.573; the default gives 9 and 0.438).
+RULES_ONLY_RANKS = {"q001": None, "q002": None, "q003": 3, "q004": 4, "q005": 1, "q006": 4, "q007": None,
+                    "q016": 3, "q018": 1, "q020": None, "q023": 1, "q034": 1, "q038": 1, "q049": 1,
+                    "q052": 1, "q053": 1}
+
+
+def test_rule_text_only_dev_ranks_are_as_measured():
+    from eval import run as R
+    items = G.load()
+    vecs = RV.load_vectors(items)
+    ix = R.index_view()
+    got = {}
+    for i in RV.dev_items(items):
+        if not i.should_abstain:
+            found = [r["id"] for r in rt.search(i.question, 5, "hybrid", query_vec=vecs[i.id], interpretations=False)]
+            got[i.id] = R.retrieval_metrics(i.gold_ids or [], found, ix)["first_gold_rank"]
+    assert got == RULES_ONLY_RANKS
+
+
 # ------------------------------------------------------------------ comparing with a baseline
 
 SETTINGS = {"k": 5, "mode": "hybrid", "rrf_k": 60, "pool": 50}

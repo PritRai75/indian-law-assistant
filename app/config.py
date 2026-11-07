@@ -32,6 +32,7 @@ class Config:
     read_timeout: int = 120           # seconds; structured outputs can take ~90 s to compile a new schema
     max_question_chars: int = 2000
     prompt: str = PROMPT_VERSION      # which app.prompts.PROMPTS text the answer model gets (experiment 4)
+    interpretations: bool = True      # search the official interpretations too; False: rule text only (experiment 1)
 
     def __post_init__(self):
         if self.search_mode not in ("vector", "bm25", "hybrid"):
@@ -49,12 +50,18 @@ class Config:
 
 DEFAULT = Config()
 
+# Settings added after runs were first logged (session 22): left out of the hash at their default
+# value, so a config that doesn't use them hashes as it did before they existed.
+ADDED_LATER = {"interpretations": True}
+
 
 def config_hash(config, as_of):
     """First 12 hex digits of a hash over the settings, the prompt version, GUARD_VERSION and the corpus
-    "as of" date. The `prompt` setting enters as "prompt_version", as it did before it was a setting, so
-    a default config hashes as it did before session 22 (earlier runs stay comparable by hash)."""
-    settings = {k: v for k, v in asdict(config).items() if k != "prompt"}
+    "as of" date. The `prompt` setting enters as "prompt_version", as it did before it was a setting, and
+    settings in ADDED_LATER count only when they differ from their default, so a default config hashes
+    as it did before session 22 (earlier runs stay comparable by hash)."""
+    settings = {k: v for k, v in asdict(config).items()
+                if k != "prompt" and not (k in ADDED_LATER and v == ADDED_LATER[k])}
     blob = json.dumps({**settings, "prompt_version": config.prompt, "guard_version": GUARD_VERSION,
                        "as_of": as_of}, sort_keys=True)
     return hashlib.sha256(blob.encode("utf-8")).hexdigest()[:12]

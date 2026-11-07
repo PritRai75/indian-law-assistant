@@ -9,6 +9,7 @@ From the repo root:
     python -m eval.run --k 2 --tool-off          the dev split with weaker settings (judge calibration)
     python -m eval.run --prompt p3               the dev split with another prompt (experiment 4)
     python -m eval.run --tool-off --prompt p4    the tool off, the model counting days itself (experiment 3)
+    python -m eval.run --no-interpretations      search the rule text only (experiment 1)
     python -m eval.run --runs                    list the logged runs
     python -m eval.run --regrade RUN_ID          grade a logged run again from its stored answers, no model calls
 
@@ -558,7 +559,7 @@ def list_runs(db) -> str:
 # ================================================================ command line
 
 def config_from_args(args):
-    """The default config with --k, --tool-off, --search and --prompt applied. All are logged with the run
+    """The default config with --k, --tool-off, --search, --prompt and --no-interpretations applied. All are logged with the run
     (config_json, config_hash), so a weak or experiment run is never mistaken for a default one."""
     from app.config import DEFAULT
     changes = {}
@@ -572,6 +573,8 @@ def config_from_args(args):
         changes["k"] = args.k
     if args.tool_off:
         changes["tool_on"] = False
+    if getattr(args, "no_interpretations", False):
+        changes["interpretations"] = False
     try:
         return DEFAULT.with_(**changes)
     except ValueError as e:                        # e.g. --prompt p4 without --tool-off
@@ -594,6 +597,8 @@ def main(argv=None) -> int:
     ap.add_argument("--prompt", choices=sorted(PROMPTS),
                     help="the answer model's prompt (default: the config's, p2; experiment 4 compares p3; "
                          "p4 goes with --tool-off for experiment 3)")
+    ap.add_argument("--no-interpretations", action="store_true",
+                    help="search the rule text only, without the official interpretations (experiment 1)")
     ap.add_argument("--note", default="", help="a short note saved with the run")
     ap.add_argument("--db", type=Path, default=DB_FILE, help="the SQLite file (default runs.db)")
     ap.add_argument("--runs", action="store_true", help="list the logged runs and stop")
@@ -631,7 +636,8 @@ def main(argv=None) -> int:
         print(f"No labelled questions to run.{hint}")
         return 2
     changed = {k: v for k, v in (("k", args.k), ("tool_on", False if args.tool_off else None),
-                                 ("search", args.search), ("prompt", args.prompt)) if v is not None}
+                                 ("search", args.search), ("prompt", args.prompt),
+                                 ("interpretations", False if args.no_interpretations else None)) if v is not None}
     print(f"Running {len(items)} question(s)"
           + (f" with {', '.join(f'{k} = {v}' for k, v in changed.items())}" if changed else "")
           + f"; answers are logged as they come in ({args.db.name}).")

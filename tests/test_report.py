@@ -566,3 +566,14 @@ def test_load_rows_reads_whether_the_tool_was_on(db):
     _, rows = P.load_rows(db, RUN_B, ix=IX)
     assert [t for t, _ in rows[0].tags] == ["calculation_error"]
     assert P.compare(db, RUN, RUN_B, ix=IX)["b"]["name"] == "hybrid k5 no tool prompt p4"
+
+
+def test_a_setting_missing_from_an_older_log_counts_as_its_default(db):
+    # Run A's log (made before session 22) has no "interpretations" key: it used the default (True).
+    add_run(db, RUN_B, {"search_mode": "hybrid", "k": 5, "tool_on": True, "interpretations": True})
+    R.log_result(db, RUN_B, PLAIN, resp(), None, R.grade(PLAIN, resp(), IX))
+    assert P.compare(db, RUN, RUN_B, ix=IX)["settings"] == []
+    db.execute("UPDATE runs SET config_json = ? WHERE run_id = ?",
+               (json.dumps({"search_mode": "hybrid", "k": 5, "tool_on": True, "interpretations": False}), RUN_B))
+    c = P.compare(db, RUN, RUN_B, ix=IX)
+    assert c["settings"] == [("interpretations", True, False)] and c["b"]["name"] == "hybrid k5 rules only"

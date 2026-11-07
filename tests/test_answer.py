@@ -89,6 +89,16 @@ def test_p4_goes_with_the_tool_off_only():
     assert req["system"] == [{"text": SYSTEM_PROMPT_P4}] and "toolConfig" not in req and resp.prompt_version == "p4"
 
 
+def test_rule_text_only_setting_reaches_the_search_and_the_hash():
+    from app.config import config_hash
+    resp, _ = run(text(reply()), config=DEFAULT.with_(interpretations=False))
+    kinds = {c["id"]: c["kind"] for c in rt.load()[0]}
+    assert resp.retrieved_ids and all(kinds[i] == "rule" for i in resp.retrieved_ids)
+    default, _ = run(text(reply()))
+    assert any(kinds[i] == "commentary" for i in default.retrieved_ids)
+    assert config_hash(DEFAULT.with_(interpretations=False), "2026-10-23") != config_hash(DEFAULT, "2026-10-23")
+
+
 def test_an_unknown_prompt_is_refused():
     with pytest.raises(ValueError, match="prompt must be one of"):
         DEFAULT.with_(prompt="p9")

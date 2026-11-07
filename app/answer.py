@@ -163,7 +163,8 @@ def answer(question, today, *, config=DEFAULT, client=None, query_vec=None):
         raise ValueError(f"question is over {config.max_question_chars} characters")
     client = client or _client(config.read_timeout)
 
-    results = rt.search(question, config.k, config.search_mode, query_vec=query_vec)
+    results = rt.search(question, config.k, config.search_mode, query_vec=query_vec,
+                        interpretations=config.interpretations)
     as_of = results[0]["chunk"]["as_of"] if results else rt.load()[0][0]["as_of"]
     req = converse_request(config)
     messages = [{"role": "user", "content": [{"text": build_user_message(question, results, today)}]}]

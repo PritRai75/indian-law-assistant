@@ -297,8 +297,9 @@ def test_smoke_example_uses_no_golden_question():
 
 # ---------------------------------------------------------------- eval.run --k / --tool-off
 
-def args(k=None, tool_off=False, search=None, prompt=None):
-    return SimpleNamespace(k=k, tool_off=tool_off, search=search, prompt=prompt)
+def args(k=None, tool_off=False, search=None, prompt=None, no_interpretations=False):
+    return SimpleNamespace(k=k, tool_off=tool_off, search=search, prompt=prompt,
+                           no_interpretations=no_interpretations)
 
 
 def test_run_flags_change_and_log_the_config():
@@ -332,3 +333,10 @@ def test_p4_flag_needs_the_tool_off():
     assert off.prompt == "p4" and not off.tool_on
     with pytest.raises(SystemExit, match="without the tool"):
         R.config_from_args(args(prompt="p4"))
+
+
+def test_no_interpretations_flag_changes_and_logs_the_config():
+    from app.config import DEFAULT
+    rules = R.config_from_args(args(no_interpretations=True))
+    assert not rules.interpretations and rules.prompt == DEFAULT.prompt and rules.tool_on
+    assert R.config_from_args(args()) == DEFAULT and DEFAULT.interpretations

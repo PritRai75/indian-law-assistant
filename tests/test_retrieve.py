@@ -203,3 +203,27 @@ def test_command_line_prints_all_three_modes(monkeypatch, capsys):
     out = capsys.readouterr().out
     assert "Named: 1005.6(b)" in out and "Not in the index: 1026.18" in out
     assert out.count("\n") == 4 + 3          # question, named line, blank, header, then k rows
+
+
+# ---------------------------------------------------------------- rule text only (experiment 1)
+
+@needs_index
+def test_rule_text_only_search_returns_rule_chunks_only():
+    chunks, vecs, _, bm25 = rt.load_rules()
+    assert chunks and all(c["kind"] == "rule" for c in chunks) and len(vecs) == len(chunks) == len(bm25.tfs)
+    assert len(chunks) == sum(c["kind"] == "rule" for c in rt.load()[0])
+    q = vec_of("1026.13(c)(2)-cmt")
+    for mode in ("vector", "bm25", "hybrid"):
+        top = rt.search("billing error resolution two complete billing cycles", 5, mode, query_vec=q,
+                        interpretations=False)
+        assert len(top) == 5 and all(r["chunk"]["kind"] == "rule" for r in top)
+    with_comments = rt.search("billing error resolution two complete billing cycles", 5, query_vec=q)
+    assert any(r["chunk"]["kind"] == "commentary" for r in with_comments)     # the default is unchanged
+
+
+@needs_index
+def test_rule_text_only_still_puts_named_provisions_first():
+    top = rt.search("What does 1026.13(c)(2) require?", k=5, mode="bm25", interpretations=False)
+    assert top[0]["id"] == "1026.13(c)" and top[0]["named"]
+    assert [r["named"] for r in top].count(True) == sum(rt.named_in("What does 1026.13(c)(2) require?",
+                                                                   rt.load_rules()[0]))
