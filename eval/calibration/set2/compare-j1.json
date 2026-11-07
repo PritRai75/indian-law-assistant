@@ -1,0 +1,457 @@
+{
+  "set": "set2",
+  "judge_version": "j1",
+  "judge_models": [
+    "global.anthropic.claude-sonnet-4-5-20250929-v1:0"
+  ],
+  "labels_sha256": "ced16b7d87055d050977ac61a277a7b1db368a44d5b2cb67a42ee78cd41f10ed",
+  "runs": {
+    "vector k5": "r20261106T081540Z",
+    "hybrid k3 no tool": "r20261106T081853Z"
+  },
+  "not_compared": [],
+  "n": 30,
+  "questions": 20,
+  "faithfulness": {
+    "agree": 18,
+    "agreement": 0.6,
+    "wilson95": [
+      0.42320360253322475,
+      0.7540937188319815
+    ],
+    "kappa": 0.368421052631579,
+    "kappa95": {
+      "lo": 0.09373785621761661,
+      "hi": 0.6395081280498558,
+      "undefined": 0,
+      "reps": 2000
+    },
+    "confusion": {
+      "faithful": {
+        "faithful": 7,
+        "partially_faithful": 1,
+        "unfaithful": 0
+      },
+      "partially_faithful": {
+        "faithful": 9,
+        "partially_faithful": 8,
+        "unfaithful": 0
+      },
+      "unfaithful": {
+        "faithful": 0,
+        "partially_faithful": 2,
+        "unfaithful": 3
+      }
+    },
+    "judge_more_lenient": [
+      "c03",
+      "c04",
+      "c05",
+      "c06",
+      "c11",
+      "c16",
+      "c17",
+      "c18",
+      "c20",
+      "c23",
+      "c27"
+    ],
+    "judge_stricter": [
+      "c24"
+    ],
+    "prit_faithful": 8,
+    "judge_faithful": 16
+  },
+  "faithful_or_not": {
+    "agree": 20,
+    "agreement": 0.6666666666666666,
+    "wilson95": [
+      0.4878005164454384,
+      0.8076950191632386
+    ],
+    "kappa": 0.3534482758620689,
+    "kappa95": {
+      "lo": 0.10134792626728108,
+      "hi": 0.6173690932311616,
+      "undefined": 0,
+      "reps": 2000
+    }
+  },
+  "key_facts": {
+    "n": 64,
+    "agree": 51,
+    "agreement": 0.796875,
+    "agreement95": {
+      "lo": 0.6611964206805125,
+      "hi": 0.9180327868852459,
+      "undefined": 0,
+      "reps": 2000
+    },
+    "kappa": 0.5856573705179283,
+    "kappa95": {
+      "lo": 0.30547309113229176,
+      "hi": 0.8226728650389836,
+      "undefined": 0,
+      "reps": 2000
+    },
+    "confusion": {
+      "prit_true": {
+        "judge_true": 30,
+        "judge_false": 7
+      },
+      "prit_false": {
+        "judge_true": 6,
+        "judge_false": 21
+      }
+    },
+    "prit_covered": 37,
+    "judge_covered": 36
+  },
+  "slices": {
+    "run: vector k5": {
+      "n": 15,
+      "agree": 7,
+      "kappa": 0.14893617021276603,
+      "kappa_binary": 0.16000000000000003,
+      "facts": 32,
+      "facts_agree": 26,
+      "facts_kappa": 0.6129032258064516
+    },
+    "run: hybrid k3 no tool": {
+      "n": 15,
+      "agree": 11,
+      "kappa": 0.5652173913043478,
+      "kappa_binary": 0.5454545454545455,
+      "facts": 32,
+      "facts_agree": 25,
+      "facts_kappa": 0.5625
+    },
+    "answerable": {
+      "n": 20,
+      "agree": 9,
+      "kappa": 0.2,
+      "kappa_binary": 0.1818181818181818,
+      "facts": 44,
+      "facts_agree": 38,
+      "facts_kappa": 0.717948717948718
+    },
+    "declines": {
+      "n": 10,
+      "agree": 9,
+      "kappa": 0.782608695652174,
+      "kappa_binary": 0.782608695652174,
+      "facts": 20,
+      "facts_agree": 13,
+      "facts_kappa": 0.30000000000000004
+    },
+    "frontline": {
+      "n": 11,
+      "agree": 8,
+      "kappa": 0.5540540540540542,
+      "kappa_binary": 0.49230769230769234,
+      "facts": 23,
+      "facts_agree": 17,
+      "facts_kappa": 0.4850746268656715
+    },
+    "compliance": {
+      "n": 19,
+      "agree": 10,
+      "kappa": 0.25327510917030566,
+      "kappa_binary": 0.24,
+      "facts": 41,
+      "facts_agree": 34,
+      "facts_kappa": 0.6287192755498059
+    }
+  },
+  "disagreements": [
+    {
+      "cid": "c01",
+      "qid": "q024",
+      "run": "vector k5",
+      "run_id": "r20261106T081540Z",
+      "prit": "partially_faithful",
+      "judge": "partially_faithful",
+      "facts": [
+        {
+          "n": 1,
+          "prit": true,
+          "judge": false
+        },
+        {
+          "n": 2,
+          "prit": true,
+          "judge": false
+        }
+      ],
+      "note": "side claim: names state law/federal statutes as governing",
+      "rationale": "The answer correctly identifies that the passages don't address the question, but makes an unsupported claim about what the question 'turns on' regarding state law and federal banking statutes."
+    },
+    {
+      "cid": "c03",
+      "qid": "q016",
+      "run": "hybrid k3 no tool",
+      "run_id": "r20261106T081853Z",
+      "prit": "partially_faithful",
+      "judge": "faithful",
+      "facts": [
+        {
+          "n": 1,
+          "prit": false,
+          "judge": true
+        }
+      ],
+      "note": "3-cycle rule garbled, 'last two cycles' dropped; KF1 lacks 'after notice'",
+      "rationale": "All claims are supported by the passages, but the answer does not mention the requirements for written confirmation of consent and notice of the right to revoke consent."
+    },
+    {
+      "cid": "c04",
+      "qid": "q009",
+      "run": "hybrid k3 no tool",
+      "run_id": "r20261106T081853Z",
+      "prit": "partially_faithful",
+      "judge": "faithful",
+      "facts": [],
+      "note": "names FCRA; (g)(4)(iii) duty stated without its conditions",
+      "rationale": "All claims are supported by passage 1, which establishes the creditor's duty to promptly report resolutions but does not impose deadlines on bureaus."
+    },
+    {
+      "cid": "c05",
+      "qid": "q002",
+      "run": "vector k5",
+      "run_id": "r20261106T081540Z",
+      "prit": "partially_faithful",
+      "judge": "faithful",
+      "facts": [],
+      "note": "'liable at all only if' rewritten as 'cap applies only if'",
+      "rationale": "All claims are supported by the tool results, but the answer does not address that online transactions where the card is not physically presented result in zero liability."
+    },
+    {
+      "cid": "c06",
+      "qid": "q016",
+      "run": "vector k5",
+      "run_id": "r20261106T081540Z",
+      "prit": "unfaithful",
+      "judge": "partially_faithful",
+      "facts": [
+        {
+          "n": 1,
+          "prit": false,
+          "judge": true
+        },
+        {
+          "n": 3,
+          "prit": false,
+          "judge": true
+        }
+      ],
+      "note": "opt-in requirement read from 'notwithstanding'; no passage states it",
+      "rationale": "The answer correctly states the affirmative consent requirement and that no fees may be charged without it, but misinterprets the phrase 'notwithstanding a consumer's affirmative consent' and does not mention the required written confirmation or notice of revocation rights."
+    },
+    {
+      "cid": "c09",
+      "qid": "q006",
+      "run": "hybrid k3 no tool",
+      "run_id": "r20261106T081853Z",
+      "prit": "unfaithful",
+      "judge": "unfaithful",
+      "facts": [
+        {
+          "n": 2,
+          "prit": true,
+          "judge": false
+        }
+      ],
+      "note": "cut-off permission drawn from 10(d)(2), which doesn't say it",
+      "rationale": "The answer fails to state the key regulatory requirement that electronic payment cut-off times must be no earlier than 5 p.m., which directly answers the question asked."
+    },
+    {
+      "cid": "c11",
+      "qid": "q004",
+      "run": "hybrid k3 no tool",
+      "run_id": "r20261106T081853Z",
+      "prit": "unfaithful",
+      "judge": "partially_faithful",
+      "facts": [
+        {
+          "n": 2,
+          "prit": true,
+          "judge": false
+        }
+      ],
+      "note": "business-day dates, no tool; 10th bus. day is 20 Nov, not 19",
+      "rationale": "The answer correctly states the regulatory requirements but provides incorrect calculated dates (e.g., 2026-11-19 instead of 2026-11-20, 2026-12-20 instead of 2026-12-20), making key deadline claims unsupported."
+    },
+    {
+      "cid": "c12",
+      "qid": "q024",
+      "run": "hybrid k3 no tool",
+      "run_id": "r20261106T081853Z",
+      "prit": "partially_faithful",
+      "judge": "partially_faithful",
+      "facts": [
+        {
+          "n": 1,
+          "prit": true,
+          "judge": false
+        },
+        {
+          "n": 2,
+          "prit": true,
+          "judge": false
+        }
+      ],
+      "note": "side claim: state law/federal preemption govern",
+      "rationale": "The answer correctly identifies that the passages don't address the question, but makes unsupported claims about what the regulations cover or don't cover generally, and doesn't explicitly state the key facts about Regulation Z and E not governing state usury caps or choice-of-law rules."
+    },
+    {
+      "cid": "c15",
+      "qid": "q010",
+      "run": "hybrid k3 no tool",
+      "run_id": "r20261106T081853Z",
+      "prit": "partially_faithful",
+      "judge": "partially_faithful",
+      "facts": [
+        {
+          "n": 2,
+          "prit": false,
+          "judge": true
+        }
+      ],
+      "note": "names 1005.31-.36 as governing; says rules are in Reg E",
+      "rationale": "The answer correctly states it cannot answer from the passages, but makes an unsupported claim about specific regulation sections governing remittance transfers."
+    },
+    {
+      "cid": "c16",
+      "qid": "q006",
+      "run": "vector k5",
+      "run_id": "r20261106T081540Z",
+      "prit": "partially_faithful",
+      "judge": "faithful",
+      "facts": [],
+      "note": "side claim: names 1026.10(b) as governing",
+      "rationale": "The answer makes no claims and correctly declines to answer because the necessary passages about payment cutoff times are not provided."
+    },
+    {
+      "cid": "c17",
+      "qid": "q004",
+      "run": "vector k5",
+      "run_id": "r20261106T081540Z",
+      "prit": "partially_faithful",
+      "judge": "faithful",
+      "facts": [],
+      "note": "dates tool-backed; 'ACH after cancel is an error' unsupported",
+      "rationale": "All claims are supported by the tool results, and both key facts about the deadlines and dates are stated in the answer."
+    },
+    {
+      "cid": "c18",
+      "qid": "q053",
+      "run": "vector k5",
+      "run_id": "r20261106T081540Z",
+      "prit": "partially_faithful",
+      "judge": "faithful",
+      "facts": [],
+      "note": "ack deadline drops 'unless resolved within that time'",
+      "rationale": "All claims are supported by the passages or tool results, and both key facts are fully covered."
+    },
+    {
+      "cid": "c20",
+      "qid": "q001",
+      "run": "vector k5",
+      "run_id": "r20261106T081540Z",
+      "prit": "partially_faithful",
+      "judge": "faithful",
+      "facts": [],
+      "note": "unlimited-liability line drops 'before notice is given'",
+      "rationale": "All claims are supported by passage 4 and the tool results, and both key facts are explicitly stated in the answer."
+    },
+    {
+      "cid": "c23",
+      "qid": "q034",
+      "run": "vector k5",
+      "run_id": "r20261106T081540Z",
+      "prit": "partially_faithful",
+      "judge": "faithful",
+      "facts": [],
+      "note": "dates tool-backed; 'Reg E error matter' unsupported",
+      "rationale": "All claims are supported by passages or tool results, and both key facts are stated with correct dates."
+    },
+    {
+      "cid": "c24",
+      "qid": "q049",
+      "run": "vector k5",
+      "run_id": "r20261106T081540Z",
+      "prit": "faithful",
+      "judge": "partially_faithful",
+      "facts": [],
+      "note": "",
+      "rationale": "The answer correctly addresses the main question about the wrong address making the notice invalid, but includes unsupported presumptions about the letter's content and deficiencies."
+    },
+    {
+      "cid": "c26",
+      "qid": "q040",
+      "run": "vector k5",
+      "run_id": "r20261106T081540Z",
+      "prit": "faithful",
+      "judge": "faithful",
+      "facts": [
+        {
+          "n": 2,
+          "prit": false,
+          "judge": true
+        }
+      ],
+      "note": "never says current Reg E has no $5 cap",
+      "rationale": "All claims are supported by the passages, and both key facts are covered in the answer."
+    },
+    {
+      "cid": "c27",
+      "qid": "q005",
+      "run": "hybrid k3 no tool",
+      "run_id": "r20261106T081853Z",
+      "prit": "partially_faithful",
+      "judge": "faithful",
+      "facts": [],
+      "note": "59 reevaluation claim drops 2009-2010 scope of cmt 59(a)(1)-4",
+      "rationale": "The answer correctly states the 45-day notice requirement but declines to definitively answer whether the new rate can apply to existing balances."
+    },
+    {
+      "cid": "c29",
+      "qid": "q044",
+      "run": "vector k5",
+      "run_id": "r20261106T081540Z",
+      "prit": "faithful",
+      "judge": "faithful",
+      "facts": [
+        {
+          "n": 2,
+          "prit": false,
+          "judge": true
+        }
+      ],
+      "note": "",
+      "rationale": "The answer correctly states that the passages do not cover general debt collection practices and that such rules fall outside Regulations Z and E, which aligns with both key facts."
+    },
+    {
+      "cid": "c30",
+      "qid": "q007",
+      "run": "hybrid k3 no tool",
+      "run_id": "r20261106T081853Z",
+      "prit": "faithful",
+      "judge": "faithful",
+      "facts": [
+        {
+          "n": 2,
+          "prit": true,
+          "judge": false
+        }
+      ],
+      "note": "matches cmt 12(a)-5.ii/iii/iv.D",
+      "rationale": "All claims are supported by passage 1, though the answer provides more detail about dual application of regulations than the reference answer's simpler statement that Regulation E determines liability."
+    }
+  ],
+  "bootstrap": {
+    "reps": 2000,
+    "seed": 20261105,
+    "resampled": "questions"
+  }
+}
