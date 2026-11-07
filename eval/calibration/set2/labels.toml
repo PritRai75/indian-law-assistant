@@ -1,0 +1,189 @@
+# Judge calibration labels (rules of rubric j2). Written by Prit Raithatha.
+# Read each item in scratch/calibration/set2/sheet.html and fill in its block here.
+#   faithfulness  "faithful", "partially_faithful" or "unfaithful"
+#   key_facts     one true or false per key fact, in the sheet's order, e.g. [true, false]
+#   note          optional, a few words
+# Label only from the sheet. Each block starts with the first words of its question: check
+# they match the sheet's item before you fill it in.
+# Check any time: python -m eval.calibrate --check --set set2. Labels are final once committed:
+# don't change them after seeing the judge's verdicts.
+
+[[label]]
+id = "c01"
+faithfulness = "partially_faithful"
+key_facts = [true, true]
+note = "side claim: names state law/federal statutes as governing"
+
+[[label]]
+id = "c02"
+faithfulness = "partially_faithful"
+key_facts = [true, true]
+note = "side claim from memory: card-network rules could give more"
+
+[[label]]
+id = "c03"
+faithfulness = "partially_faithful"
+key_facts = [false, false, true]
+note = "3-cycle rule garbled, 'last two cycles' dropped; KF1 lacks 'after notice'"
+
+[[label]]
+id = "c04"
+faithfulness = "partially_faithful"
+key_facts = [true, true]
+note = "names FCRA; (g)(4)(iii) duty stated without its conditions"
+
+[[label]]
+id = "c05"
+faithfulness = "partially_faithful"
+key_facts = [false, false]
+note = "'liable at all only if' rewritten as 'cap applies only if'"
+
+[[label]]
+id = "c06"
+faithfulness = "unfaithful"
+key_facts = [false, false, false]
+note = "opt-in requirement read from 'notwithstanding'; no passage states it"
+
+[[label]]
+id = "c07"
+faithfulness = "unfaithful"
+key_facts = [false, false]
+note = "says Reg Z governs overdraft draws; also misplaces unlimited-liability scope"
+
+[[label]]
+id = "c08"
+faithfulness = "faithful"
+key_facts = [false, false]
+note = "no program-terms point; rewards only 'not in passages'"
+
+[[label]]
+id = "c09"
+faithfulness = "unfaithful"
+key_facts = [false, true]
+note = "cut-off permission drawn from 10(d)(2), which doesn't say it"
+
+[[label]]
+id = "c10"
+faithfulness = "partially_faithful"
+key_facts = [true, false]
+note = "side claim: Reg E governs checking accounts"
+
+[[label]]
+id = "c11"
+faithfulness = "unfaithful"
+key_facts = [false, true]
+note = "business-day dates, no tool; 10th bus. day is 20 Nov, not 19"
+
+[[label]]
+id = "c12"
+faithfulness = "partially_faithful"
+key_facts = [true, true]
+note = "side claim: state law/federal preemption govern"
+
+[[label]]
+id = "c13"
+faithfulness = "faithful"
+key_facts = [true, true]
+note = ""
+
+[[label]]
+id = "c14"
+faithfulness = "faithful"
+key_facts = [true, true]
+note = "29 Nov correct; 'without access device' inferred"
+
+[[label]]
+id = "c15"
+faithfulness = "partially_faithful"
+key_facts = [false, false]
+note = "names 1005.31-.36 as governing; says rules are in Reg E"
+
+[[label]]
+id = "c16"
+faithfulness = "partially_faithful"
+key_facts = [false, false]
+note = "side claim: names 1026.10(b) as governing"
+
+[[label]]
+id = "c17"
+faithfulness = "partially_faithful"
+key_facts = [true, true]
+note = "dates tool-backed; 'ACH after cancel is an error' unsupported"
+
+[[label]]
+id = "c18"
+faithfulness = "partially_faithful"
+key_facts = [true, true]
+note = "ack deadline drops 'unless resolved within that time'"
+
+[[label]]
+id = "c19"
+faithfulness = "partially_faithful"
+key_facts = [false, false, false]
+note = "side claims: names 1005.5 and Part 1005"
+
+[[label]]
+id = "c20"
+faithfulness = "partially_faithful"
+key_facts = [true, true]
+note = "unlimited-liability line drops 'before notice is given'"
+
+[[label]]
+id = "c21"
+faithfulness = "unfaithful"
+key_facts = [false, true]
+note = "business-day dates, no tool; 10th bus. day is 17 Nov, not 16"
+
+[[label]]
+id = "c22"
+faithfulness = "faithful"
+key_facts = [true, true, true]
+note = "12 days and 19 Nov correct; tool calls irrelevant, unused"
+
+[[label]]
+id = "c23"
+faithfulness = "partially_faithful"
+key_facts = [true, true]
+note = "dates tool-backed; 'Reg E error matter' unsupported"
+
+[[label]]
+id = "c24"
+faithfulness = "faithful"
+key_facts = [true, true]
+note = ""
+
+[[label]]
+id = "c25"
+faithfulness = "partially_faithful"
+key_facts = [true, false]
+note = "side claim: names FDCPA/Reg F"
+
+[[label]]
+id = "c26"
+faithfulness = "faithful"
+key_facts = [true, false]
+note = "never says current Reg E has no $5 cap"
+
+[[label]]
+id = "c27"
+faithfulness = "partially_faithful"
+key_facts = [true, false]
+note = "59 reevaluation claim drops 2009-2010 scope of cmt 59(a)(1)-4"
+
+[[label]]
+id = "c28"
+faithfulness = "partially_faithful"
+key_facts = [true, false]
+note = "side claim: Reg E governs checking-account EFTs"
+
+[[label]]
+id = "c29"
+faithfulness = "faithful"
+key_facts = [true, false]
+note = ""
+
+[[label]]
+id = "c30"
+faithfulness = "faithful"
+key_facts = [true, true]
+note = "matches cmt 12(a)-5.ii/iii/iv.D"
