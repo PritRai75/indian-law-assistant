@@ -8,6 +8,7 @@ From the repo root:
     python -m eval.report RUN_ID --markdown FILE     also write it as Markdown (for the README)
     python -m eval.report RUN_ID --show q004         one question: its answer, tags and the judge's verdict
     python -m eval.report RUN_ID --review-sheet      write eval/review/RUN_ID.toml for the author's review
+    python -m eval.report RUN_A --compare RUN_B      two runs side by side, question by question (step 7)
 
 Judge the run first (python -m eval.judge RUN_ID); questions with no verdict are listed, and the tags
 that need the judge can't fire for them.
@@ -61,6 +62,16 @@ retrieval miss, and a missed call isn't tagged after an over-abstention either.
 Decisions 77-79 are Prit's; the order above and the keyword list are Claude's (session 21), open to
 his push-back.
 
+Comparing two runs (--compare, session 22; for the experiments, spec step 7): the questions both runs
+answered, paired. For each yes/no measure (hit@5, abstention, declines declined, answerable answered,
+declines without memory_leak, tool, calculation, judge faithful, passed) it counts the questions right
+in both, in B only, in A only and in neither, with the exact two-sided McNemar test over those that
+changed; the first gold rank and key facts covered as better / worse / same in B; totals and rates
+(MRR, citation and abstention precision, latency, tokens) for each run; overall and by persona; declines
+by category; primary tags; and every question that changed. It says which logged settings differ and
+warns when more than one does, when app/ changed between the two commits, and when a question's labels
+changed between the runs (left out). Both runs need verdicts from the same rubric.
+
 The review (decision 77): for the final test run, the author reviews every failure in
 eval/review/RUN_ID.toml (--review-sheet writes it) and confirms or changes its primary tag, or marks
 it "pass". The README's counts and three worked examples come from the reviewed tags. The review covers
@@ -70,7 +81,9 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import re
+import subprocess
 import sys
 import tomllib
 from collections import Counter
@@ -498,6 +511,296 @@ def show(db, run_id: str, qid: str, version: str = J.JUDGE_VERSION) -> str:
     return "\n".join(out)
 
 
+# ================================================================ two runs side by side (step 7)
+
+# The yes/no measures compared question by question: (key, label, applies to the row, right in the row).
+# A question counts for a measure only when it applies in both runs (for the judge: judged in both).
+PAIRED = (
+    ("hit_at_5", "hit@5", lambda r: not r.item.should_abstain, lambda r: r.metrics["hit_at_5"]),
+    ("abstain_ok", "abstention correct", lambda r: True,
+     lambda r: r.metrics["abstain_outcome"] in ("correct_answer", "correct_decline")),
+    ("declined", "declines declined", lambda r: r.item.should_abstain, lambda r: r.metrics["abstained"]),
+    ("answered", "answerable answered", lambda r: not r.item.should_abstain, lambda r: not r.metrics["abstained"]),
+    ("no_leak", "declines without memory_leak", lambda r: r.item.should_abstain,
+     lambda r: not any(t == "memory_leak" for t, _ in r.tags)),
+    ("tool_ok", "tool correct", lambda r: True, lambda r: r.metrics["tool_correct"]),
+    ("calc", "calculation exact", lambda r: r.metrics["calc_exact"] is not None, lambda r: bool(r.metrics["calc_exact"])),
+    ("faithful", "judge faithful*", lambda r: r.verdict.status == "judged",
+     lambda r: r.verdict.faithfulness == "faithful"),
+    ("passed", "passed (no error tag)", lambda r: True, lambda r: not r.tags),
+)
+
+
+def mcnemar_p(b: int, c: int) -> float:
+    """Exact two-sided McNemar test (the sign test on the questions that changed): b changed one way, c the
+    other. 1.0 when nothing changed. Checked against statsmodels' mcnemar(exact=True) in session 22."""
+    n = b + c
+    if n == 0:
+        return 1.0
+    tail = sum(math.comb(n, i) for i in range(min(b, c) + 1)) / 2 ** n
+    return min(1.0, 2 * tail)
+
+
+def paired_counts(pairs: list[tuple[Row, Row]]) -> list[dict]:
+    """One dict per PAIRED measure over (A row, B row) pairs of the same question."""
+    out = []
+    for key, label, applies, ok in PAIRED:
+        both = [(ok(a), ok(b)) for a, b in pairs if applies(a) and applies(b)]
+        b_only = sum(not x and y for x, y in both)
+        a_only = sum(x and not y for x, y in both)
+        out.append({"key": key, "label": label, "n": len(both),
+                    "a": sum(x for x, _ in both), "b": sum(y for _, y in both),
+                    "both": sum(x and y for x, y in both), "b_only": b_only, "a_only": a_only,
+                    "neither": sum(not x and not y for x, y in both), "p": mcnemar_p(b_only, a_only)})
+    return out
+
+
+def ordered_counts(pairs: list[tuple[Row, Row]]) -> list[dict]:
+    """Measures with more than two values: the first gold passage's rank (lower is better, none worst) and
+    key facts covered (answerable; a guard fallback text covers 0). Better in B / worse in B / same, with
+    the sign test over the questions that changed."""
+    def rank(r):
+        k = r.metrics["first_gold_rank"]
+        return float("inf") if k is None else k
+
+    def facts(r):
+        return r.verdict.kf_covered or 0
+
+    defs = (("rank", "first gold rank", lambda r: not r.item.should_abstain, lambda a, b: rank(b) < rank(a),
+             lambda a, b: rank(b) > rank(a)),
+            ("key_facts", "key facts covered", lambda r: not r.item.should_abstain and r.verdict.status in ("judged", "skipped"),
+             lambda a, b: facts(b) > facts(a), lambda a, b: facts(b) < facts(a)))
+    out = []
+    for key, label, applies, better, worse in defs:
+        both = [(a, b) for a, b in pairs if applies(a) and applies(b)]
+        nb, nw = sum(better(a, b) for a, b in both), sum(worse(a, b) for a, b in both)
+        out.append({"key": key, "label": label, "n": len(both), "b_better": nb, "b_worse": nw,
+                    "same": len(both) - nb - nw, "p": mcnemar_p(nb, nw)})
+    return out
+
+
+def value_lines(sa: dict, sb: dict) -> list[tuple[str, str, str]]:
+    """Measures that are totals or rates over the slice, not per question: shown for each run."""
+    def lat(t):
+        return "-" if t["latency_p50_ms"] is None else f"{t['latency_p50_ms'] / 1000:.1f} s"
+    return [("MRR", *("-" if t["mrr"] is None else f"{t['mrr']:.2f}" for t in (sa, sb))),
+            ("citation precision", frac(sa["citation_precision"]), frac(sb["citation_precision"])),
+            ("abstention precision", frac(sa["abstain_precision"]), frac(sb["abstain_precision"])),
+            ("key facts (all)", frac(sa["key_facts"]), frac(sb["key_facts"])),
+            ("latency p50", lat(sa), lat(sb)),
+            ("input tokens (total)", f"{sa['input_tokens']:,}", f"{sb['input_tokens']:,}"),
+            ("output tokens (total)", f"{sa['output_tokens']:,}", f"{sb['output_tokens']:,}")]
+
+
+def settings_diff(a: dict, b: dict) -> list[tuple[str, object, object]]:
+    """(setting, A, B) for every logged setting that differs: the config and the prompt version."""
+    ca, cb = (json.loads(r["config_json"] or "{}") for r in (a, b))
+    out = [(k, ca.get(k), cb.get(k)) for k in sorted(set(ca) | set(cb)) if ca.get(k) != cb.get(k)]
+    if a["prompt_version"] != b["prompt_version"]:
+        out.append(("prompt_version", a["prompt_version"], b["prompt_version"]))
+    return out
+
+
+def app_changed(commit_a: str | None, commit_b: str | None) -> bool | None:
+    """Whether app/ differs between the two runs' commits (git, in this repo); None when it can't tell."""
+    if not commit_a or not commit_b:
+        return None
+    if commit_a == commit_b:
+        return False
+    try:
+        done = subprocess.run(["git", "diff", "--quiet", commit_a, commit_b, "--", "app/"], cwd=R.REPO,
+                              capture_output=True)
+    except OSError:
+        return None
+    return {0: False, 1: True}.get(done.returncode)
+
+
+def what_changed(a: Row, b: Row) -> list[str]:
+    """Plain-words changes for one question, A → B."""
+    ma, mb, out = a.metrics, b.metrics, []
+
+    def word(x):
+        return "none" if x is None else str(x)
+    if not a.item.should_abstain and ma["first_gold_rank"] != mb["first_gold_rank"]:
+        out.append(f"first gold rank {word(ma['first_gold_rank'])} → {word(mb['first_gold_rank'])}")
+    if ma["abstained"] != mb["abstained"]:
+        out.append("declined → answered" if ma["abstained"] else "answered → declined")
+    if ma["tool_outcome"] != mb["tool_outcome"]:
+        out.append(f"tool {ma['tool_outcome']} → {mb['tool_outcome']}")
+    if ma["calc_exact"] != mb["calc_exact"]:
+        out.append(f"calculation {word(ma['calc_exact'])} → {word(mb['calc_exact'])}")
+    if (ma["cited_gold"], ma["cited"]) != (mb["cited_gold"], mb["cited"]):
+        out.append(f"citations in a gold family {ma['cited_gold']}/{ma['cited']} → {mb['cited_gold']}/{mb['cited']}")
+    va, vb = a.verdict, b.verdict
+
+    def judge(v):
+        return v.faithfulness if v.status == "judged" else v.status
+    if judge(va) != judge(vb):
+        out.append(f"judge {judge(va)} → {judge(vb)}")
+    if not a.item.should_abstain and (va.kf_covered or 0) != (vb.kf_covered or 0):
+        out.append(f"key facts {va.kf_covered or 0} → {vb.kf_covered or 0} of {len(a.item.key_facts or [])}")
+    ta, tb = [t for t, _ in a.tags], [t for t, _ in b.tags]
+    if ta != tb:
+        out.append(f"tags {', '.join(ta) or 'none'} → {', '.join(tb) or 'none'}")
+    return out
+
+
+def compare(db, run_a: str, run_b: str, version: str = J.JUDGE_VERSION, ix: R.IndexView | None = None) -> dict:
+    """Two runs on the same questions, paired question by question: B read against A."""
+    from eval.calibrate import run_name
+    if run_a == run_b:
+        raise SystemExit("compare two different runs")
+    ix = ix or R.index_view()
+    (ha, rows_a), (hb, rows_b) = load_rows(db, run_a, version, ix), load_rows(db, run_b, version, ix)
+    by_a, by_b = {r.item.id: r for r in rows_a}, {r.item.id: r for r in rows_b}
+    shared = sorted(set(by_a) & set(by_b))
+    failed = [(q, "A" if by_a[q].metrics is None else "B") for q in shared
+              if by_a[q].metrics is None or by_b[q].metrics is None]
+    # A question whose label was edited between the runs is graded against different labels: left out.
+    relabelled = [q for q in shared if by_a[q].item != by_b[q].item]
+    common = [q for q in shared if q not in dict(failed) and q not in relabelled]
+    if not common:
+        raise SystemExit(f"runs {run_a} and {run_b} have no question in common that ran in both")
+    pairs = [(by_a[q], by_b[q]) for q in common]
+
+    def block(ps):
+        ra, rb = [a for a, _ in ps], [b for _, b in ps]
+        sa, sb = stats(ra), stats(rb)
+        return {"n": len(ps), "paired": paired_counts(ps), "ordered": ordered_counts(ps), "values": value_lines(sa, sb)}
+
+    slices = {"all": block(pairs)}
+    for p in PERSONAS:
+        ps = [(a, b) for a, b in pairs if a.item.persona == p]
+        if ps:
+            slices[p] = block(ps)
+    cats = {}
+    for cat in sorted({a.item.abstain_category for a, _ in pairs if a.item.should_abstain}):
+        group = [(a, b) for a, b in pairs if a.item.should_abstain and a.item.abstain_category == cat]
+        cats[cat] = tuple((sum(r.metrics["abstained"] for r in rs), len(rs),
+                           sum(any(t == "memory_leak" for t, _ in r.tags) for r in rs))
+                          for rs in ([a for a, _ in group], [b for _, b in group]))
+    changes = [(a.item.id, a.item.persona, a.item.type, ch) for a, b in pairs if (ch := what_changed(a, b))]
+    return {
+        "a": {"run": ha, "name": run_name(db, run_a)}, "b": {"run": hb, "name": run_name(db, run_b)},
+        "judge_version": version, "grader_now": R.GRADER_VERSION,
+        "settings": settings_diff(ha, hb), "app_changed": app_changed(ha["git_commit"], hb["git_commit"]),
+        "dirty": [w for w, h in (("A", ha), ("B", hb)) if h["git_dirty"]],
+        "common": common, "only_a": sorted(set(by_a) - set(by_b)), "only_b": sorted(set(by_b) - set(by_a)),
+        "failed": failed, "relabelled": relabelled, "slices": slices, "declines_by_category": cats,
+        "tag_counts": (Counter(a.tags[0][0] for a, _ in pairs if a.tags), Counter(b.tags[0][0] for _, b in pairs if b.tags)),
+        "no_verdict": {w: [r.item.id for r in rs if r.verdict.status in ("missing", "error")]
+                       for w, rs in (("A", [a for a, _ in pairs]), ("B", [b for _, b in pairs]))},
+        "changes": changes,
+    }
+
+
+COMPARE_NOTE = ("How to read this: B is read against A, question by question. \"B only\" = right in B and wrong in "
+                "A (B better); \"A only\" = the reverse. p is the exact two-sided McNemar (sign) test over the "
+                "questions that changed on that measure; it needs at least 6 changes, all one way, to fall below "
+                "0.05. With this few questions a gap of one or two is within the noise, and two runs with the same "
+                "settings can also differ (the model isn't fully deterministic at temperature 0).")
+
+
+def p_cell(p: float, changed: int) -> str:
+    return "-" if changed == 0 else f"{p:.2f}"
+
+
+def compare_header(c: dict) -> list[str]:
+    a, b = c["a"], c["b"]
+    lines = [f"A: {a['run']['run_id']} ({a['name']}), commit {(a['run']['git_commit'] or '?')[:7]}",
+             f"B: {b['run']['run_id']} ({b['name']}), commit {(b['run']['git_commit'] or '?')[:7]}",
+             f"{len(c['common'])} questions in both; judge {c['judge_version']}; both graded with {c['grader_now']}"]
+    if c["settings"]:
+        lines.append("Settings that differ: " + "; ".join(f"{k} {va} → {vb}" for k, va, vb in c["settings"]))
+    else:
+        lines.append("Settings that differ: none (a repeat of the same configuration)")
+    if len(c["settings"]) > 1:
+        lines.append("WARNING: more than one setting differs, so this isn't a one-variable comparison.")
+    lines.append({False: "App code (app/): the same in both commits.",
+                  True: "WARNING: app/ changed between the two commits, so the code differs as well as the settings.",
+                  None: "App code (app/): couldn't check (commit unknown or not in this clone)."}[c["app_changed"]])
+    if c["dirty"]:
+        lines.append(f"WARNING: run {' and '.join(c['dirty'])} was made with uncommitted changes.")
+    if c["relabelled"]:
+        lines.append("Left out (labels changed between the runs): " + ", ".join(c["relabelled"]))
+    if c["failed"]:
+        lines.append("Left out (failed to run): " + ", ".join(f"{q} (in {w})" for q, w in c["failed"]))
+    if c["only_a"] or c["only_b"]:
+        lines.append(f"Left out (in one run only): A {', '.join(c['only_a']) or 'none'}; B {', '.join(c['only_b']) or 'none'}")
+    for w, qs in c["no_verdict"].items():
+        if qs:
+            lines.append(f"No {c['judge_version']} verdict in {w} for {', '.join(qs)}: judge the run first.")
+    return lines
+
+
+SLICE_TITLE = {"all": "All questions", "frontline": "Frontline", "compliance": "Compliance"}
+PAIRED_HEAD = ["measure", "A", "B", "both", "B only", "A only", "neither", "p"]
+ORDERED_HEAD = ["measure", "questions", "better in B", "worse in B", "same", "p"]
+
+
+def compare_tables(blk: dict) -> tuple[list[list[str]], list[list[str]], list[list[str]]]:
+    paired = [[d["label"], f"{d['a']}/{d['n']}", f"{d['b']}/{d['n']}", str(d["both"]), str(d["b_only"]),
+               str(d["a_only"]), str(d["neither"]), p_cell(d["p"], d["b_only"] + d["a_only"])]
+              for d in blk["paired"] if d["n"]]
+    ordered = [[d["label"], str(d["n"]), str(d["b_better"]), str(d["b_worse"]), str(d["same"]),
+                p_cell(d["p"], d["b_better"] + d["b_worse"])] for d in blk["ordered"] if d["n"]]
+    values = [list(v) for v in blk["values"]]
+    return paired, ordered, values
+
+
+def compare_text(c: dict) -> str:
+    lines = compare_header(c)
+
+    def table(head, rows, first=31):
+        widths = [first] + [max(10, len(h) + 1) for h in head[1:]]
+        out = ["  " + "".join(f"{h:<{w}}" if i == 0 else f"{h:>{w}}" for i, (h, w) in enumerate(zip(head, widths)))]
+        out += ["  " + "".join(f"{x:<{w}}" if i == 0 else f"{x:>{w}}" for i, (x, w) in enumerate(zip(r, widths)))
+                for r in rows]
+        return out
+    for key, blk in c["slices"].items():
+        paired, ordered, values = compare_tables(blk)
+        lines += ["", f"{SLICE_TITLE[key]} ({blk['n']})"] + table(PAIRED_HEAD, paired)
+        if ordered:
+            lines += [""] + table(ORDERED_HEAD, ordered)
+        lines += [""] + table(["totals and rates", "A", "B"], values)
+    if c["declines_by_category"]:
+        lines += ["", "Declines by category (declined / n, memory_leak), A → B:"]
+        lines += [f"  {cat}: {da}/{na} ({la} leak) → {db_}/{nb} ({lb} leak)"
+                  for cat, ((da, na, la), (db_, nb, lb)) in c["declines_by_category"].items()]
+    ta, tb = c["tag_counts"]
+    lines += ["", "Primary error tags, A → B:"]
+    lines += [f"  {t:20} {ta.get(t, 0):>3} → {tb.get(t, 0)}" for t in TAGS if ta.get(t) or tb.get(t)]
+    lines += ["", f"Questions that changed: {len(c['changes'])} of {len(c['common'])}"]
+    for q, persona, typ, ch in c["changes"]:
+        lines.append(f"  {q} {persona:10} {typ:20} " + "; ".join(ch))
+    lines += ["", COMPARE_NOTE, "* " + CAVEAT]
+    return "\n".join(lines)
+
+
+def compare_markdown(c: dict) -> str:
+    lines = ["# Run comparison", ""] + [line + "  " for line in compare_header(c)]
+    for key, blk in c["slices"].items():
+        paired, ordered, values = compare_tables(blk)
+        lines += ["", f"## {SLICE_TITLE[key]} ({blk['n']})", ""] + md_table(PAIRED_HEAD, paired)
+        if ordered:
+            lines += [""] + md_table(ORDERED_HEAD, ordered)
+        lines += [""] + md_table(["totals and rates", "A", "B"], values)
+    if c["declines_by_category"]:
+        lines += ["", "## Declines by category", ""] + md_table(
+            ["category", "A declined", "A memory_leak", "B declined", "B memory_leak"],
+            [[cat, f"{da}/{na}", str(la), f"{db_}/{nb}", str(lb)]
+             for cat, ((da, na, la), (db_, nb, lb)) in c["declines_by_category"].items()])
+    ta, tb = c["tag_counts"]
+    lines += ["", "## Primary error tags", ""] + md_table(
+        ["tag", "A", "B"], [[t, str(ta.get(t, 0)), str(tb.get(t, 0))] for t in TAGS if ta.get(t) or tb.get(t)])
+    lines += ["", f"## Questions that changed ({len(c['changes'])} of {len(c['common'])})", ""]
+    if c["changes"]:
+        lines += md_table(["question", "persona", "type", "what changed (A → B)"],
+                          [[q, p, t, "; ".join(ch)] for q, p, t, ch in c["changes"]])
+    lines += ["", COMPARE_NOTE, "", "\\* " + CAVEAT]
+    return "\n".join(lines) + "\n"
+
+
 # ================================================================ command line
 
 def main(argv=None) -> int:
@@ -508,8 +811,11 @@ def main(argv=None) -> int:
     ap.add_argument("--markdown", type=Path, metavar="FILE", help="also write the report as Markdown")
     ap.add_argument("--show", metavar="QID", help="one question in full, and stop")
     ap.add_argument("--review-sheet", action="store_true", help="write eval/review/RUN_ID.toml for the author's review")
+    ap.add_argument("--compare", metavar="RUN_B", help="compare RUN_ID (A) with RUN_B, question by question")
     ap.add_argument("--db", type=Path, default=R.DB_FILE, help="the SQLite file (default runs.db)")
     args = ap.parse_args(argv)
+    if args.compare and (args.show or args.review_sheet):
+        ap.error("--compare doesn't combine with --show or --review-sheet")
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")   # Windows consoles default to another encoding
 
@@ -517,6 +823,14 @@ def main(argv=None) -> int:
         print(f"No {args.db.name} here: run this from the repo root, where eval.run logs runs.")
         return 2
     db = J.connect(args.db)
+    if args.compare:
+        c = compare(db, args.run_id, args.compare, args.judge)
+        print(compare_text(c))
+        if args.markdown:
+            args.markdown.parent.mkdir(parents=True, exist_ok=True)
+            args.markdown.write_text(compare_markdown(c), encoding="utf-8", newline="\n")
+            print(f"\nWrote {args.markdown}")
+        return 0
     if args.show:
         print(show(db, args.run_id, args.show, args.judge))
         return 0

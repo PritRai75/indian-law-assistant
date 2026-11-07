@@ -229,7 +229,7 @@ def test_declines():
 RUN = "r20990101T000000Z"
 
 
-def add_verdict(db, qid, *, status="judged", label="faithful", covered=2, total=2, unsupported=(), version="j2"):
+def add_verdict(db, qid, *, status="judged", label="faithful", covered=2, total=2, unsupported=(), version="j2", run=RUN):
     claims = [{"claim": "ok", "supported": True, "source": "passage 1"}] + [
         {"claim": c, "supported": False, "source": None} for c in unsupported]
     vj = None if status != "judged" else json.dumps({
@@ -237,7 +237,7 @@ def add_verdict(db, qid, *, status="judged", label="faithful", covered=2, total=
         "key_facts": [{"n": n, "covered": n <= covered} for n in range(1, total + 1)]})
     db.execute("INSERT INTO judgements (run_id, qid, judge_version, status, faithfulness, kf_covered, kf_total, "
                "verdict_json) VALUES (?,?,?,?,?,?,?,?)",
-               (RUN, qid, version, status, label if status == "judged" else None,
+               (run, qid, version, status, label if status == "judged" else None,
                 covered if status == "judged" else None, total if status == "judged" else None, vj))
     db.commit()
 
@@ -388,3 +388,146 @@ def test_command_line_review_sheet_and_markdown(db, tmp_path, monkeypatch, capsy
     out = capsys.readouterr().out
     assert "review in progress: 0 of 4 reviewed" in out and md.read_text(encoding="utf-8").startswith("# Evaluation report")
     assert P.main([RUN, "--db", str(tmp_path / "none.db")]) == 2
+
+
+# ---------------------------------------------------------------- two runs side by side (--compare)
+
+RUN_B = "r20990102T000000Z"
+
+
+def add_run(db, run_id, config, commit="a919b13abc", dirty=0, prompt="p2"):
+    db.execute("INSERT INTO runs (run_id, split, git_commit, git_dirty, config_json, prompt_version, grader_version, "
+               "n_items, today_default) VALUES (?,?,?,?,?,?,?,?,?)",
+               (run_id, "dev", commit, dirty, json.dumps(config), prompt, "g5", 6, "2026-11-03"))
+
+
+@pytest.fixture
+def two(db):
+    """Run A is the `db` fixture's run (hybrid k5). Run B (vector k5) changes one thing per question."""
+    add_run(db, RUN_B, {"search_mode": "vector", "k": 5, "tool_on": True})
+    answers = {
+        "q006": resp(retrieved=(OTHER_CHUNK, "1026.10(b)")),                                 # rank 1 -> 2
+        "q005": resp(retrieved=("1026.55(b)(3)", OTHER_CHUNK), cites=("1026.55(b)(3)",)),     # judge better
+        "q004": tool_resp(),                                                                  # calculation fixed
+        "q016": resp(retrieved=(OTHER_CHUNK,), cites=(), abstained=True, flags=["no_valid_citation"]),  # same
+        "q008": resp(retrieved=("1005.6",), cites=("1005.6(b)(1)",)),                         # now answered
+        "q024": resp(retrieved=(OTHER_CHUNK,), cites=(), abstained=True),                     # same, now judged
+        "q049": resp(retrieved=("1005.11(c)",), cites=("1005.11(c)(1)",)),                    # failed in A
+        "q052": resp(),                                                                       # only in B
+    }
+    for qid, r in answers.items():
+        item = BY_ID[qid]
+        R.log_result(db, RUN_B, item, r, None, R.grade(item, r, IX))
+    add_verdict(db, "q006", run=RUN_B)
+    add_verdict(db, "q005", run=RUN_B, label="faithful", covered=2)
+    add_verdict(db, "q004", run=RUN_B, covered=2)
+    add_verdict(db, "q016", run=RUN_B, status="skipped")
+    add_verdict(db, "q008", run=RUN_B, label="partially_faithful", unsupported=["Visa's zero liability covers her"])
+    add_verdict(db, "q024", run=RUN_B, covered=3, total=3)
+    add_verdict(db, "q049", run=RUN_B)
+    add_verdict(db, "q052", run=RUN_B)
+    return db
+
+
+@pytest.mark.parametrize("b,c,p", [(0, 0, 1.0), (1, 1, 1.0), (3, 1, 0.625), (5, 0, 0.0625), (6, 0, 0.03125),
+                                   (0, 6, 0.03125), (10, 2, 158 / 4096)])
+def test_mcnemar_exact(b, c, p):
+    # Reference values: statsmodels.stats.contingency_tables.mcnemar(exact=True), checked in session 22.
+    assert P.mcnemar_p(b, c) == pytest.approx(p)
+
+
+def test_compare_pairs_the_questions_both_runs_answered(two):
+    c = P.compare(two, RUN, RUN_B, ix=IX)
+    assert c["common"] == ["q004", "q005", "q006", "q008", "q016", "q024"]
+    assert c["failed"] == [("q049", "A")] and c["only_b"] == ["q052"] and c["only_a"] == [] and c["relabelled"] == []
+    assert c["settings"] == [("search_mode", "hybrid", "vector")] and c["dirty"] == []
+    assert (c["a"]["name"], c["b"]["name"]) == ("hybrid k5", "vector k5")
+    assert c["no_verdict"] == {"A": ["q024"], "B": []}
+
+
+def test_compare_counts_each_measure_question_by_question(two):
+    blk = P.compare(two, RUN, RUN_B, ix=IX)["slices"]["all"]
+    got = {d["key"]: (d["n"], d["a"], d["b"], d["both"], d["b_only"], d["a_only"], d["neither"]) for d in blk["paired"]}
+    assert got["hit_at_5"] == (4, 3, 3, 3, 0, 0, 1)            # answerable q004 q005 q006 q016; q016 misses in both
+    assert got["declined"] == (2, 2, 1, 1, 0, 1, 0)            # q008 answered in B
+    assert got["abstain_ok"] == (6, 5, 4, 4, 0, 1, 1)          # q016 over-abstains in both
+    assert got["calc"] == (1, 0, 1, 0, 1, 0, 0)                # q004
+    assert got["faithful"] == (4, 2, 3, 2, 1, 0, 1)            # judged in both: q006 q005 q004 q008
+    assert got["no_leak"] == (2, 1, 1, 1, 0, 0, 1)             # q008 leaks in both
+    assert got["answered"] == (4, 3, 3, 3, 0, 0, 1)            # q016 declined (guard) in both
+    assert got["tool_ok"] == (6, 6, 6, 6, 0, 0, 0)
+    assert got["passed"] == (6, 2, 4, 2, 2, 0, 2)              # both: q006 q024; B fixes q004 q005; q008 q016 fail in both
+    ordered = {d["key"]: (d["n"], d["b_better"], d["b_worse"], d["same"]) for d in blk["ordered"]}
+    assert ordered["rank"] == (4, 0, 1, 3)                     # q006 rank 1 -> 2
+    assert ordered["key_facts"] == (4, 2, 0, 2)                # q005 1 -> 2, q004 1 -> 2
+    assert {d["key"]: d["p"] for d in blk["ordered"]}["key_facts"] == 0.5
+
+
+def test_compare_slices_categories_tags_and_changes(two):
+    c = P.compare(two, RUN, RUN_B, ix=IX)
+    assert list(c["slices"]) == ["all", "frontline", "compliance"]
+    assert c["declines_by_category"] == {"network_rules": ((1, 1, 1), (0, 1, 1)), "state_law": ((1, 1, 0), (1, 1, 0))}
+    ta, tb = c["tag_counts"]
+    assert ta["calculation_error"] == 1 and tb["calculation_error"] == 0 and tb["missed_abstention"] == 1
+    ch = {q: x for q, _, _, x in c["changes"]}
+    assert set(ch) == {"q004", "q005", "q006", "q008", "q024"}
+    assert ch["q006"] == ["first gold rank 1 → 2"]
+    assert "calculation False → True" in ch["q004"] and "key facts 1 → 2 of 2" in ch["q004"]
+    assert "declined → answered" in ch["q008"] and ch["q008"][-1] == "tags memory_leak → missed_abstention, memory_leak"
+    assert ch["q024"] == ["judge missing → faithful"]
+
+
+def test_compare_text_and_markdown(two):
+    c = P.compare(two, RUN, RUN_B, ix=IX)
+    t = P.compare_text(c)
+    assert "Settings that differ: search_mode hybrid → vector" in t and "WARNING: more than one" not in t
+    assert "couldn't check" in t                    # made-up commits aren't in this repo
+    assert "Left out (failed to run): q049 (in A)" in t and "Left out (in one run only): A none; B q052" in t
+    assert "Questions that changed: 5 of 6" in t and "McNemar" in t and "upper bound" in t
+    md = P.compare_markdown(c)
+    assert md.startswith("# Run comparison") and "| hit@5 | 3/4 | 3/4 | 3 | 0 | 0 | 1 | - |" in md and "## Frontline (3)" in md
+
+
+def test_compare_warns_about_more_than_one_setting_and_dirty_runs(db):
+    add_run(db, RUN_B, {"search_mode": "vector", "k": 3, "tool_on": True}, dirty=1, prompt="p3")
+    R.log_result(db, RUN_B, PLAIN, resp(), None, R.grade(PLAIN, resp(), IX))
+    c = P.compare(db, RUN, RUN_B, ix=IX)
+    assert c["settings"] == [("k", 5, 3), ("search_mode", "hybrid", "vector"), ("prompt_version", "p2", "p3")]
+    t = P.compare_text(c)
+    assert "WARNING: more than one setting differs" in t and "WARNING: run B was made with uncommitted changes" in t
+
+
+def test_compare_leaves_out_a_question_relabelled_between_runs(db):
+    add_run(db, RUN_B, {"search_mode": "hybrid", "k": 5, "tool_on": True})
+    edited = PLAIN.model_copy(update={"key_facts": list(PLAIN.key_facts) + ["one more"]})
+    R.log_result(db, RUN_B, edited, resp(), None, R.grade(edited, resp(), IX))
+    R.log_result(db, RUN_B, TWO_GOLD, resp(), None, R.grade(TWO_GOLD, resp(), IX))
+    c = P.compare(db, RUN, RUN_B, ix=IX)
+    assert c["relabelled"] == ["q006"] and c["common"] == ["q005"]
+    assert "none (a repeat of the same configuration)" in P.compare_text(c)
+
+
+def test_compare_refuses_the_same_run_or_nothing_in_common(db):
+    with pytest.raises(SystemExit, match="two different runs"):
+        P.compare(db, RUN, RUN, ix=IX)
+    add_run(db, RUN_B, {"search_mode": "hybrid", "k": 5, "tool_on": True})
+    R.log_result(db, RUN_B, BY_ID["q052"], resp(), None, R.grade(BY_ID["q052"], resp(), IX))
+    with pytest.raises(SystemExit, match="no question in common"):
+        P.compare(db, RUN, RUN_B, ix=IX)
+
+
+def test_app_changed(monkeypatch):
+    assert P.app_changed("abc", "abc") is False and P.app_changed(None, "abc") is None
+    monkeypatch.setattr(P.subprocess, "run", lambda *a, **k: type("Done", (), {"returncode": 1})())
+    assert P.app_changed("abc", "def") is True
+    monkeypatch.setattr(P.subprocess, "run", lambda *a, **k: type("Done", (), {"returncode": 128})())
+    assert P.app_changed("abc", "def") is None
+
+
+def test_command_line_compare(two, tmp_path, capsys):
+    md = tmp_path / "out" / "cmp.md"
+    assert P.main([RUN, "--compare", RUN_B, "--db", str(tmp_path / "runs.db"), "--markdown", str(md)]) == 0
+    out = capsys.readouterr().out
+    assert "A: r20990101T000000Z (hybrid k5)" in out and md.read_text(encoding="utf-8").startswith("# Run comparison")
+    with pytest.raises(SystemExit):
+        P.main([RUN, "--compare", RUN_B, "--show", "q006", "--db", str(tmp_path / "runs.db")])
