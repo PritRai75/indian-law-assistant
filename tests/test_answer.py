@@ -80,6 +80,15 @@ def test_the_prompt_setting_picks_the_system_prompt_and_is_logged():
     assert resp.config_hash != default.config_hash
 
 
+def test_p4_goes_with_the_tool_off_only():
+    from app.prompts import SYSTEM_PROMPT_P4
+    with pytest.raises(ValueError, match="without the tool"):
+        DEFAULT.with_(prompt="p4")
+    resp, client = run(text(reply()), config=DEFAULT.with_(prompt="p4", tool_on=False))
+    req = client.requests[0]
+    assert req["system"] == [{"text": SYSTEM_PROMPT_P4}] and "toolConfig" not in req and resp.prompt_version == "p4"
+
+
 def test_an_unknown_prompt_is_refused():
     with pytest.raises(ValueError, match="prompt must be one of"):
         DEFAULT.with_(prompt="p9")

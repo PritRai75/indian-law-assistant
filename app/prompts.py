@@ -10,11 +10,13 @@ header, with the regulation, the paragraph, the "Status:" line and any "Applies 
 text), plus the exact provision IDs it may cite. The answer format (fields and what each means) is
 described here; the schema that enforces it comes with the answer flow (app/schema.py).
 
-Experiment 4 (session 22): PROMPTS holds every version the answer flow can use, chosen by the config's
+Experiments 3 and 4 (session 22): PROMPTS holds every version the answer flow can use, chosen by the config's
 `prompt` setting (default PROMPT_VERSION, "p2"). "p3" is p2 with its one paragraph on when to set
 `abstained` replaced by explicit decline rules and made-up examples (P3_DECLINE_RULES); every other
 word is the same, so the experiment changes one thing. The examples avoid every golden question's
-situation (checked against all 60 in session 22) and state no rule content.
+situation (checked against all 60 in session 22) and state no rule content. "p4" is p2 with its rule 2
+(call the tool, never count days) replaced by one telling the model to work the dates out itself: the
+off arm of experiment 3, used only with the tool off.
 """
 from datetime import date
 
@@ -146,7 +148,32 @@ one sentence saying that state law is outside what you can answer.
 SYSTEM_PROMPT_P3 = SYSTEM_PROMPT.replace(P2_ABSTAIN_PARAGRAPH, P3_DECLINE_RULES)
 assert SYSTEM_PROMPT_P3 != SYSTEM_PROMPT, "p2's abstain paragraph not found"
 
-PROMPTS = {"p2": SYSTEM_PROMPT, "p3": SYSTEM_PROMPT_P3}
+# p4 (experiment 3, the tool off): p2's rule 2 tells the model to call dispute_timeline and never count
+# days itself, which makes no sense without the tool. p4 replaces that rule only, so the model works the
+# dates out itself (the spec's "the model counts days itself"). Business days follow the tool's own
+# assumption (decision 35), so the two arms differ in who counts, not in what a business day is. Used
+# only with the tool off (app.config refuses p4 with the tool on).
+P2_TOOL_RULE = """\
+2. For any deadline, date or liability amount that depends on dates, call dispute_timeline and use \
+its result. Never count days or business days yourself. If the question lacks a date the tool needs, \
+don't invent one: state the rule in words, cited, and say which date is needed. You can call the \
+tool at most twice.
+"""
+
+P4_COUNT_RULE = """\
+2. You have no tool in this setting. For any deadline, date or liability amount that depends on \
+dates, work it out yourself from the dates in the question and the rules in the passages: for each \
+one, state the start date, the period the rule gives and the resulting date. Count carefully. A \
+business day is Monday to Friday, except federal holidays on which the Federal Reserve is closed. If \
+the question lacks a date you need, don't invent one: state the rule in words, cited, and say which \
+date is needed.
+"""
+
+SYSTEM_PROMPT_P4 = SYSTEM_PROMPT.replace(P2_TOOL_RULE, P4_COUNT_RULE)
+assert SYSTEM_PROMPT_P4 != SYSTEM_PROMPT, "p2's tool rule not found"
+
+PROMPTS = {"p2": SYSTEM_PROMPT, "p3": SYSTEM_PROMPT_P3, "p4": SYSTEM_PROMPT_P4}
+TOOL_OFF_ONLY = {"p4"}             # prompts written for a run without the tool
 
 KIND = {"rule": "regulation", "commentary": "official interpretation"}
 

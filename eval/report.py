@@ -45,7 +45,8 @@ Answerable questions:
                           output_invalid or tool_limit)
   3. wrong_reg            it cites the other regulation (code: wrong_reg)
   4. status_error         it cites a provision that isn't in force (code: status_error)
-  5. tool_misuse          a call was needed and missed, or made with wrong arguments
+  5. tool_misuse          a call was needed and missed, or made with wrong arguments (a missed call
+                          isn't tagged in a run with the tool off: there was no tool; session 22)
   6. calculation_error    an expected date, or a Reg E $50 / $500 tier, is missing from the answer
   7. memory_leak          a claim the judge marks unsupported names something outside Z and E: a card
                           network, state law, a statute, another regulation, a court, the issuer's
@@ -159,9 +160,11 @@ def claims_note(claims: list[str]) -> str:
     return "; ".join(f'"{short(c, 80)}"' for c in claims[:2]) + (f" (+{len(claims) - 2} more)" if len(claims) > 2 else "")
 
 
-def tags_for(item: G.GoldenItem, m: dict, v: Verdict) -> list[tuple[str, str]]:
+def tags_for(item: G.GoldenItem, m: dict, v: Verdict, tool_on: bool = True) -> list[tuple[str, str]]:
     """Every error tag that applies, as (tag, evidence), in precedence order: the first is the primary
-    tag. An empty list means the question passed."""
+    tag. An empty list means the question passed. In a run with the tool off (tool_on False), a call
+    that was expected but not made isn't tool_misuse: there was no tool to call (session 22,
+    experiment 3); the dates are still checked (calculation_error)."""
     out: list[tuple[str, str]] = []
 
     def add(tag, why):
@@ -192,7 +195,7 @@ def tags_for(item: G.GoldenItem, m: dict, v: Verdict) -> list[tuple[str, str]]:
         add("wrong_reg", f"cites the other regulation ({item.regulation} question): {', '.join(m['wrong_reg_ids'])}")
     if m["status_error"]:
         add("status_error", "cites a provision not in force: " + ", ".join(m["not_in_force_ids"]))
-    if m["tool_outcome"] == "wrong_args" or (m["tool_outcome"] == "missed_call" and not m["abstained"]):
+    if m["tool_outcome"] == "wrong_args" or (m["tool_outcome"] == "missed_call" and not m["abstained"] and tool_on):
         add("tool_misuse", m["tool_outcome"] + (f" ({', '.join(m['arg_diffs'])})" if m["arg_diffs"] else ""))
     if m["calc_exact"] is False and not m["abstained"]:
         add("calculation_error", "missing from the answer: " + ", ".join(m["calc_missing"]))
@@ -238,6 +241,10 @@ def load_rows(db, run_id: str, version: str = J.JUDGE_VERSION, ix: R.IndexView |
     run = dict(zip(("run_id", "split", "ids", "git_commit", "git_dirty", "config_json", "prompt_version",
                     "grader_version", "n_items", "note"), head))
     ix = ix or R.index_view()
+    try:
+        tool_on = json.loads(run["config_json"] or "{}").get("tool_on", True)
+    except ValueError:
+        tool_on = True
     verdicts = {qid: (status, faith, cov, tot, vj) for qid, status, faith, cov, tot, vj in db.execute(
         "SELECT qid, status, faithfulness, kf_covered, kf_total, verdict_json FROM judgements "
         "WHERE run_id = ? AND judge_version = ?", (run_id, version))}
@@ -250,7 +257,7 @@ def load_rows(db, run_id: str, version: str = J.JUDGE_VERSION, ix: R.IndexView |
             continue
         m = R.grade(item, json.loads(resp_json), ix)
         v = verdict_from_row(verdicts.get(qid))
-        rows.append(Row(item, m, None, v, tags_for(item, m, v)))
+        rows.append(Row(item, m, None, v, tags_for(item, m, v, tool_on)))
     return run, rows
 
 

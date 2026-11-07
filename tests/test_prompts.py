@@ -17,6 +17,7 @@ PROMPT_HASHES = {
     "p1": "f64d0e22177ff96a184f68bb713c85ab93ba1aba591131784f43bf8a52dee426",
     "p2": "bb93800274dea0e40728f2bee26b044723f8fe9805dcef144330547857ad3350",   # S12: final reply is JSON only
     "p3": "373e1240549656241e9ae09cb6a5dee72862c9da889577f39d3df22ad3d3509b",   # S22: experiment 4's decline rules
+    "p4": "f0a7b608aba386efaa2b48c075618d8c6718ca88f597ebeebd7554cca5871449",   # S22: experiment 3, the tool off
 }
 
 
@@ -37,6 +38,14 @@ def test_p3_is_p2_with_only_the_abstain_paragraph_replaced():
     # Experiment 4 changes one thing: every other word of p2 is in p3 unchanged.
     assert pr.P2_ABSTAIN_PARAGRAPH in pr.SYSTEM_PROMPT and pr.P2_ABSTAIN_PARAGRAPH not in pr.SYSTEM_PROMPT_P3
     assert pr.SYSTEM_PROMPT_P3.replace(pr.P3_DECLINE_RULES, pr.P2_ABSTAIN_PARAGRAPH) == pr.SYSTEM_PROMPT
+
+
+def test_p4_is_p2_with_only_the_tool_rule_replaced():
+    # Experiment 3's off arm: rule 2 (call the tool, never count) becomes "work the dates out yourself".
+    assert pr.P2_TOOL_RULE in pr.SYSTEM_PROMPT and pr.P2_TOOL_RULE not in pr.SYSTEM_PROMPT_P4
+    assert pr.SYSTEM_PROMPT_P4.replace(pr.P4_COUNT_RULE, pr.P2_TOOL_RULE) == pr.SYSTEM_PROMPT
+    assert "call dispute_timeline" not in pr.SYSTEM_PROMPT_P4 and "Never count days" not in pr.SYSTEM_PROMPT_P4
+    assert pr.TOOL_OFF_ONLY == {"p4"}
 
 
 def test_p3_examples_share_no_wording_with_the_golden_questions():

@@ -8,7 +8,7 @@ import hashlib
 import json
 from dataclasses import asdict, dataclass, replace
 
-from app.prompts import PROMPT_VERSION, PROMPTS
+from app.prompts import PROMPT_VERSION, PROMPTS, TOOL_OFF_ONLY
 
 # The citation guard's rule (app.answer.guard). Bump it with any change to how the guard reads or
 # removes citations, since that changes answers. "c1": one ID per string (sessions 12-14);
@@ -38,6 +38,8 @@ class Config:
             raise ValueError(f"search_mode must be vector, bm25 or hybrid, not {self.search_mode!r}")
         if self.prompt not in PROMPTS:
             raise ValueError(f"prompt must be one of {', '.join(PROMPTS)}, not {self.prompt!r}")
+        if self.prompt in TOOL_OFF_ONLY and self.tool_on:
+            raise ValueError(f"prompt {self.prompt} is written for runs without the tool: use it with the tool off")
         if self.output_mode not in ("json", "structured"):
             raise ValueError(f"output_mode must be json or structured, not {self.output_mode!r}")
 

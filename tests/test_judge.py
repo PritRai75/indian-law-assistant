@@ -325,3 +325,10 @@ def test_prompt_flag_changes_and_logs_the_config():
     assert p3.prompt == "p3" and p3.search_mode == DEFAULT.search_mode and p3.k == DEFAULT.k
     assert config_hash(p3, "2026-10-23") != config_hash(DEFAULT, "2026-10-23")
     assert R.config_from_args(args(prompt="p2")) == DEFAULT
+
+
+def test_p4_flag_needs_the_tool_off():
+    off = R.config_from_args(args(tool_off=True, prompt="p4"))
+    assert off.prompt == "p4" and not off.tool_on
+    with pytest.raises(SystemExit, match="without the tool"):
+        R.config_from_args(args(prompt="p4"))

@@ -8,6 +8,7 @@ From the repo root:
     python -m eval.run --split test --final      the test split: once, at the very end
     python -m eval.run --k 2 --tool-off          the dev split with weaker settings (judge calibration)
     python -m eval.run --prompt p3               the dev split with another prompt (experiment 4)
+    python -m eval.run --tool-off --prompt p4    the tool off, the model counting days itself (experiment 3)
     python -m eval.run --runs                    list the logged runs
     python -m eval.run --regrade RUN_ID          grade a logged run again from its stored answers, no model calls
 
@@ -571,7 +572,10 @@ def config_from_args(args):
         changes["k"] = args.k
     if args.tool_off:
         changes["tool_on"] = False
-    return DEFAULT.with_(**changes)
+    try:
+        return DEFAULT.with_(**changes)
+    except ValueError as e:                        # e.g. --prompt p4 without --tool-off
+        raise SystemExit(str(e)) from None
 
 
 def main(argv=None) -> int:
@@ -588,7 +592,8 @@ def main(argv=None) -> int:
     ap.add_argument("--search", choices=["vector", "bm25", "hybrid"],
                     help="search mode (default: the config's, hybrid; experiment 2 compares them)")
     ap.add_argument("--prompt", choices=sorted(PROMPTS),
-                    help="the answer model's prompt (default: the config's, p2; experiment 4 compares p3)")
+                    help="the answer model's prompt (default: the config's, p2; experiment 4 compares p3; "
+                         "p4 goes with --tool-off for experiment 3)")
     ap.add_argument("--note", default="", help="a short note saved with the run")
     ap.add_argument("--db", type=Path, default=DB_FILE, help="the SQLite file (default runs.db)")
     ap.add_argument("--runs", action="store_true", help="list the logged runs and stop")

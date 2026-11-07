@@ -541,3 +541,28 @@ def test_compare_reads_the_prompt_once_and_names_it(db):
     assert c["settings"] == [("prompt_version", "p2", "p3")]
     assert c["b"]["name"] == "hybrid k5 prompt p3" and c["a"]["name"] == "hybrid k5"
     assert "WARNING: more than one" not in P.compare_text(c)
+
+
+# ---------------------------------------------------------------- the tool off (experiment 3)
+
+def test_a_missed_call_is_no_tool_misuse_when_the_run_had_no_tool():
+    # Both dates missing and no call: with the tool on that's tool_misuse then calculation_error; with
+    # the tool off only the calculation is wrong.
+    r = resp(retrieved=("1005.11(c)", OTHER_CHUNK), cites=("1005.11(c)(1)",), answer="We will look into it.")
+    m = R.grade(TOOL, r, IX)
+    assert m["tool_outcome"] == "missed_call"
+    v = judged(n=len(TOOL.key_facts))
+    assert [t for t, _ in P.tags_for(TOOL, m, v)][:2] == ["tool_misuse", "calculation_error"]
+    assert [t for t, _ in P.tags_for(TOOL, m, v, tool_on=False)] == ["calculation_error"]
+    right = tool_resp()
+    no_tool = resp(retrieved=right["retrieved_ids"], cites=right["citations"], answer=right["answer"])
+    assert P.tags_for(TOOL, R.grade(TOOL, no_tool, IX), v, tool_on=False) == []
+
+
+def test_load_rows_reads_whether_the_tool_was_on(db):
+    add_run(db, RUN_B, {"search_mode": "hybrid", "k": 5, "tool_on": False, "prompt": "p4"}, prompt="p4")
+    r = resp(retrieved=("1005.11(c)", OTHER_CHUNK), cites=("1005.11(c)(1)",), answer="We will look into it.")
+    R.log_result(db, RUN_B, TOOL, r, None, R.grade(TOOL, r, IX))
+    _, rows = P.load_rows(db, RUN_B, ix=IX)
+    assert [t for t, _ in rows[0].tags] == ["calculation_error"]
+    assert P.compare(db, RUN, RUN_B, ix=IX)["b"]["name"] == "hybrid k5 no tool prompt p4"
