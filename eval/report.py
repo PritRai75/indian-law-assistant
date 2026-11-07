@@ -25,16 +25,19 @@ How the numbers are counted:
   dropped or bent conditions. So the judge-based tags (memory_leak, unsupported_claim) are a lower bound.
 
 Error tags (session 21; Prit chose the automatic tags with a review of the final run, the new tag
-`incomplete`, and counting a decline that names an outside law as memory_leak). A question fails when
+`incomplete`, and counting a decline that names an outside law as memory_leak; after the first real
+report he chose to split every decline's unsupported claims the same way as an answer's). A question fails when
 any tag applies. Tags are checked in pipeline order, cause before symptom, and the first one that
 applies is the primary tag; the others are kept and shown.
 
 Should-decline questions:
   1. missed_abstention    it answered
-  2. memory_leak          the judge marks a claim unsupported (j2 counts naming an outside law or
-                          part as governing as one; decision 48: a decline says the topic is outside
-                          Z and E without naming the law). A missed abstention gets this too, as a
-                          second tag.
+  2. memory_leak          a claim the judge marks unsupported names something outside Z and E (the
+                          same keyword test as step 7 below; decision 48: a decline says the topic is
+                          outside Z and E without naming the law)
+     unsupported_claim    any other claim the judge marks unsupported (j2 also counts naming a part
+                          of Z or E as governing, "see Subpart B", as one)
+  Both apply to a correct decline and, as further tags, to a missed abstention.
 Answerable questions:
   1. retrieval_miss       no passage the model was given holds a gold paragraph (first_gold_rank None)
   2. over_abstention      it declined (with the cause: the model, or the guard's no_valid_citation,
@@ -91,12 +94,16 @@ PERSONAS = ("frontline", "compliance")
 # (checked against the corpus in session 21): "account agreement" (71 chunks), "terms and conditions"
 # (18), "card network" (3, Reg E's debit card networks), "issuer's policies" (1). "State law" and "the
 # Act" stay although the corpus uses them: the spec's memory_leak is such a statement *not in the
-# passages*, which is what an unsupported claim is.
+# passages*, which is what an unsupported claim is. "Federal law / rules / statutes / regulations"
+# counts unless Regulation E or Z (or 12 CFR 1005 / 1026) follows: "federal law (Regulation E)" is Z/E
+# itself (run r20261106T081540Z's q008), "the federal rules that regulate calling hours" isn't (q044).
 OUTSIDE_LAW = re.compile("|".join([
     r"\b(?:visa|mastercard|american express|amex)\b", r"\bnetwork(?:'s)? rules?\b",
     r"\bzero[- ]liability\b", r"\bnacha\b", r"\bchargebacks?\b",
     r"\bstate (?:laws?|statutes?|regulators?)\b", r"(?-i:\b[Uu]nder [A-Z][a-z]+ law\b)",
-    r"\bstatutes?\b", r"\bstatutory\b", r"\bfederal law\b",
+    r"\bstatutes?\b", r"\bstatutory\b",
+    r"\bfederal (?:laws?|rules?|statutes?|regulations?)\b"
+    r"(?!\s*[(,]?\s*(?:(?:in|at)\s+)?(?:(?:Regulation|Reg\.?)\s+[EZ]\b|12 CFR (?:Part )?10(?:05|26)))",
     r"\b(?:FCRA|FCBA|TILA|EFTA|UDAAP|UDAP|CARD Act|Dodd-Frank|UCC)\b", r"\bUniform Commercial Code\b",
     r"\b(?:Truth in Lending|Electronic Fund Transfer|Fair Credit (?:Billing|Reporting)) Act\b",
     r"(?-i:\bAct\b)", r"(?-i:\bReg(?:ulation)?\.? (?!E\b|Z\b)[A-Z]{1,2}\b)",
@@ -148,14 +155,20 @@ def tags_for(item: G.GoldenItem, m: dict, v: Verdict) -> list[tuple[str, str]]:
         if tag not in (t for t, _ in out):
             out.append((tag, why))
 
-    judged = v.status == "judged"
-    unsupported = v.unsupported if judged else []
+    unsupported = v.unsupported if v.status == "judged" else []
+    leaks = [c for c in unsupported if outside_law(c)]
+    others = [c for c in unsupported if not outside_law(c)]
+
+    def claims_tags():
+        if leaks:
+            add("memory_leak", "judge: unsupported " + claims_note(leaks))
+        if others:
+            add("unsupported_claim", "judge: unsupported " + claims_note(others))
 
     if item.should_abstain:
         if not m["abstained"]:
             add("missed_abstention", f"answered; should decline ({item.abstain_category})")
-        if unsupported:
-            add("memory_leak", "judge: unsupported " + claims_note(unsupported))
+        claims_tags()
         return out
 
     if m["first_gold_rank"] is None:
@@ -170,12 +183,7 @@ def tags_for(item: G.GoldenItem, m: dict, v: Verdict) -> list[tuple[str, str]]:
         add("tool_misuse", m["tool_outcome"] + (f" ({', '.join(m['arg_diffs'])})" if m["arg_diffs"] else ""))
     if m["calc_exact"] is False and not m["abstained"]:
         add("calculation_error", "missing from the answer: " + ", ".join(m["calc_missing"]))
-    leaks = [c for c in unsupported if outside_law(c)]
-    others = [c for c in unsupported if not outside_law(c)]
-    if leaks:
-        add("memory_leak", "judge: unsupported " + claims_note(leaks))
-    if others:
-        add("unsupported_claim", "judge: unsupported " + claims_note(others))
+    claims_tags()
     bad = []
     if m["invented_ids"]:
         bad.append("not given to it: " + ", ".join(m["invented_ids"]))
@@ -303,7 +311,7 @@ def review_sheet(rep: dict) -> str:
              "# a short note when you change it. Don't edit `id` or `auto`.",
              "# Tags for answerable questions, in the order they are checked: "
              + ", ".join(t for t in TAGS if t != "missed_abstention") + ".",
-             "# For declines: missed_abstention, then memory_leak.",
+             "# For declines: missed_abstention, then memory_leak, then unsupported_claim.",
              f"# Check any time: python -m eval.report {rid}  (it says how many are reviewed)", ""]
     for f in rep["failures"]:
         others = ", ".join(t for t, _ in f["tags"][1:])

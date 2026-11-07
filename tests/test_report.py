@@ -89,6 +89,54 @@ def test_outside_law_leaves(claim):
     assert not P.outside_law(claim)
 
 
+# Every unsupported claim the judge (j2) found in dev run r20261106T081540Z (vector k5), word for word,
+# with whether it names something outside Z and E. Session 21 set the keyword list from these.
+REAL_CLAIMS = [
+    ("q004", False, "an unauthorized ACH debit after cancellation qualifies as an 'error'"),
+    ("q005", False, "This is required by §§ 1026.9(c) or (g)"),
+    ("q006", False, "That question is governed by § 1026.10(b)"),
+    ("q007", False, "The debit card transactions that drained the checking account balance are governed by Regulation E, "
+                    "which covers unauthorized electronic fund transfers from a consumer's bank account"),
+    ("q007", False, "The overdraft credit line is a separate open-end credit feature"),
+    ("q007", False, "Unauthorized use of a credit card or credit feature is governed by Regulation Z"),
+    ("q008", False, "Under federal law (Regulation E), a cardholder's liability for unauthorized use of a debit card is "
+                    "governed by § 1005.6(b), not Regulation Z's credit card rules"),
+    ("q009", False, "Regulation Z does not set a deadline for the credit bureaus themselves to correct a report"),
+    ("q009", True, "The timeline for the bureaus to act on that notification is governed by the Fair Credit Reporting "
+                   "Act and its implementing regulations"),
+    ("q010", False, "The applicable rules for that situation are in Subpart B of Regulation E (the remittance transfer "
+                    "provisions, around § 1005.31 et seq.)"),
+    ("q016", False, "The prohibited practices listed in § 1026.56(j) apply '[n]otwithstanding a consumer's affirmative "
+                    "consent,' meaning the consent requirement is a threshold condition that must be satisfied before "
+                    "any fee is permissible"),
+    ("q024", True, "This question turns on which state's usury or interest-rate laws apply to a credit card account — a "
+                   "matter of state law and potentially federal banking statutes, not Regulation Z (12 CFR Part 1026)."),
+    ("q028", False, "A checking account is a deposit account, not an open-end credit plan"),
+    ("q028", False, "Regulation Z's account-opening disclosure rules (§ 1026.5(b)(1)(i), § 1026.6(b)) do not apply to it "
+                    "[a checking account]"),
+    ("q028", False, "Regulation E (12 CFR Part 1005) governs electronic fund transfers associated with checking accounts"),
+    ("q028", False, "providing a compliance sign-off or clearance determination is outside what I can do under these regulations"),
+    ("q044", True, "The federal rules that directly regulate those practices (such as restrictions on calling hours and "
+                   "workplace contacts) fall outside Regulation Z and Regulation E entirely"),
+    ("q052", False, "Her call on Tuesday, 10 November 2026 is three business days before Sunday, 15 November 2026 "
+                    "(counting Wednesday, Thursday, and Friday)"),
+]
+
+
+@pytest.mark.parametrize("qid,want,claim", REAL_CLAIMS)
+def test_outside_law_on_a_real_run(qid, want, claim):
+    assert P.outside_law(claim) is want
+
+
+@pytest.mark.parametrize("claim,want", [
+    ("under federal law (Regulation Z) the cap is $50", False), ("federal regulations, Reg E, apply", False),
+    ("the federal law in 12 CFR Part 1005 applies", False), ("federal law may give the customer more", True),
+    ("federal regulations on debt collection apply", True),
+])
+def test_federal_law_unless_z_or_e_follows(claim, want):
+    assert P.outside_law(claim) is want
+
+
 # ---------------------------------------------------------------- answerable questions: each tag and the order
 
 def test_a_clean_answer_passes():
@@ -163,11 +211,15 @@ def test_without_a_verdict_the_judge_tags_cannot_fire():
 def test_declines():
     no = resp(retrieved=("1005.6", OTHER_CHUNK), cites=(), abstained=True)
     assert tags(NETWORK, no) == []
-    # decision 79: a correct decline that names an outside law is a memory_leak, whatever the words
-    assert tags(NETWORK, no, judged("partially_faithful", unsupported=["governed by Subpart C"])) == ["memory_leak"]
+    # decision 79: a correct decline that names an outside law is a memory_leak; any other
+    # unsupported claim in it is an unsupported_claim (Prit's (a), after the first real report)
+    assert tags(NETWORK, no, judged("partially_faithful", unsupported=["Visa's zero liability covers her"])) \
+        == ["memory_leak"]
+    assert tags(NETWORK, no, judged("partially_faithful", unsupported=["governed by Subpart B of Regulation E"])) \
+        == ["unsupported_claim"]
     yes = resp(retrieved=("1005.6", OTHER_CHUNK), cites=("1005.6(b)(1)",))
-    assert tags(NETWORK, yes, judged("unfaithful", unsupported=["Visa's zero liability"])) \
-        == ["missed_abstention", "memory_leak"]
+    assert tags(NETWORK, yes, judged("unfaithful", unsupported=["the bank must refund in 5 days", "Visa's zero liability"])) \
+        == ["missed_abstention", "memory_leak", "unsupported_claim"]
     m = R.grade(STATE, yes, IX)
     assert P.tags_for(STATE, m, judged())[0] == ("missed_abstention", "answered; should decline (state_law)")
 
@@ -288,7 +340,7 @@ def write(path, rep, fill=None):
 def test_review_sheet_lists_every_failure_with_its_automatic_tag(db, tmp_path):
     rep = P.build(db, RUN, ix=IX)
     sheet = P.review_sheet(rep)
-    assert "For declines: missed_abstention, then memory_leak." in sheet
+    assert "For declines: missed_abstention, then memory_leak, then unsupported_claim." in sheet
     blocks = tomllib.loads(sheet)["review"]
     assert [(b["id"], b["auto"], b["tag"]) for b in blocks] == [
         ("q004", "calculation_error", ""), ("q005", "unsupported_claim", ""),
